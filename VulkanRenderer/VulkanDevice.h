@@ -10,6 +10,14 @@
 
 #include "Window.h"
 
+
+struct SwapChainSupportDetails 
+{
+	VkSurfaceCapabilitiesKHR m_surfaceCapabilites;
+	std::vector<VkSurfaceFormatKHR> m_formats;
+	std::vector<VkPresentModeKHR> m_presentModes;
+};
+
 struct QueueFamilyIndices 
 {
 	std::optional<uint32_t> m_graphicsQueue;
@@ -27,6 +35,16 @@ public:
 
 	VulkanDevice(Window& window);
 	~VulkanDevice();
+
+	SwapChainSupportDetails querySwapChainSupportDetails();
+	//bool checkDeviceExtensionSupport();
+
+	VkInstance getVkInstance() const;
+	VkDevice getDevice() const;
+	VkSurfaceKHR getSurface() const;
+	VkQueue getGraphicsQueue() const;
+	VkQueue getPresentQueue() const;
+	VkCommandPool getCommandPool() const;
 
 private:
 
@@ -47,5 +65,7 @@ private:
 	VkQueue m_graphicsQueue;
 	VkQueue m_presentQueue;
 	VkCommandPool m_vkCommandPool;
+
+	std::vector<const char*> m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 };
 

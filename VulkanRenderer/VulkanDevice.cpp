@@ -113,8 +113,8 @@ void VulkanDevice::createDevice()
 	devCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	devCreateInfo.queueCreateInfoCount = (uint32_t)qCreateInfo.size();
 	devCreateInfo.pQueueCreateInfos = qCreateInfo.data();
-	devCreateInfo.enabledExtensionCount = 1;
-	devCreateInfo.ppEnabledExtensionNames = (const char**)VK_KHR_SWAPCHAIN_EXTENSION_NAME;//array of extensions, in this case only 1
+	devCreateInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
+	devCreateInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
 	if (vkCreateDevice(m_vkPhysicalDevice, &devCreateInfo, nullptr, &m_vkDevice) != VK_SUCCESS) 
 	{
 		throw std::runtime_error("Failed to create Vulkan device");
@@ -127,3 +127,36 @@ void VulkanDevice::createCommandBuffer()
 {
 	
 }
+
+SwapChainSupportDetails VulkanDevice::querySwapChainSupportDetails()
+{
+	SwapChainSupportDetails details;
+
+	//surface capabilites
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vkPhysicalDevice, m_vkSurfaceKHR, &details.m_surfaceCapabilites);
+
+	//surface formats
+	uint32_t formatCount;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(m_vkPhysicalDevice, m_vkSurfaceKHR, &formatCount, nullptr);
+	if (formatCount != 0) 
+	{
+		details.m_formats.resize(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(m_vkPhysicalDevice, m_vkSurfaceKHR, &formatCount, details.m_formats.data());
+	}
+
+	//surface present modes
+	uint32_t presentModeCount;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(m_vkPhysicalDevice, m_vkSurfaceKHR, &presentModeCount, nullptr);
+	if (presentModeCount != 0)
+	{
+		details.m_presentModes.resize(presentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(m_vkPhysicalDevice, m_vkSurfaceKHR, &presentModeCount, details.m_presentModes.data());
+	}
+}
+
+VkInstance VulkanDevice::getVkInstance() const { return m_vkInstance; }
+VkDevice VulkanDevice::getDevice() const { return m_vkDevice; }
+VkSurfaceKHR VulkanDevice::getSurface() const { return m_vkSurfaceKHR; }
+VkQueue VulkanDevice::getGraphicsQueue() const { return m_graphicsQueue; }
+VkQueue VulkanDevice::getPresentQueue() const { return m_presentQueue; }
+VkCommandPool VulkanDevice::getCommandPool() const { return m_vkCommandPool; }

@@ -159,6 +159,7 @@
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="VulkanDevice.cpp" />
+    <ClCompile Include="VulkanSwapChain.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +167,7 @@
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="VulkanDevice.h" />
+    <ClInclude Include="VulkanSwapChain.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>

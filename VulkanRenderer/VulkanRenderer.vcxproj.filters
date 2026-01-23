@@ -30,6 +30,9 @@
     <ClCompile Include="VulkanDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="VulkanSwapChain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window.h">
@@ -45,6 +48,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VulkanDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanSwapChain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
