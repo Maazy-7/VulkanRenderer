@@ -4,15 +4,15 @@ VulkanDevice::VulkanDevice(Window& window)
 	:m_window(window)
 {
 	createVkInstance();
+	createSurface();
 	pickPhysicalDevice();
 	createDevice();
-	createSurface();
 	createCommandBuffer();
 }
 
 VulkanDevice::~VulkanDevice() 
 {
-
+	vkDestroyDevice(m_vkDevice, nullptr);
 }
 
 void VulkanDevice::createVkInstance() 
@@ -46,19 +46,24 @@ void VulkanDevice::createSurface()
 	}
 }
 
-QueueFamilyIndices VulkanDevice::findQueueIndices(VkPhysicalDevice vk) 
+QueueFamilyIndices VulkanDevice::findQueueIndices() 
+{
+	return findQueueIndices(m_vkPhysicalDevice);
+}
+
+QueueFamilyIndices VulkanDevice::findQueueIndices(VkPhysicalDevice device) 
 {
 	uint32_t qFamPropertyCount;
-	vkGetPhysicalDeviceQueueFamilyProperties(vk, &qFamPropertyCount, nullptr);
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &qFamPropertyCount, nullptr);
 	std::vector<VkQueueFamilyProperties> qFamProperties(qFamPropertyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(vk, &qFamPropertyCount, qFamProperties.data());
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &qFamPropertyCount, qFamProperties.data());
 	
 	QueueFamilyIndices res;
 	for (uint32_t i = 0; i < qFamPropertyCount; i++) 
 	{
 		if (qFamProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) { res.m_graphicsQueue = i; }
 		VkBool32 presRes;
-		vkGetPhysicalDeviceSurfaceSupportKHR(vk, i, m_vkSurfaceKHR, &presRes);
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_vkSurfaceKHR, &presRes);
 		if (presRes) { res.m_presentQueue = i; }
 		if (res.isComplete()) { break; }
 	}
@@ -95,7 +100,7 @@ void VulkanDevice::pickPhysicalDevice()
 
 void VulkanDevice::createDevice() 
 {
-	QueueFamilyIndices qfamInds = findQueueIndices(m_vkPhysicalDevice);
+	QueueFamilyIndices qfamInds = findQueueIndices();
 	float qPriority = 1.f;
 	//set ensures same queue index isn't iterated over twice
 	std::set<uint32_t> queueFamilies = {qfamInds.m_graphicsQueue.value(), qfamInds.m_presentQueue.value()};
@@ -152,6 +157,8 @@ SwapChainSupportDetails VulkanDevice::querySwapChainSupportDetails()
 		details.m_presentModes.resize(presentModeCount);
 		vkGetPhysicalDeviceSurfacePresentModesKHR(m_vkPhysicalDevice, m_vkSurfaceKHR, &presentModeCount, details.m_presentModes.data());
 	}
+
+	return details;
 }
 
 VkInstance VulkanDevice::getVkInstance() const { return m_vkInstance; }
@@ -160,3 +167,4 @@ VkSurfaceKHR VulkanDevice::getSurface() const { return m_vkSurfaceKHR; }
 VkQueue VulkanDevice::getGraphicsQueue() const { return m_graphicsQueue; }
 VkQueue VulkanDevice::getPresentQueue() const { return m_presentQueue; }
 VkCommandPool VulkanDevice::getCommandPool() const { return m_vkCommandPool; }
+void VulkanDevice::getWindowFrameBufferSize(int* width, int* height) const { glfwGetFramebufferSize(m_window.getWindow(), width, height); }

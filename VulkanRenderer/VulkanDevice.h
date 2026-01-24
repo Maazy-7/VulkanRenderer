@@ -38,6 +38,7 @@ public:
 
 	SwapChainSupportDetails querySwapChainSupportDetails();
 	//bool checkDeviceExtensionSupport();
+	QueueFamilyIndices findQueueIndices();
 
 	VkInstance getVkInstance() const;
 	VkDevice getDevice() const;
@@ -45,10 +46,11 @@ public:
 	VkQueue getGraphicsQueue() const;
 	VkQueue getPresentQueue() const;
 	VkCommandPool getCommandPool() const;
+	void getWindowFrameBufferSize(int* width, int* height) const;
 
 private:
 
-	QueueFamilyIndices findQueueIndices(VkPhysicalDevice vk);
+	QueueFamilyIndices findQueueIndices(VkPhysicalDevice dev);
 
 	void createVkInstance();
 	void createSurface();
