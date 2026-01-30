@@ -5,7 +5,9 @@ Application::Application()
 	:m_window(std::make_unique<Window>(DEFAULT_WIDTH, DEFUALT_HEIGHT, "Application"))
 {
 	m_window->setKeyCallback(&InputManager::keyCallback);
-	VulkanDevice vkd(*m_window);
+	VulkanDevice vkDevice(*m_window);
+	VulkanSwapChain vkSwapChain(vkDevice);
+	VulkanPipeline vkPipeline(vkDevice, "Shaders/shader.vert.spv", "Shaders/shader.frag.spv", vkSwapChain);
 }
 
 Application::~Application() 

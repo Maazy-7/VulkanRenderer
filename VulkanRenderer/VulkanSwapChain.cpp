@@ -6,6 +6,7 @@ VulkanSwapChain::VulkanSwapChain(VulkanDevice& device)
 {
 	createSwapChain();
 	createImageViews();
+	createRenderPass();
 }
 
 VulkanSwapChain::~VulkanSwapChain() 
@@ -15,6 +16,7 @@ VulkanSwapChain::~VulkanSwapChain()
 	{
 		vkDestroyImageView(m_vkDevice.getDevice(), imageView, nullptr);
 	}
+	vkDestroyRenderPass(m_vkDevice.getDevice(), m_vkRenderPass, nullptr);
 }
 
 void VulkanSwapChain::createSwapChain() 
@@ -37,6 +39,7 @@ void VulkanSwapChain::createSwapChain()
 
 	VkSwapchainCreateInfoKHR swapChainCreateInfo = {};
 	swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	swapChainCreateInfo.surface = m_vkDevice.getSurface();
 	swapChainCreateInfo.minImageCount = imageCount;
 	swapChainCreateInfo.imageFormat = surfaceFormat.format;
 	swapChainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -146,58 +149,51 @@ void VulkanSwapChain::createImageViews()
 	}
 }
 
-void VulkanSwapChain::createGraphicsPipeline()
+void VulkanSwapChain::createRenderPass() 
 {
-	auto vertexCode = readFromFile("Shaders/shader.vert.spv");
-	auto fragmentCode = readFromFile("Shaders/shader.frag.spv");
+	VkAttachmentDescription colorAttachment = {};
+	colorAttachment.format = m_swapChainFormat;
+	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-	VkShaderModule vertexShaderModule = createShaderModule(vertexCode);
-	VkShaderModule fragmentShaderModule = createShaderModule(fragmentCode);
+	VkAttachmentReference colorAttachmentReference = {};
+	colorAttachmentReference.attachment = 0;
+	colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	VkPipelineShaderStageCreateInfo vertexShaderCreateInfo = {};
-	vertexShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertexShaderCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertexShaderCreateInfo.module = vertexShaderModule;
-	vertexShaderCreateInfo.pName = "main";
-
-	VkPipelineShaderStageCreateInfo fragmentShaderCreateInfo = {};
-	fragmentShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragmentShaderCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragmentShaderCreateInfo.module = fragmentShaderModule;
-	fragmentShaderCreateInfo.pName = "main";
-
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShaderCreateInfo, fragmentShaderCreateInfo };
-	//
+	VkSubpassDescription subpassDesc = {};
+	subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpassDesc.colorAttachmentCount = 1;
+	subpassDesc.pColorAttachments = &colorAttachmentReference;
 	
-	vkDestroyShaderModule(m_vkDevice.getDevice(), vertexShaderModule, nullptr);
-	vkDestroyShaderModule(m_vkDevice.getDevice(), fragmentShaderModule, nullptr);
+	VkRenderPassCreateInfo renderpassCreateInfo = {};
+	renderpassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderpassCreateInfo.attachmentCount = 1;
+	renderpassCreateInfo.pAttachments = &colorAttachment;
+	renderpassCreateInfo.subpassCount = 1;
+	renderpassCreateInfo.pSubpasses = &subpassDesc;
+
+	if (vkCreateRenderPass(m_vkDevice.getDevice(), &renderpassCreateInfo, nullptr, &m_vkRenderPass) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("Failed to create Vulkan render pass");
+	}
 }
 
-VkShaderModule VulkanSwapChain::createShaderModule(const std::vector<char>& shaderCode) 
+VkRenderPass& VulkanSwapChain::getRenderPass()
 {
-	VkShaderModuleCreateInfo shaderCreateMooduleInfo = {};
-	shaderCreateMooduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	shaderCreateMooduleInfo.codeSize = shaderCode.size();
-	shaderCreateMooduleInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
-	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(m_vkDevice.getDevice(), &shaderCreateMooduleInfo, nullptr, &shaderModule) != VK_SUCCESS) 
-	{
-		throw std::runtime_error("Failed to create Vulkan shader module");
-	}
-	return shaderModule;
+	return m_vkRenderPass;
 }
 
-std::vector<char> VulkanSwapChain::readFromFile(const std::string& filename)
+unsigned int VulkanSwapChain::getSwapChainWidth() const 
 {
-	std::ifstream file(filename, std::ios::ate | std::ios::binary);
-	if (!file.is_open()) 
-	{
-		throw std::runtime_error("Failed to open shader file");
-	}
-	size_t fileSize = (uint32_t)file.tellg();
-	std::vector<char> buffer(fileSize);
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-	file.close();
-	return buffer;
+	return m_extent.width;
+}
+
+unsigned int VulkanSwapChain::getSwapChainHeight() const
+{
+	return m_extent.height;
 }

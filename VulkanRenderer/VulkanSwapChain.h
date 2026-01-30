@@ -20,25 +20,29 @@ public:
 
 	~VulkanSwapChain();
 
+	unsigned int getSwapChainWidth() const;
+	unsigned int getSwapChainHeight() const;
+
+	//temp
+	VkRenderPass& getRenderPass();
+
 private:
 
 	void createSwapChain();
 	void createImageViews();
-	void createGraphicsPipeline();
+	void createRenderPass();
 
-
-	VkShaderModule createShaderModule(const std::vector<char>& shaderCode);
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& surfaceFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& presentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilites);
-	std::vector<char> readFromFile(const std::string& filename);
-
+	
 	VkSwapchainKHR m_vkSwapChain;
 	VulkanDevice& m_vkDevice;
 	VkFormat m_swapChainFormat;
 	VkExtent2D m_extent;
 
+	VkRenderPass m_vkRenderPass;
+
 	std::vector<VkImage> m_swapChainImages;
 	std::vector<VkImageView> m_swapChainImageViews;
-	
 };

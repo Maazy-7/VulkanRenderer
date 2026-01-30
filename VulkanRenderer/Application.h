@@ -2,8 +2,10 @@
 
 #include <memory>
 #include "Window.h"
-#include "VulkanDevice.h"
 #include "InputManager.h"
+#include "VulkanDevice.h"
+#include "VulkanSwapChain.h"
+#include "VulkanPipeline.h"
 
 #define DEFAULT_WIDTH 1920
 #define DEFUALT_HEIGHT 1080
