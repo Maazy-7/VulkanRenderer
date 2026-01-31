@@ -12,11 +12,23 @@ VulkanDevice::VulkanDevice(Window& window)
 
 VulkanDevice::~VulkanDevice() 
 {
+	if (enableValidationLayers) 
+	{
+		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vkInstance, "vkDestroyDebugUtilsMessengerEXT");
+		if (func != nullptr) 
+		{
+			func(m_vkInstance, m_vkDebugMessenger, nullptr);
+		}
+	}
 	vkDestroyDevice(m_vkDevice, nullptr);
 }
 
 void VulkanDevice::createVkInstance() 
 {
+	if (enableValidationLayers && !checkValidationLayerSupport()) 
+	{
+		throw std::runtime_error("validation layers requested but not available");
+	}
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "vulkan renderer";
@@ -25,17 +37,92 @@ void VulkanDevice::createVkInstance()
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_3;
 
-	uint32_t extCount;
-	const char** exts = glfwGetRequiredInstanceExtensions(&extCount);
+	auto exts = getRequiredExtensions();
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
-	createInfo.enabledExtensionCount = extCount;
-	createInfo.ppEnabledExtensionNames = exts;
+	createInfo.enabledExtensionCount = exts.size();
+	createInfo.ppEnabledExtensionNames = exts.data();
+	
+	if (enableValidationLayers) 
+	{
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+	}
+	else { createInfo.enabledLayerCount = 0; }
+	
 	if (vkCreateInstance(&createInfo, nullptr, &m_vkInstance) != VK_SUCCESS) 
 	{
 		throw std::runtime_error("Failed to create Vulkan instance");
 	}
+}
+
+void VulkanDevice::setupDebugMessenger() 
+{
+	if (!enableValidationLayers) { return; }
+	VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo = {};
+	debugMessengerCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	debugMessengerCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | 
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	debugMessengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
+		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | 
+		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	debugMessengerCreateInfo.pfnUserCallback = debugCallback;
+	debugMessengerCreateInfo.pUserData = nullptr;
+	
+	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vkInstance, "vkCreateDebugUtilsMessengerEXT");
+	if (func != nullptr) {
+		if (func(m_vkInstance, &debugMessengerCreateInfo, nullptr, &m_vkDebugMessenger) != VK_SUCCESS) 
+		{
+			throw std::runtime_error("Failed to create debug");
+		}
+	}
+	else 
+	{
+		std::cout << "extension not present" << "\n";
+	}
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	VkDebugUtilsMessageTypeFlagsEXT messageType,
+	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+	void* pUserData)
+{
+	std::cerr << "validation layer: " << pCallbackData->pMessage << "\n";
+	return VK_FALSE;
+}
+
+bool VulkanDevice::checkValidationLayerSupport() const
+{
+	uint32_t layerCount;
+	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+	std::vector<VkLayerProperties> availableLayers(layerCount);
+	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+	for (const char* layerName : validationLayers) 
+	{
+		bool layerFound = false;
+		for (auto& layerProperties : availableLayers) 
+		{
+			if (strcmp(layerName, layerProperties.layerName) == 0) { layerFound = true; break; }
+		}
+		if (!layerFound) 
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+std::vector<const char*> VulkanDevice::getRequiredExtensions() const 
+{
+	uint32_t extCount;
+	const char** exts = glfwGetRequiredInstanceExtensions(&extCount);
+	std::vector<const char*> extensions(exts, exts + extCount);
+
+	if (enableValidationLayers) { extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME); }
+	return extensions;
 }
 
 void VulkanDevice::createSurface()
@@ -133,7 +220,7 @@ void VulkanDevice::createCommandBuffer()
 	
 }
 
-SwapChainSupportDetails VulkanDevice::querySwapChainSupportDetails()
+SwapChainSupportDetails VulkanDevice::querySwapChainSupportDetails() const
 {
 	SwapChainSupportDetails details;
 

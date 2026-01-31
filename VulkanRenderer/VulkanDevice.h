@@ -11,6 +11,10 @@
 #include "Window.h"
 
 
+const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
+const bool enableValidationLayers = true;
+
+
 struct SwapChainSupportDetails 
 {
 	VkSurfaceCapabilitiesKHR m_surfaceCapabilites;
@@ -36,9 +40,11 @@ public:
 	VulkanDevice(Window& window);
 	~VulkanDevice();
 
-	SwapChainSupportDetails querySwapChainSupportDetails();
-	//bool checkDeviceExtensionSupport();
+	SwapChainSupportDetails querySwapChainSupportDetails() const;
+	bool checkValidationLayerSupport() const;
+	std::vector<const char*> getRequiredExtensions() const;
 	QueueFamilyIndices findQueueIndices();
+	
 
 	VkInstance getVkInstance() const;
 	VkDevice getDevice() const;
@@ -53,12 +59,19 @@ private:
 	QueueFamilyIndices findQueueIndices(VkPhysicalDevice dev);
 
 	void createVkInstance();
+	void setupDebugMessenger();
 	void createSurface();
 	void pickPhysicalDevice();
 	void createDevice();
 	void createCommandBuffer();
 
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		void* pUserData);
+
 	VkInstance m_vkInstance;
+	VkDebugUtilsMessengerEXT m_vkDebugMessenger;
 	VkPhysicalDevice m_vkPhysicalDevice = VK_NULL_HANDLE;
 	VkDevice m_vkDevice;
 	VkPhysicalDeviceProperties m_vkPhysicalDeviceProperties;
