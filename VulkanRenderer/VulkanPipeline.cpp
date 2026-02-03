@@ -8,7 +8,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const std::string& vertexPa
 
 VulkanPipeline::~VulkanPipeline() 
 {
-
+	vkDestroyPipeline(m_vkDevice.getDevice(), m_vkPipeline, nullptr);
 }
 
 void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const std::string& fragmentPath, VulkanSwapChain& swapChain)

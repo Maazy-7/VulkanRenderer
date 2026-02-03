@@ -131,6 +131,8 @@ void VulkanSwapChain::createImageViews()
 		VkImageViewCreateInfo vkImgVCreateInfo = {};
 		vkImgVCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		vkImgVCreateInfo.image = m_swapChainImages[i];
+		vkImgVCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		vkImgVCreateInfo.format = m_swapChainFormat;
 		vkImgVCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 		vkImgVCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 		vkImgVCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
