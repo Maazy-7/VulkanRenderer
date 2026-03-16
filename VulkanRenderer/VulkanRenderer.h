@@ -1,0 +1,45 @@
+#pragma once
+
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+#include <vector>
+#include <memory>
+
+#include "Window.h"
+#include "VulkanDevice.h"
+#include "VulkanSwapChain.h"
+#include "VulkanPipeline.h"
+
+
+class VulkanRenderer
+{
+public:
+
+	VulkanRenderer(const VulkanRenderer&) = delete;
+	VulkanRenderer& operator=(const VulkanRenderer&) = delete;
+
+	VulkanRenderer(Window& window, VulkanDevice& device);
+	~VulkanRenderer();
+
+	VkCommandBuffer getCurrentCommandBuffer();
+	VulkanSwapChain* getSwapChain();
+
+	VkCommandBuffer beginFrame();
+	void endFrame();
+	void beginRenderPass(VkCommandBuffer commandBuffer);
+	void endRenderPass(VkCommandBuffer commandBuffer);
+	
+private:
+
+	void createCommandBuffer();
+
+	Window& m_window;
+	VulkanDevice& m_vkDevice;
+	std::unique_ptr<VulkanSwapChain> m_vkSwapChain;
+	std::vector<VkCommandBuffer> m_vkCommandBuffers;
+
+	uint32_t m_currentImageIndex = 0;
+	int m_currentFrameIndex = 0;
+	bool m_isFrameStarted = false;
+};
+

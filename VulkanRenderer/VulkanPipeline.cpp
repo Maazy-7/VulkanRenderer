@@ -186,3 +186,8 @@ std::vector<char> VulkanPipeline::readFromFile(const std::string& filename)
 	file.close();
 	return buffer;
 }
+
+VkPipeline VulkanPipeline::getPipeline() const 
+{
+	return m_vkPipeline;
+}

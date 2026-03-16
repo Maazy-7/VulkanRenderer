@@ -22,6 +22,9 @@ public:
 	VulkanPipeline(VulkanDevice& device, const std::string& vertexPath, const std::string& fragmentPath, VulkanSwapChain& swapChain);
 	~VulkanPipeline();
 
+	//temp
+	VkPipeline getPipeline() const;
+
 private:
 
 	void createGraphicsPipeline(const std::string& vertexPath, const std::string& fragmentPath, VulkanSwapChain& swapChain);

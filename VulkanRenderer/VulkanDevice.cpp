@@ -4,10 +4,11 @@ VulkanDevice::VulkanDevice(Window& window)
 	:m_window(window)
 {
 	createVkInstance();
+	setupDebugMessenger();
 	createSurface();
 	pickPhysicalDevice();
 	createDevice();
-	createCommandBuffer();
+	createCommandPool();
 }
 
 VulkanDevice::~VulkanDevice() 
@@ -20,6 +21,7 @@ VulkanDevice::~VulkanDevice()
 			func(m_vkInstance, m_vkDebugMessenger, nullptr);
 		}
 	}
+	vkDestroyCommandPool(m_vkDevice, m_vkCommandPool, nullptr);
 	vkDestroyDevice(m_vkDevice, nullptr);
 }
 
@@ -197,6 +199,7 @@ void VulkanDevice::createDevice()
 		VkDeviceQueueCreateInfo qCrInfo = {};
 		qCrInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		qCrInfo.queueCount = 1;
+		qCrInfo.queueFamilyIndex = f;
 		qCrInfo.pQueuePriorities = &qPriority;
 		qCreateInfo.push_back(qCrInfo);
 	}
@@ -215,8 +218,19 @@ void VulkanDevice::createDevice()
 	vkGetDeviceQueue(m_vkDevice, qfamInds.m_presentQueue.value(), 0, &m_presentQueue);
 }
 
-void VulkanDevice::createCommandBuffer() 
+void VulkanDevice::createCommandPool()
 {
+	QueueFamilyIndices qFamilyIndices = findQueueIndices();
+
+	VkCommandPoolCreateInfo commandPoolCreateInfo = {};
+	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+	commandPoolCreateInfo.queueFamilyIndex = qFamilyIndices.m_graphicsQueue.value();
+
+	if (vkCreateCommandPool(m_vkDevice, &commandPoolCreateInfo, nullptr, &m_vkCommandPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create Vulkan command pool");
+	}
 	
 }
 

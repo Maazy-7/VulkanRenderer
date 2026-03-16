@@ -1,13 +1,13 @@
 #include "Application.h"
 
 
-Application::Application() 
-	:m_window(std::make_unique<Window>(DEFAULT_WIDTH, DEFUALT_HEIGHT, "Application"))
+Application::Application()
+	:m_window(std::make_unique<Window>(DEFAULT_WIDTH, DEFUALT_HEIGHT, "Application")),
+	m_vkDevice(*m_window),
+	m_vkRenderer(*m_window, m_vkDevice),
+	m_simpleRenderSystem(m_vkDevice, *m_vkRenderer.getSwapChain())
 {
 	m_window->setKeyCallback(&InputManager::keyCallback);
-	VulkanDevice vkDevice(*m_window);
-	VulkanSwapChain vkSwapChain(vkDevice);
-	VulkanPipeline vkPipeline(vkDevice, "Shaders/shader.vert.spv", "Shaders/shader.frag.spv", vkSwapChain);
 }
 
 Application::~Application() 
@@ -32,14 +32,20 @@ void Application::run()
 		//physics update
 
 		//renderer update
+		auto commandBuffer = m_vkRenderer.beginFrame();
+		m_vkRenderer.beginRenderPass(commandBuffer);
+		m_simpleRenderSystem.renderGameObjects(commandBuffer);
+		m_vkRenderer.endRenderPass(commandBuffer);
+		m_vkRenderer.endFrame();
 
 	}
+	vkDeviceWaitIdle(m_vkDevice.getDevice());
 }
 
 float Application::getDeltaTime() 
 {
 	float currentTime = m_window->getTime();
 	m_deltaTime = currentTime - m_prevTime;
-	float m_prevTime = m_deltaTime;
+	m_prevTime = currentTime;
 	return m_deltaTime;
 }

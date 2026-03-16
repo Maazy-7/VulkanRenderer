@@ -12,6 +12,7 @@
 class VulkanSwapChain
 {
 public:
+	static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 	VulkanSwapChain(const VulkanSwapChain&) = delete;
 	VulkanSwapChain& operator=(const VulkanSwapChain&) = delete;
@@ -22,15 +23,21 @@ public:
 
 	unsigned int getSwapChainWidth() const;
 	unsigned int getSwapChainHeight() const;
+	VkExtent2D getSwapChainExtent() const;
+	VkFramebuffer getFramebuffer(int index) const;
 
-	//temp
-	VkRenderPass& getRenderPass();
+	VkRenderPass getRenderPass();
+
+	VkResult acquireNextImage(uint32_t* imageIndex);
+	VkResult submitCommandBuffers(const VkCommandBuffer* commandBuffers, uint32_t* imageIndex);
 
 private:
 
 	void createSwapChain();
 	void createImageViews();
 	void createRenderPass();
+	void createFramebuffers();
+	void createSyncObjects();
 
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& surfaceFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& presentModes);
@@ -45,4 +52,12 @@ private:
 
 	std::vector<VkImage> m_swapChainImages;
 	std::vector<VkImageView> m_swapChainImageViews;
+	std::vector<VkFramebuffer> m_framebuffers;
+
+	std::vector<VkSemaphore> m_imageAvailableSemaphores;
+	std::vector<VkSemaphore> m_renderFinishedSemaphores;
+	std::vector<VkFence> m_imagesInFlight;
+	std::vector<VkFence> m_inFlightFences;
+
+	size_t m_currentFrame = 0;
 };

@@ -158,17 +158,21 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SimpleRenderSystem.cpp" />
     <ClCompile Include="VulkanDevice.cpp" />
     <ClCompile Include="VulkanPipeline.cpp" />
+    <ClCompile Include="VulkanRenderer.cpp" />
     <ClCompile Include="VulkanSwapChain.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="InputManager.h" />
+    <ClInclude Include="SimpleRenderSystem.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="VulkanDevice.h" />
     <ClInclude Include="VulkanPipeline.h" />
+    <ClInclude Include="VulkanRenderer.h" />
     <ClInclude Include="VulkanSwapChain.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>

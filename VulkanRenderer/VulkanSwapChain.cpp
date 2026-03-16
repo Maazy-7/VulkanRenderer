@@ -7,16 +7,29 @@ VulkanSwapChain::VulkanSwapChain(VulkanDevice& device)
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
+	createFramebuffers();
+	createSyncObjects();
 }
 
-VulkanSwapChain::~VulkanSwapChain() 
+VulkanSwapChain::~VulkanSwapChain()
 {
-	vkDestroySwapchainKHR(m_vkDevice.getDevice(), m_vkSwapChain, nullptr);
-	for (auto& imageView : m_swapChainImageViews) 
+	for (auto& framebuffer : m_framebuffers) 
+	{
+		vkDestroyFramebuffer(m_vkDevice.getDevice(), framebuffer, nullptr);
+	} 
+	for (auto& imageView : m_swapChainImageViews)
 	{
 		vkDestroyImageView(m_vkDevice.getDevice(), imageView, nullptr);
 	}
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+	{
+		vkDestroySemaphore(m_vkDevice.getDevice(), m_renderFinishedSemaphores[i], nullptr);
+		vkDestroySemaphore(m_vkDevice.getDevice(), m_imageAvailableSemaphores[i], nullptr);
+		vkDestroyFence(m_vkDevice.getDevice(), m_inFlightFences[i], nullptr);
+	}
+
 	vkDestroyRenderPass(m_vkDevice.getDevice(), m_vkRenderPass, nullptr);
+	vkDestroySwapchainKHR(m_vkDevice.getDevice(), m_vkSwapChain, nullptr);
 }
 
 void VulkanSwapChain::createSwapChain() 
@@ -185,7 +198,53 @@ void VulkanSwapChain::createRenderPass()
 	}
 }
 
-VkRenderPass& VulkanSwapChain::getRenderPass()
+void VulkanSwapChain::createFramebuffers() 
+{
+	m_framebuffers.resize(m_swapChainImageViews.size());
+	
+	for (size_t i = 0; i < m_framebuffers.size(); i++) 
+	{
+		VkImageView attachments[] = { m_swapChainImageViews[i] };
+
+		VkFramebufferCreateInfo framebufferCreateInfo = {};
+		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferCreateInfo.renderPass = m_vkRenderPass;
+		framebufferCreateInfo.attachmentCount = 1;
+		framebufferCreateInfo.pAttachments = attachments;
+		framebufferCreateInfo.width = m_extent.width;
+		framebufferCreateInfo.height = m_extent.height;
+		framebufferCreateInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_vkDevice.getDevice(), &framebufferCreateInfo, nullptr, &m_framebuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create Vulkan framebuffer");
+		}
+	}
+}
+
+void VulkanSwapChain::createSyncObjects() 
+{
+	m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+	VkSemaphoreCreateInfo semCreateInfo = {};
+	semCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	
+	VkFenceCreateInfo fenceCreateInfo = {};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+	{
+		if (vkCreateSemaphore(m_vkDevice.getDevice(), &semCreateInfo, nullptr, &m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
+			vkCreateSemaphore(m_vkDevice.getDevice(), &semCreateInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
+			vkCreateFence(m_vkDevice.getDevice(), &fenceCreateInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create Vulkan semaphores or fence");
+		}
+	}
+}
+
+VkRenderPass VulkanSwapChain::getRenderPass()
 {
 	return m_vkRenderPass;
 }
@@ -198,4 +257,62 @@ unsigned int VulkanSwapChain::getSwapChainWidth() const
 unsigned int VulkanSwapChain::getSwapChainHeight() const
 {
 	return m_extent.height;
+}
+
+VkExtent2D VulkanSwapChain::getSwapChainExtent() const 
+{
+	return m_extent;
+}
+
+VkFramebuffer VulkanSwapChain::getFramebuffer(int index) const 
+{
+	return m_framebuffers[index];
+}
+
+VkResult VulkanSwapChain::acquireNextImage(uint32_t* imageIndex) 
+{
+	vkWaitForFences(m_vkDevice.getDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+	VkResult result = vkAcquireNextImageKHR(m_vkDevice.getDevice(), m_vkSwapChain, std::numeric_limits<uint64_t>::max(), 
+		m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, imageIndex);
+	return result;
+}
+
+VkResult VulkanSwapChain::submitCommandBuffers(const VkCommandBuffer* commandBuffers, uint32_t* imageIndex) 
+{
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkSemaphore waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
+	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = commandBuffers;
+	VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	vkResetFences(m_vkDevice.getDevice(), 1, &m_inFlightFences[m_currentFrame]);
+	if (vkQueueSubmit(m_vkDevice.getGraphicsQueue(), 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to submit Vulkan command buffer");
+	}
+
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+
+	VkSwapchainKHR swapChain[] = {m_vkSwapChain};
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChain;
+
+	presentInfo.pImageIndices = imageIndex;
+
+	VkResult result = vkQueuePresentKHR(m_vkDevice.getPresentQueue(), &presentInfo);
+
+	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+	return result;
 }

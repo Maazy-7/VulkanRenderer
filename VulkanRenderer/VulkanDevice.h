@@ -63,7 +63,7 @@ private:
 	void createSurface();
 	void pickPhysicalDevice();
 	void createDevice();
-	void createCommandBuffer();
+	void createCommandPool();
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
