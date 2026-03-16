@@ -115,8 +115,4 @@ void VulkanRenderer::beginRenderPass(VkCommandBuffer commandBuffer)
 void VulkanRenderer::endRenderPass(VkCommandBuffer commandBuffer) 
 {
 	vkCmdEndRenderPass(commandBuffer);
-	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) 
-	{
-		throw std::runtime_error("Failed to end Vulkan command buffer");
-	}
 }
