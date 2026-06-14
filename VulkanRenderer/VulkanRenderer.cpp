@@ -110,9 +110,9 @@ void VulkanRenderer::endFrame()
 	m_currentFrameIndex = (m_currentFrameIndex + 1) % VulkanSwapChain::MAX_FRAMES_IN_FLIGHT;
 }
 
-void VulkanRenderer::beginRenderPass(VkCommandBuffer commandBuffer)
+void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer)
 {
-	VkRenderPassBeginInfo renderPassBeginInfo = {};
+	/*VkRenderPassBeginInfo renderPassBeginInfo = {};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassBeginInfo.renderPass = m_vkSwapChain->getRenderPass();
 	renderPassBeginInfo.framebuffer = m_vkSwapChain->getFramebuffer(m_currentImageIndex);
@@ -123,7 +123,28 @@ void VulkanRenderer::beginRenderPass(VkCommandBuffer commandBuffer)
 	renderPassBeginInfo.clearValueCount = 1;
 	renderPassBeginInfo.pClearValues = &clearColor;
 
-	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);*/
+
+	//dynamic rendering attachment info
+	VkRenderingAttachmentInfo colorAttachmentInfo = {};
+	colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+	colorAttachmentInfo.imageView = m_vkSwapChain->getSwapChainImageView(m_currentImageIndex);
+	colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachmentInfo.clearValue = { {0.f, 0.f, 0.f, 1.f} };
+
+	VkRenderingInfo renderingInfo = {};
+	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+	renderingInfo.renderArea.offset = { 0, 0 };
+	renderingInfo.renderArea.extent = m_vkSwapChain->getSwapChainExtent();
+	renderingInfo.layerCount = 1;
+	renderingInfo.colorAttachmentCount = 1;
+	renderingInfo.pColorAttachments = &colorAttachmentInfo;
+	renderingInfo.pDepthAttachment = VK_NULL_HANDLE;
+	renderingInfo.pStencilAttachment = VK_NULL_HANDLE;
+
+	vkCmdBeginRendering(commandBuffer, &renderingInfo);
 	
 	VkViewport viewport{};
 	viewport.x = 0.0f;
@@ -140,7 +161,7 @@ void VulkanRenderer::beginRenderPass(VkCommandBuffer commandBuffer)
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
-void VulkanRenderer::endRenderPass(VkCommandBuffer commandBuffer) 
+void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer) 
 {
-	vkCmdEndRenderPass(commandBuffer);
+	vkCmdEndRendering(commandBuffer);
 }

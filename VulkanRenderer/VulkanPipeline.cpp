@@ -54,7 +54,7 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 	inputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 
-	VkViewport viewport = {};
+	/*VkViewport viewport = {};
 	viewport.x = 0;
 	viewport.y = 0;
 	viewport.width = (float)swapChain.getSwapChainWidth();
@@ -64,14 +64,14 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 
 	VkRect2D scissor = {};
 	scissor.offset = { 0,0 };
-	scissor.extent = { swapChain.getSwapChainWidth(), swapChain.getSwapChainHeight() };
+	scissor.extent = { swapChain.getSwapChainWidth(), swapChain.getSwapChainHeight() };*/
 
 	VkPipelineViewportStateCreateInfo viewPortStateCreateInfo = {};//for now not using dynamic state
 	viewPortStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	viewPortStateCreateInfo.viewportCount = 1;
-	viewPortStateCreateInfo.pViewports = &viewport;
+	viewPortStateCreateInfo.pViewports = VK_NULL_HANDLE;
 	viewPortStateCreateInfo.scissorCount = 1;
-	viewPortStateCreateInfo.pScissors = &scissor;
+	viewPortStateCreateInfo.pScissors = VK_NULL_HANDLE;
 
 	VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo = {};
 	rasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -129,20 +129,29 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 		throw std::runtime_error("Failed to create pipeline layout");
 	}
 
+	//dynamic rendering attachment info
+	VkPipelineRenderingCreateInfo pipelineRenderingCreateInfo = {};
+	pipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+	pipelineRenderingCreateInfo.colorAttachmentCount = 1;
+	VkFormat colorFormat = swapChain.getSwapChainFormat();
+	pipelineRenderingCreateInfo.pColorAttachmentFormats = &colorFormat;
+	pipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+	pipelineRenderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {};
 	graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	graphicsPipelineCreateInfo.stageCount = 2;
 	graphicsPipelineCreateInfo.pStages = shaderStages;
 	graphicsPipelineCreateInfo.pVertexInputState = &vertInputStateCreateinfo;
 	graphicsPipelineCreateInfo.pInputAssemblyState = &inputAssemblyStateCreateInfo;
-	graphicsPipelineCreateInfo.pViewportState = &viewPortStateCreateInfo;
 	graphicsPipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
+	graphicsPipelineCreateInfo.pViewportState = &viewPortStateCreateInfo;
 	graphicsPipelineCreateInfo.pMultisampleState = &multiSampleStateCreateInfo;
 	graphicsPipelineCreateInfo.pDepthStencilState = nullptr;
 	graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
 	graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
 	graphicsPipelineCreateInfo.layout = m_vkPipelineLayout;
-	graphicsPipelineCreateInfo.renderPass = swapChain.getRenderPass();
+	graphicsPipelineCreateInfo.pNext = &pipelineRenderingCreateInfo;
 	graphicsPipelineCreateInfo.subpass = 0;
 	graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 	graphicsPipelineCreateInfo.basePipelineIndex = -1;

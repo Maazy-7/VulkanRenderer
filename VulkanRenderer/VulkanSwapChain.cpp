@@ -6,8 +6,6 @@ VulkanSwapChain::VulkanSwapChain(VulkanDevice& device)
 {
 	createSwapChain();
 	createImageViews();
-	createRenderPass();
-	createFramebuffers();
 	createSyncObjects();
 }
 
@@ -16,8 +14,6 @@ VulkanSwapChain::VulkanSwapChain(VulkanDevice& device, std::shared_ptr<VulkanSwa
 {
 	createSwapChain();
 	createImageViews();
-	createRenderPass();
-	createFramebuffers();
 	createSyncObjects();
 	m_oldSwapChain = nullptr;
 }
@@ -31,8 +27,6 @@ VulkanSwapChain::~VulkanSwapChain()
 		vkDestroySemaphore(m_vkDevice.getDevice(), m_imageAvailableSemaphores[i], nullptr);
 		vkDestroyFence(m_vkDevice.getDevice(), m_inFlightFences[i], nullptr);
 	}
-
-	vkDestroyRenderPass(m_vkDevice.getDevice(), m_vkRenderPass, nullptr);
 }
 
 void VulkanSwapChain::createSwapChain() 
@@ -95,22 +89,8 @@ void VulkanSwapChain::createSwapChain()
 	vkGetSwapchainImagesKHR(m_vkDevice.getDevice(), m_vkSwapChain, &imageCount, m_swapChainImages.data());
 }
 
-void VulkanSwapChain::recreateSwapChain() 
-{
-	vkDeviceWaitIdle(m_vkDevice.getDevice());
-	cleanupSwapChain();
-
-	createSwapChain();
-	createImageViews();
-	createFramebuffers();
-}
-
 void VulkanSwapChain::cleanupSwapChain() 
 {
-	for (auto& framebuffer : m_framebuffers)
-	{
-		vkDestroyFramebuffer(m_vkDevice.getDevice(), framebuffer, nullptr);
-	}
 	for (auto& imageView : m_swapChainImageViews)
 	{
 		vkDestroyImageView(m_vkDevice.getDevice(), imageView, nullptr);
@@ -190,64 +170,6 @@ void VulkanSwapChain::createImageViews()
 	}
 }
 
-void VulkanSwapChain::createRenderPass() 
-{
-	VkAttachmentDescription colorAttachment = {};
-	colorAttachment.format = m_swapChainFormat;
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	VkAttachmentReference colorAttachmentReference = {};
-	colorAttachmentReference.attachment = 0;
-	colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpassDesc = {};
-	subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpassDesc.colorAttachmentCount = 1;
-	subpassDesc.pColorAttachments = &colorAttachmentReference;
-	
-	VkRenderPassCreateInfo renderpassCreateInfo = {};
-	renderpassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderpassCreateInfo.attachmentCount = 1;
-	renderpassCreateInfo.pAttachments = &colorAttachment;
-	renderpassCreateInfo.subpassCount = 1;
-	renderpassCreateInfo.pSubpasses = &subpassDesc;
-
-	if (vkCreateRenderPass(m_vkDevice.getDevice(), &renderpassCreateInfo, nullptr, &m_vkRenderPass) != VK_SUCCESS) 
-	{
-		throw std::runtime_error("Failed to create Vulkan render pass");
-	}
-}
-
-void VulkanSwapChain::createFramebuffers() 
-{
-	m_framebuffers.resize(m_swapChainImageViews.size());
-	
-	for (size_t i = 0; i < m_framebuffers.size(); i++) 
-	{
-		VkImageView attachments[] = { m_swapChainImageViews[i] };
-
-		VkFramebufferCreateInfo framebufferCreateInfo = {};
-		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferCreateInfo.renderPass = m_vkRenderPass;
-		framebufferCreateInfo.attachmentCount = 1;
-		framebufferCreateInfo.pAttachments = attachments;
-		framebufferCreateInfo.width = m_extent.width;
-		framebufferCreateInfo.height = m_extent.height;
-		framebufferCreateInfo.layers = 1;
-
-		if (vkCreateFramebuffer(m_vkDevice.getDevice(), &framebufferCreateInfo, nullptr, &m_framebuffers[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create Vulkan framebuffer");
-		}
-	}
-}
-
 void VulkanSwapChain::createSyncObjects() 
 {
 	m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -270,11 +192,6 @@ void VulkanSwapChain::createSyncObjects()
 	}
 }
 
-VkRenderPass VulkanSwapChain::getRenderPass()
-{
-	return m_vkRenderPass;
-}
-
 unsigned int VulkanSwapChain::getSwapChainWidth() const 
 {
 	return m_extent.width;
@@ -290,9 +207,14 @@ VkExtent2D VulkanSwapChain::getSwapChainExtent() const
 	return m_extent;
 }
 
-VkFramebuffer VulkanSwapChain::getFramebuffer(int index) const 
+VkImageView VulkanSwapChain::getSwapChainImageView(int index) const 
 {
-	return m_framebuffers[index];
+	return m_swapChainImageViews[index];
+}
+
+VkFormat VulkanSwapChain::getSwapChainFormat() const 
+{
+	return m_swapChainFormat;
 }
 
 VkResult VulkanSwapChain::acquireNextImage(uint32_t* imageIndex) 

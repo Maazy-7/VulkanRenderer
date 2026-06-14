@@ -25,9 +25,8 @@ public:
 	unsigned int getSwapChainWidth() const;
 	unsigned int getSwapChainHeight() const;
 	VkExtent2D getSwapChainExtent() const;
-	VkFramebuffer getFramebuffer(int index) const;
-
-	VkRenderPass getRenderPass();
+	VkImageView getSwapChainImageView(int index) const;
+	VkFormat getSwapChainFormat() const;
 
 	VkResult acquireNextImage(uint32_t* imageIndex);
 	VkResult submitCommandBuffers(const VkCommandBuffer* commandBuffers, uint32_t* imageIndex);
@@ -35,10 +34,9 @@ public:
 private:
 
 	void createSwapChain();
-	void recreateSwapChain();
 	void createImageViews();
-	void createRenderPass();
-	void createFramebuffers();
+	//void createRenderPass();
+	//void createFramebuffers();
 	void createSyncObjects();
 	void cleanupSwapChain();
 
@@ -52,11 +50,8 @@ private:
 	VkFormat m_swapChainFormat;
 	VkExtent2D m_extent;
 
-	VkRenderPass m_vkRenderPass;
-
 	std::vector<VkImage> m_swapChainImages;
 	std::vector<VkImageView> m_swapChainImageViews;
-	std::vector<VkFramebuffer> m_framebuffers;
 
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;

@@ -204,12 +204,19 @@ void VulkanDevice::createDevice()
 		qCreateInfo.push_back(qCrInfo);
 	}
 
+	//enabling dynamic rendering capabilties
+	VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures = {};
+	dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+	dynamicRenderingFeatures.pNext = nullptr;
+	dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+
 	VkDeviceCreateInfo devCreateInfo = {};
 	devCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	devCreateInfo.queueCreateInfoCount = (uint32_t)qCreateInfo.size();
 	devCreateInfo.pQueueCreateInfos = qCreateInfo.data();
 	devCreateInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
 	devCreateInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
+	devCreateInfo.pNext = &dynamicRenderingFeatures;
 	if (vkCreateDevice(m_vkPhysicalDevice, &devCreateInfo, nullptr, &m_vkDevice) != VK_SUCCESS) 
 	{
 		throw std::runtime_error("Failed to create Vulkan device");
