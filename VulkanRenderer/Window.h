@@ -16,6 +16,7 @@ public:
 	Window& operator=(const Window&) = delete;
 	
 	bool windowShouldClose() const;
+	bool isFrameBufferResized() const;
 	glm::vec2 getDimensions() const;
 	float getAspect() const;
 	float getTime() const;
@@ -28,9 +29,12 @@ public:
 private:
 	
 	void innitWindow();
+	static void frameBufferResizeCallback(GLFWwindow*, int, int);
+	void resetFrameBufferResizeFlag();
 
 	GLFWwindow* m_window = nullptr;
 	int m_width, m_height;
 	std::string m_name;
+	bool m_frameBufferResized = false;
 };
 

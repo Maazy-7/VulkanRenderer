@@ -18,6 +18,7 @@ public:
 	VulkanSwapChain& operator=(const VulkanSwapChain&) = delete;
 
 	VulkanSwapChain(VulkanDevice& device);
+	VulkanSwapChain(VulkanDevice& device, std::shared_ptr<VulkanSwapChain> previousSwapChain);
 
 	~VulkanSwapChain();
 
@@ -34,16 +35,19 @@ public:
 private:
 
 	void createSwapChain();
+	void recreateSwapChain();
 	void createImageViews();
 	void createRenderPass();
 	void createFramebuffers();
 	void createSyncObjects();
+	void cleanupSwapChain();
 
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& surfaceFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& presentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilites);
 	
 	VkSwapchainKHR m_vkSwapChain;
+	std::shared_ptr<VulkanSwapChain> m_oldSwapChain;
 	VulkanDevice& m_vkDevice;
 	VkFormat m_swapChainFormat;
 	VkExtent2D m_extent;

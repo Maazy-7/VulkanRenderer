@@ -11,16 +11,20 @@ VulkanSwapChain::VulkanSwapChain(VulkanDevice& device)
 	createSyncObjects();
 }
 
+VulkanSwapChain::VulkanSwapChain(VulkanDevice& device, std::shared_ptr<VulkanSwapChain> previousSwapChain)
+	: m_vkDevice(device), m_oldSwapChain(previousSwapChain)
+{
+	createSwapChain();
+	createImageViews();
+	createRenderPass();
+	createFramebuffers();
+	createSyncObjects();
+	m_oldSwapChain = nullptr;
+}
+
 VulkanSwapChain::~VulkanSwapChain()
 {
-	for (auto& framebuffer : m_framebuffers) 
-	{
-		vkDestroyFramebuffer(m_vkDevice.getDevice(), framebuffer, nullptr);
-	} 
-	for (auto& imageView : m_swapChainImageViews)
-	{
-		vkDestroyImageView(m_vkDevice.getDevice(), imageView, nullptr);
-	}
+	cleanupSwapChain();
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
 	{
 		vkDestroySemaphore(m_vkDevice.getDevice(), m_renderFinishedSemaphores[i], nullptr);
@@ -29,7 +33,6 @@ VulkanSwapChain::~VulkanSwapChain()
 	}
 
 	vkDestroyRenderPass(m_vkDevice.getDevice(), m_vkRenderPass, nullptr);
-	vkDestroySwapchainKHR(m_vkDevice.getDevice(), m_vkSwapChain, nullptr);
 }
 
 void VulkanSwapChain::createSwapChain() 
@@ -79,7 +82,7 @@ void VulkanSwapChain::createSwapChain()
 	swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	swapChainCreateInfo.presentMode = presentMode;
 	swapChainCreateInfo.clipped = VK_TRUE;
-	swapChainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+	swapChainCreateInfo.oldSwapchain = m_oldSwapChain == nullptr ? VK_NULL_HANDLE : m_oldSwapChain->m_vkSwapChain;
 
 	if (vkCreateSwapchainKHR(m_vkDevice.getDevice(), &swapChainCreateInfo, nullptr, &m_vkSwapChain) != VK_SUCCESS)
 	{
@@ -90,6 +93,29 @@ void VulkanSwapChain::createSwapChain()
 	vkGetSwapchainImagesKHR(m_vkDevice.getDevice(), m_vkSwapChain, &imageCount, nullptr);
 	m_swapChainImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(m_vkDevice.getDevice(), m_vkSwapChain, &imageCount, m_swapChainImages.data());
+}
+
+void VulkanSwapChain::recreateSwapChain() 
+{
+	vkDeviceWaitIdle(m_vkDevice.getDevice());
+	cleanupSwapChain();
+
+	createSwapChain();
+	createImageViews();
+	createFramebuffers();
+}
+
+void VulkanSwapChain::cleanupSwapChain() 
+{
+	for (auto& framebuffer : m_framebuffers)
+	{
+		vkDestroyFramebuffer(m_vkDevice.getDevice(), framebuffer, nullptr);
+	}
+	for (auto& imageView : m_swapChainImageViews)
+	{
+		vkDestroyImageView(m_vkDevice.getDevice(), imageView, nullptr);
+	}
+	vkDestroySwapchainKHR(m_vkDevice.getDevice(), m_vkSwapChain, nullptr);
 }
 
 VkSurfaceFormatKHR VulkanSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& surfaceFormats)

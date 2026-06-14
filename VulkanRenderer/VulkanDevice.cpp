@@ -43,7 +43,7 @@ void VulkanDevice::createVkInstance()
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
-	createInfo.enabledExtensionCount = exts.size();
+	createInfo.enabledExtensionCount = (uint32_t)exts.size();
 	createInfo.ppEnabledExtensionNames = exts.data();
 	
 	if (enableValidationLayers) 
@@ -91,7 +91,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback(VkDebugUtilsMessageSe
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData)
 {
-	std::cerr << "validation layer: " << pCallbackData->pMessage << "\n";
+	std::cerr << "\nvalidation layer: " << pCallbackData->pMessage << "\n";
 	return VK_FALSE;
 }
 

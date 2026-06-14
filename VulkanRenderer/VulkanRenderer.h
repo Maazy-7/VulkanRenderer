@@ -32,6 +32,7 @@ public:
 private:
 
 	void createCommandBuffer();
+	void recreateSwapChain();
 
 	Window& m_window;
 	VulkanDevice& m_vkDevice;

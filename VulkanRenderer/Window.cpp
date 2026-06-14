@@ -16,13 +16,25 @@ void Window::innitWindow()
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	m_window = glfwCreateWindow(m_width, m_height, m_name.c_str(), nullptr, nullptr);
+	glfwSetWindowUserPointer(m_window, this);
+	glfwSetFramebufferSizeCallback(m_window, frameBufferResizeCallback);
 }
 
 bool Window::windowShouldClose() const 
 {
 	return glfwWindowShouldClose(m_window);
+}
+
+bool Window::isFrameBufferResized() const 
+{
+	return m_frameBufferResized;
+}
+
+void Window::resetFrameBufferResizeFlag() 
+{
+	m_frameBufferResized = false;
 }
 
 glm::vec2 Window::getDimensions() const 
@@ -58,4 +70,12 @@ void Window::setWindowClose(bool close)
 void Window::pollEvents() 
 {
 	glfwPollEvents();
+}
+
+void Window::frameBufferResizeCallback(GLFWwindow* glfw_window, int width, int height) 
+{
+	auto window = reinterpret_cast<Window*>(glfw_window);
+	window->m_frameBufferResized = true;
+	window->m_width = width;
+	window->m_height = height;
 }

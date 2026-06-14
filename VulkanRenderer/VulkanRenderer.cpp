@@ -26,6 +26,28 @@ void VulkanRenderer::createCommandBuffer()
 	}
 }
 
+void VulkanRenderer::recreateSwapChain() 
+{
+	int width, height = 0;
+	glfwGetFramebufferSize(m_window.getWindow(), &width, &height);
+	while (width == 0 || height == 0) 
+	{
+		glfwGetFramebufferSize(m_window.getWindow(), &width, &height);
+		glfwWaitEvents();
+	}
+
+	vkDeviceWaitIdle(m_vkDevice.getDevice());
+	if (m_vkSwapChain == nullptr) 
+	{
+		m_vkSwapChain = std::make_unique<VulkanSwapChain>(m_vkDevice);
+	}
+	else 
+	{
+		std::shared_ptr<VulkanSwapChain> old_swapChain = std::move(m_vkSwapChain);
+		m_vkSwapChain = std::make_unique<VulkanSwapChain>(m_vkDevice, old_swapChain);
+	}
+}
+
 VkCommandBuffer VulkanRenderer::getCurrentCommandBuffer() 
 {
 	return m_vkCommandBuffers[m_currentFrameIndex];
@@ -39,7 +61,12 @@ VulkanSwapChain* VulkanRenderer::getSwapChain()
 VkCommandBuffer VulkanRenderer::beginFrame() 
 {
 	VkResult result = m_vkSwapChain->acquireNextImage(&m_currentImageIndex);
-	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
+	if (result == VK_ERROR_OUT_OF_DATE_KHR) 
+	{
+		recreateSwapChain();
+		return VK_NULL_HANDLE;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
 	{
 		throw std::runtime_error("Failed to acquire swap chain image");
 	}
@@ -69,9 +96,10 @@ void VulkanRenderer::endFrame()
 	}
 
 	VkResult result = m_vkSwapChain->submitCommandBuffers(&commandBuffer, &m_currentImageIndex);
-	if (0 == 1)//add swap chain recreation here 
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window.isFrameBufferResized())
 	{
-	
+		recreateSwapChain();
+
 	}
 	else if (result != VK_SUCCESS)
 	{
