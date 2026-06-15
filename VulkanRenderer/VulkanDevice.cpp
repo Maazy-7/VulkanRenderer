@@ -204,11 +204,11 @@ void VulkanDevice::createDevice()
 		qCreateInfo.push_back(qCrInfo);
 	}
 
-	//enabling dynamic rendering capabilties
-	VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures = {};
-	dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
-	dynamicRenderingFeatures.pNext = nullptr;
-	dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+	//enabling dynamic rendering and synchronization2
+	VkPhysicalDeviceVulkan13Features vkDevice13Features = {};
+	vkDevice13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	vkDevice13Features.dynamicRendering = VK_TRUE;
+	vkDevice13Features.synchronization2 = VK_TRUE;
 
 	VkDeviceCreateInfo devCreateInfo = {};
 	devCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -216,7 +216,7 @@ void VulkanDevice::createDevice()
 	devCreateInfo.pQueueCreateInfos = qCreateInfo.data();
 	devCreateInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
 	devCreateInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
-	devCreateInfo.pNext = &dynamicRenderingFeatures;
+	devCreateInfo.pNext = &vkDevice13Features;
 	if (vkCreateDevice(m_vkPhysicalDevice, &devCreateInfo, nullptr, &m_vkDevice) != VK_SUCCESS) 
 	{
 		throw std::runtime_error("Failed to create Vulkan device");

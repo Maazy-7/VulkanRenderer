@@ -26,6 +26,7 @@ public:
 	unsigned int getSwapChainHeight() const;
 	VkExtent2D getSwapChainExtent() const;
 	VkImageView getSwapChainImageView(int index) const;
+	VkImage getSwapChainImage(int index) const;
 	VkFormat getSwapChainFormat() const;
 
 	VkResult acquireNextImage(uint32_t* imageIndex);

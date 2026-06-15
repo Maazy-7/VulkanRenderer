@@ -125,6 +125,29 @@ void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer)
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);*/
 
+	//transition image layout for rendering
+	VkImageMemoryBarrier2 imgBarrier = {};
+	imgBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	imgBarrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+	imgBarrier.srcAccessMask = VK_ACCESS_2_NONE;
+	imgBarrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+	imgBarrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+	imgBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imgBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	imgBarrier.image = m_vkSwapChain->getSwapChainImage(m_currentImageIndex);
+	imgBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imgBarrier.subresourceRange.baseMipLevel = 0;
+	imgBarrier.subresourceRange.levelCount = 1;
+	imgBarrier.subresourceRange.baseArrayLayer = 0;
+	imgBarrier.subresourceRange.layerCount = 1;
+	
+	VkDependencyInfo dependencyInfo = {};
+	dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	dependencyInfo.imageMemoryBarrierCount = 1;
+	dependencyInfo.pImageMemoryBarriers = &imgBarrier;
+
+	vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
+
 	//dynamic rendering attachment info
 	VkRenderingAttachmentInfo colorAttachmentInfo = {};
 	colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -164,4 +187,27 @@ void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer)
 void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer) 
 {
 	vkCmdEndRendering(commandBuffer);
+
+	//transition image layout for presenation
+	VkImageMemoryBarrier2 presentBarrier = {};
+	presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	presentBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+	presentBarrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+	presentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
+	presentBarrier.dstAccessMask = 0;
+	presentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	presentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	presentBarrier.image = m_vkSwapChain->getSwapChainImage(m_currentImageIndex);
+	presentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	presentBarrier.subresourceRange.baseMipLevel = 0;
+	presentBarrier.subresourceRange.levelCount = 1;
+	presentBarrier.subresourceRange.baseArrayLayer = 0;
+	presentBarrier.subresourceRange.layerCount = 1;
+
+	VkDependencyInfo presentDependencyInfo{};
+	presentDependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	presentDependencyInfo.imageMemoryBarrierCount = 1;
+	presentDependencyInfo.pImageMemoryBarriers = &presentBarrier;
+
+	vkCmdPipelineBarrier2(commandBuffer, &presentDependencyInfo);
 }
