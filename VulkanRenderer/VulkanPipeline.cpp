@@ -42,12 +42,15 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 	dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 	dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 
+	VkVertexInputBindingDescription bindingDescription = Vertex::getBindingDescription();
+	std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = Vertex::getAttributeDescriptions();
+
 	VkPipelineVertexInputStateCreateInfo vertInputStateCreateinfo = {};
 	vertInputStateCreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertInputStateCreateinfo.vertexBindingDescriptionCount = 0;
-	vertInputStateCreateinfo.pVertexBindingDescriptions = nullptr;
-	vertInputStateCreateinfo.vertexAttributeDescriptionCount = 0;
-	vertInputStateCreateinfo.pVertexAttributeDescriptions = nullptr;
+	vertInputStateCreateinfo.vertexBindingDescriptionCount = 1;
+	vertInputStateCreateinfo.pVertexBindingDescriptions = &bindingDescription;
+	vertInputStateCreateinfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescriptions.size();
+	vertInputStateCreateinfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo = {};
 	inputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

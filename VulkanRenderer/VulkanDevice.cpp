@@ -276,3 +276,19 @@ VkQueue VulkanDevice::getGraphicsQueue() const { return m_graphicsQueue; }
 VkQueue VulkanDevice::getPresentQueue() const { return m_presentQueue; }
 VkCommandPool VulkanDevice::getCommandPool() const { return m_vkCommandPool; }
 void VulkanDevice::getWindowFrameBufferSize(int* width, int* height) const { glfwGetFramebufferSize(m_window.getWindow(), width, height); }
+
+uint32_t VulkanDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) 
+{
+	VkPhysicalDeviceMemoryProperties physicalDevMemProperties{};
+	vkGetPhysicalDeviceMemoryProperties(m_vkPhysicalDevice, &physicalDevMemProperties);
+
+	for (uint32_t i = 0; i < physicalDevMemProperties.memoryTypeCount; i++) 
+	{
+		if (typeFilter & (1 << i) && (physicalDevMemProperties.memoryTypes[i].propertyFlags & properties) == properties)
+		{
+			return i;
+		}
+	}
+
+	throw std::runtime_error("failed to find a suitable memory type");
+}

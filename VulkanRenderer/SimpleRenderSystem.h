@@ -8,6 +8,14 @@
 #include "VulkanDevice.h"
 #include "VulkanSwapChain.h"
 #include "VulkanPipeline.h"
+#include "VulkanBuffer.h"
+
+const std::vector<Vertex> vertices =
+{
+{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+};
 
 class SimpleRenderSystem
 {
@@ -27,5 +35,6 @@ private:
 
 	VulkanDevice& m_vkDevice;
 	std::unique_ptr<VulkanPipeline> m_vkPipeline;
+	VulkanBuffer vkbuffer;//temp
 };
 

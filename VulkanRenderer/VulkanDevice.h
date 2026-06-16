@@ -53,6 +53,7 @@ public:
 	VkQueue getPresentQueue() const;
 	VkCommandPool getCommandPool() const;
 	void getWindowFrameBufferSize(int* width, int* height) const;
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 private:
 

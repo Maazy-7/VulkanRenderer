@@ -6,6 +6,7 @@
 
 #include "VulkanDevice.h"
 #include "VulkanSwapChain.h"
+#include "VulkanBuffer.h"
 
 struct PipelineConfigurationInfo
 {
