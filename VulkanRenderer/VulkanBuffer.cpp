@@ -25,13 +25,13 @@ std::array<VkVertexInputAttributeDescription, 2> Vertex::getAttributeDescription
 	return attributeDescriptions;
 }
 
-VulkanBuffer::VulkanBuffer(VulkanDevice& device, const std::vector<Vertex>& vertices) 
+VulkanBuffer::VulkanBuffer(VulkanDevice& device, const std::vector<Vertex>& vertices, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 	:m_vkDevice(device), count((uint32_t)vertices.size())
 {
 	VkBufferCreateInfo bufferCreateInfo{};
 	bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	bufferCreateInfo.size = sizeof(vertices[0]) * vertices.size();
-	bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferCreateInfo.usage = usage;
 	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	if (vkCreateBuffer(m_vkDevice.getDevice(), &bufferCreateInfo, nullptr, &m_vkBuffer) != VK_SUCCESS) 
@@ -45,8 +45,7 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, const std::vector<Vertex>& vert
 	VkMemoryAllocateInfo memoryAllocateInfo{};
 	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	memoryAllocateInfo.allocationSize = memoryRequirements.size;
-	memoryAllocateInfo.memoryTypeIndex = m_vkDevice.findMemoryType(memoryRequirements.memoryTypeBits, 
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	memoryAllocateInfo.memoryTypeIndex = m_vkDevice.findMemoryType(memoryRequirements.memoryTypeBits, properties);
 
 	if (vkAllocateMemory(m_vkDevice.getDevice(), &memoryAllocateInfo, nullptr, &m_vkDeviceMemory) != VK_SUCCESS) 
 	{
@@ -54,10 +53,6 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, const std::vector<Vertex>& vert
 	}
 
 	vkBindBufferMemory(m_vkDevice.getDevice(), m_vkBuffer, m_vkDeviceMemory, 0);
-
-	vkMapMemory(m_vkDevice.getDevice(), m_vkDeviceMemory, 0, bufferCreateInfo.size, 0, &m_mapped);
-	memcpy(m_mapped, vertices.data(), (size_t)bufferCreateInfo.size);
-	vkUnmapMemory(m_vkDevice.getDevice(), m_vkDeviceMemory);
 }
 
 VulkanBuffer::~VulkanBuffer() 
@@ -76,4 +71,56 @@ void VulkanBuffer::bindBuffer(VkCommandBuffer commandBuffer) const
 uint32_t VulkanBuffer::getBufferElementCount() const 
 {
 	return count;
+}
+
+VkBuffer VulkanBuffer::getBuffer() const 
+{
+	return m_vkBuffer;
+}
+
+VulkanDevice& VulkanBuffer::getVulkanDevice() const 
+{
+	return m_vkDevice;
+}
+
+void VulkanBuffer::map(VkDeviceSize offset, VkDeviceSize size, const void* src) 
+{
+	vkMapMemory(m_vkDevice.getDevice(), m_vkDeviceMemory, offset, size, 0, &m_mapped);
+	memcpy(m_mapped, src, (size_t)size);
+	vkUnmapMemory(m_vkDevice.getDevice(), m_vkDeviceMemory);
+}
+
+void VulkanBuffer::copyBuffer(VulkanBuffer& srcBuffer, VulkanBuffer& dstBuffer, VkDeviceSize size)
+{
+	VkCommandBufferAllocateInfo cmdBufAllocInfo{};
+	cmdBufAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cmdBufAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	cmdBufAllocInfo.commandPool = srcBuffer.getVulkanDevice().getCommandPool();
+	cmdBufAllocInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	vkAllocateCommandBuffers(srcBuffer.getVulkanDevice().getDevice(), &cmdBufAllocInfo, &commandBuffer);
+
+	VkCommandBufferBeginInfo cmdBufBeginInfo{};
+	cmdBufBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	cmdBufBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandBuffer, &cmdBufBeginInfo);
+
+	VkBufferCopy copyRegion{};
+	copyRegion.srcOffset = 0; //optional
+	copyRegion.dstOffset = 0; //optional
+	copyRegion.size = size;
+	vkCmdCopyBuffer(commandBuffer, srcBuffer.getBuffer(), dstBuffer.getBuffer(), 1, &copyRegion);
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	vkQueueSubmit(srcBuffer.getVulkanDevice().getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(srcBuffer.getVulkanDevice().getGraphicsQueue());
+
+	vkFreeCommandBuffers(srcBuffer.getVulkanDevice().getDevice(), srcBuffer.getVulkanDevice().getCommandPool(), 1, &commandBuffer);
 }

@@ -35,6 +35,8 @@ private:
 
 	VulkanDevice& m_vkDevice;
 	std::unique_ptr<VulkanPipeline> m_vkPipeline;
-	VulkanBuffer vkbuffer;//temp
+	//temp
+	VulkanBuffer vertexBuffer;
+	VulkanBuffer stagingBuffer;
 };
 

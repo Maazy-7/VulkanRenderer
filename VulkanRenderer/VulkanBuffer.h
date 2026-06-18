@@ -21,11 +21,16 @@ public:
 	VulkanBuffer(const VulkanBuffer&) = delete;
 	VulkanBuffer& operator=(const VulkanBuffer&) = delete;
 
-	VulkanBuffer(VulkanDevice& device, const std::vector<Vertex>& vertices);
+	VulkanBuffer(VulkanDevice& device, const std::vector<Vertex>& vertices, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 	~VulkanBuffer();
 
 	void bindBuffer(VkCommandBuffer commandBuffer) const;
+	void map(VkDeviceSize offset, VkDeviceSize size, const void* src);
 	uint32_t getBufferElementCount() const;
+	VkBuffer getBuffer() const;
+	VulkanDevice& getVulkanDevice() const;
+
+	static void copyBuffer(VulkanBuffer& srcBuffer, VulkanBuffer& dstBuffer, VkDeviceSize size);
 
 private:
 
