@@ -25,12 +25,13 @@ std::array<VkVertexInputAttributeDescription, 2> Vertex::getAttributeDescription
 	return attributeDescriptions;
 }
 
-VulkanBuffer::VulkanBuffer(VulkanDevice& device, const std::vector<Vertex>& vertices, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
-	:m_vkDevice(device), count((uint32_t)vertices.size())
+VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDeviceSize elementCount, VkDeviceSize size, 
+	VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
+	:m_vkDevice(device), count((uint32_t)elementCount), buffSize(size)
 {
 	VkBufferCreateInfo bufferCreateInfo{};
 	bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferCreateInfo.size = sizeof(vertices[0]) * vertices.size();
+	bufferCreateInfo.size = size;
 	bufferCreateInfo.usage = usage;
 	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -61,11 +62,18 @@ VulkanBuffer::~VulkanBuffer()
 	vkFreeMemory(m_vkDevice.getDevice(), m_vkDeviceMemory, nullptr);
 }
 
-void VulkanBuffer::bindBuffer(VkCommandBuffer commandBuffer) const
+void VulkanBuffer::bindVertexBuffer(VkCommandBuffer commandBuffer) const
 {
 	VkBuffer vBuffers[] = { m_vkBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vBuffers, offsets);
+}
+
+void VulkanBuffer::bindIndexBuffer(VkCommandBuffer commandBuffer) const
+{
+	VkBuffer vBuffers[] = { m_vkBuffer };
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindIndexBuffer(commandBuffer, m_vkBuffer, 0, VK_INDEX_TYPE_UINT16);
 }
 
 uint32_t VulkanBuffer::getBufferElementCount() const 

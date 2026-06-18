@@ -10,12 +10,14 @@
 #include "VulkanPipeline.h"
 #include "VulkanBuffer.h"
 
-const std::vector<Vertex> vertices =
-{
-{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+const std::vector<Vertex> vertices = {
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
 };
+
+const std::vector<uint16_t> indices = { 0, 1, 2, 2, 3, 0 };
 
 class SimpleRenderSystem
 {
@@ -33,10 +35,16 @@ private:
 
 	void createPipeline(VulkanSwapChain& swapChain);
 
+	VkDeviceSize vCount = vertices.size();
+	VkDeviceSize iCount = indices.size();
+	VkDeviceSize vBuffSize = sizeof(vertices[0]) * vCount;
+	VkDeviceSize iBuffSize = sizeof(indices[0]) * iCount;
+
 	VulkanDevice& m_vkDevice;
 	std::unique_ptr<VulkanPipeline> m_vkPipeline;
 	//temp
 	VulkanBuffer vertexBuffer;
+	VulkanBuffer indexBuffer;
 	VulkanBuffer stagingBuffer;
 };
 
