@@ -7,6 +7,7 @@
 #include "VulkanDevice.h"
 #include "VulkanSwapChain.h"
 #include "VulkanBuffer.h"
+#include "VulkanDescriptor.h"
 
 struct PipelineConfigurationInfo
 {
@@ -35,5 +36,6 @@ private:
 	VulkanDevice& m_vkDevice;
 	VkPipeline m_vkPipeline;
 	VkPipelineLayout m_vkPipelineLayout;
+	VulkanDescriptorSetLayout m_vkDescriptorSetLayout;
 };
 

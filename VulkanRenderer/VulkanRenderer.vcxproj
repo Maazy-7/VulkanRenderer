@@ -160,6 +160,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SimpleRenderSystem.cpp" />
     <ClCompile Include="VulkanBuffer.cpp" />
+    <ClCompile Include="VulkanDescriptor.cpp" />
     <ClCompile Include="VulkanDevice.cpp" />
     <ClCompile Include="VulkanPipeline.cpp" />
     <ClCompile Include="VulkanRenderer.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="SimpleRenderSystem.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="VulkanBuffer.h" />
+    <ClInclude Include="VulkanDescriptor.h" />
     <ClInclude Include="VulkanDevice.h" />
     <ClInclude Include="VulkanPipeline.h" />
     <ClInclude Include="VulkanRenderer.h" />

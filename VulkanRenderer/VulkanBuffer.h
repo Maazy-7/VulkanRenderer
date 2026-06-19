@@ -27,7 +27,9 @@ public:
 
 	void bindVertexBuffer(VkCommandBuffer commandBuffer) const;
 	void bindIndexBuffer(VkCommandBuffer commandBuffer) const;
-	void map(VkDeviceSize offset, VkDeviceSize size, const void* src);
+	void map(VkDeviceSize offset, VkDeviceSize size);
+	void writeToBuffer(VkDeviceSize offset, VkDeviceSize size, const void* src);
+	void unMap();
 	uint32_t getBufferElementCount() const;
 	VkBuffer getBuffer() const;
 	VulkanDevice& getVulkanDevice() const;

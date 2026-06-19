@@ -19,6 +19,12 @@ const std::vector<Vertex> vertices = {
 
 const std::vector<uint16_t> indices = { 0, 1, 2, 2, 3, 0 };
 
+struct UniformBufferObject {
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
+};
+
 class SimpleRenderSystem
 {
 
@@ -41,10 +47,12 @@ private:
 	VkDeviceSize iBuffSize = sizeof(indices[0]) * iCount;
 
 	VulkanDevice& m_vkDevice;
+	VulkanSwapChain& m_vkSwapChain;
 	std::unique_ptr<VulkanPipeline> m_vkPipeline;
 	//temp
 	VulkanBuffer vertexBuffer;
 	VulkanBuffer indexBuffer;
 	VulkanBuffer stagingBuffer;
+	std::vector<VulkanBuffer> m_uniformBuffers;
 };
 

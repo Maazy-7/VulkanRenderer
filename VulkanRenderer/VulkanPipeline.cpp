@@ -1,7 +1,7 @@
 #include "VulkanPipeline.h"
 
 VulkanPipeline::VulkanPipeline(VulkanDevice& device, const std::string& vertexPath, const std::string& fragmentPath, VulkanSwapChain& swapChain)
-	:m_vkDevice(device)
+	:m_vkDevice(device), m_vkDescriptorSetLayout(VulkanDescriptorSetLayout(device))
 {
 	createGraphicsPipeline(vertexPath, fragmentPath, swapChain);
 }
@@ -122,8 +122,8 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutCreateInfo.setLayoutCount = 0;
-	pipelineLayoutCreateInfo.pSetLayouts = nullptr;
+	pipelineLayoutCreateInfo.setLayoutCount = 1;
+	pipelineLayoutCreateInfo.pSetLayouts = &m_vkDescriptorSetLayout.getDescriptorSetLayout();
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
 	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
 

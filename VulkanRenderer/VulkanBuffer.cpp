@@ -91,11 +91,23 @@ VulkanDevice& VulkanBuffer::getVulkanDevice() const
 	return m_vkDevice;
 }
 
-void VulkanBuffer::map(VkDeviceSize offset, VkDeviceSize size, const void* src) 
+void VulkanBuffer::map(VkDeviceSize offset, VkDeviceSize size) 
 {
 	vkMapMemory(m_vkDevice.getDevice(), m_vkDeviceMemory, offset, size, 0, &m_mapped);
-	memcpy(m_mapped, src, (size_t)size);
-	vkUnmapMemory(m_vkDevice.getDevice(), m_vkDeviceMemory);
+}
+
+void VulkanBuffer::writeToBuffer(VkDeviceSize offset, VkDeviceSize size, const void* src) 
+{
+	memcpy(m_mapped, src, size);//need to implement buffer write with offset
+}
+
+void VulkanBuffer::unMap() 
+{
+	if (m_mapped) 
+	{
+		vkUnmapMemory(m_vkDevice.getDevice(), m_vkDeviceMemory);
+		m_mapped = nullptr;
+	}
 }
 
 void VulkanBuffer::copyBuffer(VulkanBuffer& srcBuffer, VulkanBuffer& dstBuffer, VkDeviceSize size)
