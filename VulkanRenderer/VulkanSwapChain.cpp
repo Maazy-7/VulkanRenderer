@@ -212,6 +212,11 @@ unsigned int VulkanSwapChain::getSwapChainHeight() const
 	return m_extent.height;
 }
 
+size_t VulkanSwapChain::getCurrentFrameIndex() const 
+{
+	return m_currentFrame;
+}
+
 VkExtent2D VulkanSwapChain::getSwapChainExtent() const 
 {
 	return m_extent;

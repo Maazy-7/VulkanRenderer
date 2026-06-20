@@ -34,7 +34,7 @@ void Application::run()
 		//renderer update
 		auto commandBuffer = m_vkRenderer.beginFrame();
 		m_vkRenderer.beginRendering(commandBuffer);
-		m_simpleRenderSystem.renderGameObjects(commandBuffer);
+		m_simpleRenderSystem.renderGameObjects(commandBuffer, dt);
 		m_vkRenderer.endRendering(commandBuffer);
 		m_vkRenderer.endFrame();
 

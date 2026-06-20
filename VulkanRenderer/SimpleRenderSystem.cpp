@@ -18,13 +18,17 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, VulkanSwapChain& sw
 	stagingBuffer.unMap();
 	VulkanBuffer::copyBuffer(stagingBuffer, indexBuffer, iBuffSize);
 
-	m_uniformBuffers.reserve(swapChain.MAX_FRAMES_IN_FLIGHT);
 	for (size_t i = 0; i < swapChain.MAX_FRAMES_IN_FLIGHT; i++) 
 	{
-		m_uniformBuffers.emplace_back(m_vkDevice, 3/*temp*/, sizeof(UniformBufferObject),
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		m_uniformBuffers[i].map(0, sizeof(UniformBufferObject));
+		m_uniformBuffers.push_back(std::make_unique<VulkanBuffer>(m_vkDevice, 3/*temp*/, sizeof(UniformBufferObject),
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+		m_uniformBuffers[i]->map(0, sizeof(UniformBufferObject));
 	}
+
+	ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), (float)swapChain.getSwapChainExtent().width / (float)swapChain.getSwapChainExtent().height, 0.1f, 10.0f);
+	ubo.proj[1][1] *= -1;
 }
 
 void SimpleRenderSystem::createPipeline(VulkanSwapChain& swapChain) 
@@ -32,8 +36,11 @@ void SimpleRenderSystem::createPipeline(VulkanSwapChain& swapChain)
 	m_vkPipeline = std::make_unique<VulkanPipeline>(m_vkDevice, "Shaders/shader.vert.spv", "Shaders/shader.frag.spv", swapChain);
 }
 
-void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer)
+void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float dt)
 {
+	ubo.model = glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	m_uniformBuffers[m_vkSwapChain.getCurrentFrameIndex()]->writeToBuffer(0, sizeof(UniformBufferObject), &ubo);
+	
 	//currently just renders a triangle
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipeline());
 	vertexBuffer.bindVertexBuffer(commandBuffer);

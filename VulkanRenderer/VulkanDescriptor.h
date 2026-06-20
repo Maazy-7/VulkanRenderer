@@ -21,3 +21,21 @@ private:
     VkDescriptorSetLayout m_vkDescriptorSetLayout;
 };
 
+class VulkanDescriptorPool 
+{
+public:
+    VulkanDescriptorPool(const VulkanDescriptorPool&) = delete;
+    VulkanDescriptorPool& operator=(const VulkanDescriptorPool&) = delete;
+
+    VulkanDescriptorPool(VulkanDevice& device, uint32_t descriptorCount);
+    ~VulkanDescriptorPool();
+
+    void allocateDescriptorSet();
+
+private:
+
+    VulkanDevice& m_vkDevice;
+    VkDescriptorPool m_vkDescriptorPool;
+    std::vector<VkDescriptorSet> m_vkDescriptorSets;
+    uint32_t m_descriptorCount;
+};

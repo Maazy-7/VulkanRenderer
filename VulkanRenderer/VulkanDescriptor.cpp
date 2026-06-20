@@ -1,6 +1,5 @@
 #include "VulkanDescriptor.h"
 
-
 VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VulkanDevice& device)
 	:m_vkDevice(device)
 {
@@ -29,4 +28,28 @@ VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout()
 const VkDescriptorSetLayout& VulkanDescriptorSetLayout::getDescriptorSetLayout() const 
 {
 	return m_vkDescriptorSetLayout;
+}
+
+VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, uint32_t descriptorCount)
+	:m_vkDevice(device), m_descriptorCount(descriptorCount)
+{
+	VkDescriptorPoolSize descriptorPoolSize{};
+	descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorPoolSize.descriptorCount = descriptorCount;
+
+	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
+	descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	descriptorPoolCreateInfo.poolSizeCount = 1;
+	descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
+	descriptorPoolCreateInfo.maxSets = descriptorCount;
+
+	if (vkCreateDescriptorPool(m_vkDevice.getDevice(), &descriptorPoolCreateInfo, nullptr, &m_vkDescriptorPool) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create Vulkan descriptor pool");
+	}
+}
+
+VulkanDescriptorPool::~VulkanDescriptorPool() 
+{
+	vkDestroyDescriptorPool(m_vkDevice.getDevice(), m_vkDescriptorPool, nullptr);
 }

@@ -2,7 +2,10 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <memory>
+#include <chrono>
 
 #include "Window.h"
 #include "VulkanDevice.h"
@@ -35,7 +38,7 @@ public:
 
 	SimpleRenderSystem(VulkanDevice& device, VulkanSwapChain& swapChain);
 
-	void renderGameObjects(VkCommandBuffer commandBuffer);
+	void renderGameObjects(VkCommandBuffer commandBuffer, float dt);
 
 private:
 
@@ -53,6 +56,9 @@ private:
 	VulkanBuffer vertexBuffer;
 	VulkanBuffer indexBuffer;
 	VulkanBuffer stagingBuffer;
-	std::vector<VulkanBuffer> m_uniformBuffers;
+	std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
+	UniformBufferObject ubo;
+	float m_deltaTime;
+	float m_previousTime;
 };
 

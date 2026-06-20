@@ -24,6 +24,7 @@ public:
 
 	unsigned int getSwapChainWidth() const;
 	unsigned int getSwapChainHeight() const;
+	size_t getCurrentFrameIndex() const;
 	VkExtent2D getSwapChainExtent() const;
 	VkImageView getSwapChainImageView(int index) const;
 	VkImage getSwapChainImage(int index) const;
