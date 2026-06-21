@@ -21,7 +21,7 @@ public:
 	VulkanPipeline(const VulkanPipeline&) = delete;
 	VulkanPipeline& operator=(const VulkanPipeline&) = delete;
 
-	VulkanPipeline(VulkanDevice& device, const std::string& vertexPath, const std::string& fragmentPath, VulkanSwapChain& swapChain);
+	VulkanPipeline(VulkanDevice& device, const std::string& vertexPath, const std::string& fragmentPath, const VulkanSwapChain& swapChain);
 	~VulkanPipeline();
 
 	//temp
@@ -29,7 +29,7 @@ public:
 
 private:
 
-	void createGraphicsPipeline(const std::string& vertexPath, const std::string& fragmentPath, VulkanSwapChain& swapChain);
+	void createGraphicsPipeline(const std::string& vertexPath, const std::string& fragmentPath, const VulkanSwapChain& swapChain);
 	VkShaderModule createShaderModule(const std::vector<char>& shaderCode);
 	std::vector<char> readFromFile(const std::string& filename);
 

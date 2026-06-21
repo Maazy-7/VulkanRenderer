@@ -32,5 +32,6 @@ private:
 	VulkanDevice m_vkDevice;
 	VulkanRenderer  m_vkRenderer;
 	SimpleRenderSystem m_simpleRenderSystem;
+	VulkanDescriptorPool m_vkDescriptorPool;
 };
 

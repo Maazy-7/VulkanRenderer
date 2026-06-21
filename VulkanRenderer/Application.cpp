@@ -5,7 +5,8 @@ Application::Application()
 	:m_window(std::make_unique<Window>(DEFAULT_WIDTH, DEFUALT_HEIGHT, "Application")),
 	m_vkDevice(*m_window),
 	m_vkRenderer(*m_window, m_vkDevice),
-	m_simpleRenderSystem(m_vkDevice, *m_vkRenderer.getSwapChain())
+	m_simpleRenderSystem(m_vkDevice, m_vkRenderer.getSwapChain()),
+	m_vkDescriptorPool(m_vkDevice, m_vkRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT)
 {
 	m_window->setKeyCallback(&InputManager::keyCallback);
 }

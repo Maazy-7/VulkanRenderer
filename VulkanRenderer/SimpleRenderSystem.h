@@ -36,13 +36,13 @@ public:
 	SimpleRenderSystem(const SimpleRenderSystem&) = delete;
 	SimpleRenderSystem& operator=(const SimpleRenderSystem&) = delete;
 
-	SimpleRenderSystem(VulkanDevice& device, VulkanSwapChain& swapChain);
+	SimpleRenderSystem(VulkanDevice& device, const VulkanSwapChain& swapChain);
 
 	void renderGameObjects(VkCommandBuffer commandBuffer, float dt);
 
 private:
 
-	void createPipeline(VulkanSwapChain& swapChain);
+	void createPipeline(const VulkanSwapChain& swapChain);
 
 	VkDeviceSize vCount = vertices.size();
 	VkDeviceSize iCount = indices.size();
@@ -50,13 +50,14 @@ private:
 	VkDeviceSize iBuffSize = sizeof(indices[0]) * iCount;
 
 	VulkanDevice& m_vkDevice;
-	VulkanSwapChain& m_vkSwapChain;
+	const VulkanSwapChain& m_vkSwapChain;
 	std::unique_ptr<VulkanPipeline> m_vkPipeline;
 	//temp
 	VulkanBuffer vertexBuffer;
 	VulkanBuffer indexBuffer;
 	VulkanBuffer stagingBuffer;
 	std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
+	std::vector<VkDescriptorSet> m_vkDescriptorSets;
 	UniformBufferObject ubo;
 	float m_deltaTime;
 	float m_previousTime;

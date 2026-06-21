@@ -1,6 +1,6 @@
 #include "VulkanPipeline.h"
 
-VulkanPipeline::VulkanPipeline(VulkanDevice& device, const std::string& vertexPath, const std::string& fragmentPath, VulkanSwapChain& swapChain)
+VulkanPipeline::VulkanPipeline(VulkanDevice& device, const std::string& vertexPath, const std::string& fragmentPath, const VulkanSwapChain& swapChain)
 	:m_vkDevice(device), m_vkDescriptorSetLayout(VulkanDescriptorSetLayout(device))
 {
 	createGraphicsPipeline(vertexPath, fragmentPath, swapChain);
@@ -11,7 +11,7 @@ VulkanPipeline::~VulkanPipeline()
 	vkDestroyPipeline(m_vkDevice.getDevice(), m_vkPipeline, nullptr);
 }
 
-void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const std::string& fragmentPath, VulkanSwapChain& swapChain)
+void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const std::string& fragmentPath, const VulkanSwapChain& swapChain)
 {
 	//Shader stage info
 	auto vertexCode = readFromFile(vertexPath);

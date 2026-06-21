@@ -22,7 +22,7 @@ public:
 	~VulkanRenderer();
 
 	VkCommandBuffer getCurrentCommandBuffer();
-	VulkanSwapChain* getSwapChain();
+	const VulkanSwapChain& getSwapChain();
 
 	VkCommandBuffer beginFrame();
 	void endFrame();

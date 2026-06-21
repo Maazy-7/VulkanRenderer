@@ -36,6 +36,5 @@ private:
 
     VulkanDevice& m_vkDevice;
     VkDescriptorPool m_vkDescriptorPool;
-    std::vector<VkDescriptorSet> m_vkDescriptorSets;
     uint32_t m_descriptorCount;
 };

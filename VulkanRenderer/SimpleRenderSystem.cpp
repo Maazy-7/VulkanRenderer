@@ -1,6 +1,6 @@
 #include "SimpleRenderSystem.h"
 
-SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, VulkanSwapChain& swapChain) 
+SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanSwapChain& swapChain) 
 	:m_vkDevice(device),
 	m_vkSwapChain(swapChain),
 	stagingBuffer(VulkanBuffer(m_vkDevice, vCount, vBuffSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)),
@@ -31,7 +31,7 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, VulkanSwapChain& sw
 	ubo.proj[1][1] *= -1;
 }
 
-void SimpleRenderSystem::createPipeline(VulkanSwapChain& swapChain) 
+void SimpleRenderSystem::createPipeline(const VulkanSwapChain& swapChain) 
 {
 	m_vkPipeline = std::make_unique<VulkanPipeline>(m_vkDevice, "Shaders/shader.vert.spv", "Shaders/shader.frag.spv", swapChain);
 }
