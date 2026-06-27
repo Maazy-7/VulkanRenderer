@@ -21,8 +21,11 @@ public:
 	VulkanPipeline(const VulkanPipeline&) = delete;
 	VulkanPipeline& operator=(const VulkanPipeline&) = delete;
 
-	VulkanPipeline(VulkanDevice& device, const std::string& vertexPath, const std::string& fragmentPath, const VulkanSwapChain& swapChain);
+	VulkanPipeline(VulkanDevice& device, const std::string& vertexPath, const std::string& fragmentPath, const VulkanSwapChain& swapChain, 
+		VulkanDescriptorSetLayout& vulkanDescriptorSetLayout);
 	~VulkanPipeline();
+
+	VkPipelineLayout getPipelineLayout() const;
 
 	//temp
 	VkPipeline getPipeline() const;
@@ -36,6 +39,6 @@ private:
 	VulkanDevice& m_vkDevice;
 	VkPipeline m_vkPipeline;
 	VkPipelineLayout m_vkPipelineLayout;
-	VulkanDescriptorSetLayout m_vkDescriptorSetLayout;
+	VulkanDescriptorSetLayout& m_vulkanDescriptorSetLayout;
 };
 

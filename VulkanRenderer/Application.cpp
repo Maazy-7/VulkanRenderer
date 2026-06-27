@@ -18,6 +18,23 @@ Application::~Application()
 
 void Application::run() 
 {
+	//temp
+	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
+	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1);
+	VulkanDescriptorSetLayout globalSetLayout(m_vkDevice, bindings);
+	VulkanDescriptorWriter descriptorWriter(m_vkDescriptorPool, globalSetLayout);
+	m_simpleRenderSystem.createPipeline(globalSetLayout);//VkPipeline needs to know about layout, so its created after descriptor layout
+	
+	for (size_t i = 0; i < 2; i++)
+	{
+		VkDescriptorBufferInfo descriptorBufferInfo{};
+		descriptorBufferInfo.buffer = m_simpleRenderSystem.m_uniformBuffers[i]->getBuffer();
+		descriptorBufferInfo.offset = 0;
+		descriptorBufferInfo.range = sizeof(m_simpleRenderSystem.ubo);
+
+		descriptorWriter.writeBuffer(&descriptorBufferInfo, 0).build(m_simpleRenderSystem.m_vkDescriptorSets[i]);
+	}
+	//temp
 	while (!m_window->windowShouldClose()) 
 	{
 		if (InputManager::getKey(GLFW_KEY_ESCAPE)) { m_window->setWindowClose(true); }

@@ -1,13 +1,14 @@
 #include "VulkanPipeline.h"
 
-VulkanPipeline::VulkanPipeline(VulkanDevice& device, const std::string& vertexPath, const std::string& fragmentPath, const VulkanSwapChain& swapChain)
-	:m_vkDevice(device), m_vkDescriptorSetLayout(VulkanDescriptorSetLayout(device))
+VulkanPipeline::VulkanPipeline(VulkanDevice& device, const std::string& vertexPath, const std::string& fragmentPath, const VulkanSwapChain& swapChain, VulkanDescriptorSetLayout& vulkanDescriptorSetLayout)
+	:m_vkDevice(device), m_vulkanDescriptorSetLayout(vulkanDescriptorSetLayout)
 {
 	createGraphicsPipeline(vertexPath, fragmentPath, swapChain);
 }
 
 VulkanPipeline::~VulkanPipeline() 
 {
+	vkDestroyPipelineLayout(m_vkDevice.getDevice(), m_vkPipelineLayout, nullptr);
 	vkDestroyPipeline(m_vkDevice.getDevice(), m_vkPipeline, nullptr);
 }
 
@@ -89,6 +90,7 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 	rasterizationStateCreateInfo.depthBiasClamp = 0.f;
 	rasterizationStateCreateInfo.depthBiasSlopeFactor = 0.f;
 
+
 	//currently disabled
 	VkPipelineMultisampleStateCreateInfo multiSampleStateCreateInfo = {};
 	multiSampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -123,7 +125,7 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutCreateInfo.setLayoutCount = 1;
-	pipelineLayoutCreateInfo.pSetLayouts = &m_vkDescriptorSetLayout.getDescriptorSetLayout();
+	pipelineLayoutCreateInfo.pSetLayouts = &m_vulkanDescriptorSetLayout.getDescriptorSetLayout();
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
 	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
 
@@ -164,8 +166,6 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 		throw std::runtime_error("Failed to create Vulkan graphics pipeline");
 	}
 
-
-	vkDestroyPipelineLayout(m_vkDevice.getDevice(), m_vkPipelineLayout, nullptr);
 	vkDestroyShaderModule(m_vkDevice.getDevice(), vertexShaderModule, nullptr);
 	vkDestroyShaderModule(m_vkDevice.getDevice(), fragmentShaderModule, nullptr);
 }
@@ -202,4 +202,9 @@ std::vector<char> VulkanPipeline::readFromFile(const std::string& filename)
 VkPipeline VulkanPipeline::getPipeline() const 
 {
 	return m_vkPipeline;
+}
+
+VkPipelineLayout VulkanPipeline::getPipelineLayout() const 
+{
+	return m_vkPipelineLayout;
 }

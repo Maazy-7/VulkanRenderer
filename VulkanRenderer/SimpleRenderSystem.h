@@ -28,6 +28,8 @@ struct UniformBufferObject {
 	glm::mat4 proj;
 };
 
+class Application; //friendship
+
 class SimpleRenderSystem
 {
 
@@ -40,9 +42,11 @@ public:
 
 	void renderGameObjects(VkCommandBuffer commandBuffer, float dt);
 
+	std::vector<VkDescriptorSet>& getDescriptorSets();
+
 private:
 
-	void createPipeline(const VulkanSwapChain& swapChain);
+	void createPipeline(VulkanDescriptorSetLayout& vulkanDescriptorSetLayout);
 
 	VkDeviceSize vCount = vertices.size();
 	VkDeviceSize iCount = indices.size();
@@ -58,8 +62,9 @@ private:
 	VulkanBuffer stagingBuffer;
 	std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
 	std::vector<VkDescriptorSet> m_vkDescriptorSets;
+	//VulkanDescriptorSetLayout& m_vulkanDescriptorSetLayout;
 	UniformBufferObject ubo;
-	float m_deltaTime;
-	float m_previousTime;
+
+	friend class Application;
 };
 
