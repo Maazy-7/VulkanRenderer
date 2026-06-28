@@ -42,7 +42,7 @@ private:
 	void* m_mapped = nullptr;
 	VkBuffer m_vkBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_vkDeviceMemory = VK_NULL_HANDLE;
-	uint32_t count;
-	VkDeviceSize buffSize;
+	uint32_t m_count;
+	VkDeviceSize m_buffSize;
 };
 

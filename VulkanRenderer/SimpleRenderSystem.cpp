@@ -20,6 +20,21 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanSwapCha
 	stagingBuffer.unMap();
 	VulkanBuffer::copyBuffer(stagingBuffer, indexBuffer, iBuffSize);
 
+	//allocating texture and staging buffer for texture
+	int width, height, channels;
+	stbi_uc* pixels = stbi_load("Assets/statue.jpg", &width, &height, &channels, STBI_rgb_alpha);
+	if (!pixels) { throw std::runtime_error("failed to load texture image"); }
+	VkDeviceSize imageSize = static_cast<uint64_t>(width * height * 4);
+
+	VulkanBuffer stagingBuffer(m_vkDevice, 1, imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	stagingBuffer.map(0, imageSize);
+	stagingBuffer.writeToBuffer(0, imageSize, pixels);
+	stbi_image_free(pixels);
+
+
+
+
 	//allocating uniform buffers
 	for (size_t i = 0; i < swapChain.MAX_FRAMES_IN_FLIGHT; i++) 
 	{
@@ -28,8 +43,8 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanSwapCha
 		m_uniformBuffers[i]->map(0, sizeof(UniformBufferObject));
 	}
 
-	ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = glm::mat4(1.f);//glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	ubo.view = glm::lookAt(glm::vec3(0.0f, 0.f, 2.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapChain.getSwapChainExtent().width) 
 		/ static_cast<float>(swapChain.getSwapChainExtent().height), 0.1f, 10.0f);
 	ubo.proj[1][1] *= -1;
@@ -44,10 +59,11 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 
 void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float dt)
 {
-	ubo.model = glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = glm::rotate(ubo.model, dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	//ubo.model = glm::translate(ubo.model, glm::vec3(0.f, 0.01f, 0.f));
 	m_uniformBuffers[m_vkSwapChain.getCurrentFrameIndex()]->writeToBuffer(0, sizeof(UniformBufferObject), &ubo);
-	m_uniformBuffers[m_vkSwapChain.getCurrentFrameIndex()]->unMap();
-	m_uniformBuffers[m_vkSwapChain.getCurrentFrameIndex()]->map(0, sizeof(UniformBufferObject));
+	//m_uniformBuffers[m_vkSwapChain.getCurrentFrameIndex()]->unMap();
+	//m_uniformBuffers[m_vkSwapChain.getCurrentFrameIndex()]->map(0, sizeof(UniformBufferObject));
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipeline());
 	vertexBuffer.bindVertexBuffer(commandBuffer);

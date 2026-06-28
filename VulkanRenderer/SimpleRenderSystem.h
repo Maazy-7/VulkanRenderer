@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 #include <chrono>
+#include <stb/stb_image.h>
 
 #include "Window.h"
 #include "VulkanDevice.h"

@@ -27,7 +27,7 @@ std::array<VkVertexInputAttributeDescription, 2> Vertex::getAttributeDescription
 
 VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDeviceSize elementCount, VkDeviceSize size, 
 	VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
-	:m_vkDevice(device), count((uint32_t)elementCount), buffSize(size)
+	:m_vkDevice(device), m_count((uint32_t)elementCount), m_buffSize(size)
 {
 	VkBufferCreateInfo bufferCreateInfo{};
 	bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -78,7 +78,7 @@ void VulkanBuffer::bindIndexBuffer(VkCommandBuffer commandBuffer) const
 
 uint32_t VulkanBuffer::getBufferElementCount() const 
 {
-	return count;
+	return m_count;
 }
 
 VkBuffer VulkanBuffer::getBuffer() const 
