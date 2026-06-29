@@ -54,6 +54,8 @@ public:
 	VkCommandPool getCommandPool() const;
 	void getWindowFrameBufferSize(int* width, int* height) const;
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	[[nodiscard]] VkCommandBuffer beginSingleTimeCommands();
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
 private:
 

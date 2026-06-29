@@ -112,35 +112,11 @@ void VulkanBuffer::unMap()
 
 void VulkanBuffer::copyBuffer(VulkanBuffer& srcBuffer, VulkanBuffer& dstBuffer, VkDeviceSize size)
 {
-	VkCommandBufferAllocateInfo cmdBufAllocInfo{};
-	cmdBufAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	cmdBufAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	cmdBufAllocInfo.commandPool = srcBuffer.getVulkanDevice().getCommandPool();
-	cmdBufAllocInfo.commandBufferCount = 1;
-
-	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(srcBuffer.getVulkanDevice().getDevice(), &cmdBufAllocInfo, &commandBuffer);
-
-	VkCommandBufferBeginInfo cmdBufBeginInfo{};
-	cmdBufBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	cmdBufBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	vkBeginCommandBuffer(commandBuffer, &cmdBufBeginInfo);
+	VkCommandBuffer commandBuffer = srcBuffer.m_vkDevice.beginSingleTimeCommands();
 
 	VkBufferCopy copyRegion{};
-	copyRegion.srcOffset = 0; //optional
-	copyRegion.dstOffset = 0; //optional
 	copyRegion.size = size;
 	vkCmdCopyBuffer(commandBuffer, srcBuffer.getBuffer(), dstBuffer.getBuffer(), 1, &copyRegion);
-	vkEndCommandBuffer(commandBuffer);
 
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
-
-	vkQueueSubmit(srcBuffer.getVulkanDevice().getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(srcBuffer.getVulkanDevice().getGraphicsQueue());
-
-	vkFreeCommandBuffers(srcBuffer.getVulkanDevice().getDevice(), srcBuffer.getVulkanDevice().getCommandPool(), 1, &commandBuffer);
+	srcBuffer.m_vkDevice.endSingleTimeCommands(commandBuffer);
 }

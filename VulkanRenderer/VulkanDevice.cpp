@@ -292,3 +292,40 @@ uint32_t VulkanDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags
 
 	throw std::runtime_error("failed to find a suitable memory type");
 }
+
+VkCommandBuffer VulkanDevice::beginSingleTimeCommands() 
+{
+	VkCommandBufferAllocateInfo cmdBufferAllocateInfo{};
+	cmdBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cmdBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	cmdBufferAllocateInfo.commandPool = m_vkCommandPool;
+	cmdBufferAllocateInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	if (vkAllocateCommandBuffers(m_vkDevice, &cmdBufferAllocateInfo, &commandBuffer) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to allocate single time Vulkan command buffer");
+	}
+	VkCommandBufferBeginInfo cmdBufferBeginInfo{};
+	cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	cmdBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandBuffer, &cmdBufferBeginInfo);
+
+	return commandBuffer;
+}
+
+void VulkanDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer) 
+{
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(m_graphicsQueue);
+
+	vkFreeCommandBuffers(m_vkDevice, m_vkCommandPool, 1, &commandBuffer);
+}

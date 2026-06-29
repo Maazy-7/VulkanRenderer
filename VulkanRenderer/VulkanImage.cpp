@@ -37,9 +37,79 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 	{
 		throw std::runtime_error("failed to allocate Vulkan image memory");
 	}
+
+	vkBindImageMemory(m_vulkanDevice.getDevice(), m_vkImage, m_vkDeviceMemory, 0);
 }
 
 VulkanImage::~VulkanImage() 
 {
+	vkDestroyImage(m_vulkanDevice.getDevice(), m_vkImage, nullptr);
+	vkFreeMemory(m_vulkanDevice.getDevice(), m_vkDeviceMemory, nullptr);
+}
 
+void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+{
+	VkCommandBuffer commandBuffer = m_vulkanDevice.beginSingleTimeCommands();
+
+	VkImageMemoryBarrier imgMemoryBarrier{};
+	imgMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	imgMemoryBarrier.oldLayout = oldLayout;
+	imgMemoryBarrier.newLayout = newLayout;
+	imgMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imgMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imgMemoryBarrier.image = m_vkImage;
+	imgMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imgMemoryBarrier.subresourceRange.baseMipLevel = 0;
+	imgMemoryBarrier.subresourceRange.levelCount = 1;
+	imgMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+	imgMemoryBarrier.subresourceRange.layerCount = 1;
+
+	VkPipelineStageFlags srcStageFlags;
+	VkPipelineStageFlags dstStageFlags;
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) 
+	{
+		imgMemoryBarrier.srcAccessMask = 0;
+		imgMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		srcStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStageFlags = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) 
+	{
+		imgMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imgMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		srcStageFlags = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStageFlags = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else 
+	{
+		throw std::invalid_argument("unsupported layout transition");
+	}
+
+	vkCmdPipelineBarrier(commandBuffer, srcStageFlags, dstStageFlags, 0, 0, nullptr, 0, nullptr, 0, &imgMemoryBarrier);
+
+	m_vulkanDevice.endSingleTimeCommands(commandBuffer);
+}
+
+void VulkanImage::copyBufferToImage(VulkanBuffer& srcBuffer, uint32_t width, uint32_t height)
+{
+	VkCommandBuffer commandBuffer = m_vulkanDevice.beginSingleTimeCommands();
+
+	VkBufferImageCopy imgCopyRegion{};
+	imgCopyRegion.bufferOffset = 0;
+	imgCopyRegion.bufferRowLength = 0;
+	imgCopyRegion.bufferImageHeight = 0;
+
+	imgCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imgCopyRegion.imageSubresource.mipLevel = 0;
+	imgCopyRegion.imageSubresource.baseArrayLayer = 0;
+	imgCopyRegion.imageSubresource.layerCount = 1;
+	imgCopyRegion.imageOffset = { 0, 0, 0 };
+	imgCopyRegion.imageExtent = { width, height, 1 };
+
+	vkCmdCopyBufferToImage(commandBuffer, srcBuffer.getBuffer(), m_vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imgCopyRegion);
+
+	m_vulkanDevice.endSingleTimeCommands(commandBuffer);
 }
