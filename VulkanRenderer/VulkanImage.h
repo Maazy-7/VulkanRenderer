@@ -21,6 +21,6 @@ private:
 	VkImage m_vkImage;
 	VkDeviceMemory m_vkDeviceMemory;
 	VkImageView m_vkImageView;
-
+	VkSampler m_vkSampler;
 };
 

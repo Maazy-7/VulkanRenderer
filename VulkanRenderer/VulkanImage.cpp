@@ -4,6 +4,7 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 	VkImageTiling imgTilling, VkImageUsageFlags imgUsage, VkMemoryPropertyFlags memoryPropertyFlags)
 	:m_vulkanDevice(vulkanDevice)
 {
+	//creating vk image
 	VkImageCreateInfo imgCreateInfo{};
 	imgCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -39,10 +40,53 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 	}
 
 	vkBindImageMemory(m_vulkanDevice.getDevice(), m_vkImage, m_vkDeviceMemory, 0);
+
+	//creating vk image view
+	VkImageViewCreateInfo imgViewCreateInfo{};
+	imgViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	imgViewCreateInfo.image = m_vkImage;
+	imgViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	imgViewCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+	imgViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imgViewCreateInfo.subresourceRange.baseMipLevel = 0;
+	imgViewCreateInfo.subresourceRange.levelCount = 1;
+	imgViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+	imgViewCreateInfo.subresourceRange.layerCount = 1;
+
+	if (vkCreateImageView(m_vulkanDevice.getDevice(), &imgViewCreateInfo, nullptr, &m_vkImageView) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create Vulkan image view");
+	}
+
+	//creating vk sampler
+	VkSamplerCreateInfo samplerCreateInfo{};
+	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
+	samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
+	samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.anisotropyEnable = VK_TRUE;
+	samplerCreateInfo.maxAnisotropy = m_vulkanDevice.getPhysicalDeviceProperties().limits.maxSamplerAnisotropy;
+	samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerCreateInfo.compareEnable = VK_FALSE;
+	samplerCreateInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerCreateInfo.mipLodBias = 0.f;
+	samplerCreateInfo.minLod = 0.f;
+	samplerCreateInfo.maxLod = 0.f;
+
+	if (vkCreateSampler(m_vulkanDevice.getDevice(), &samplerCreateInfo, nullptr, &m_vkSampler) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create Vulkan sampler");
+	}
 }
 
-VulkanImage::~VulkanImage() 
+VulkanImage::~VulkanImage()
 {
+	vkDestroySampler(m_vulkanDevice.getDevice(), m_vkSampler, nullptr);
+	vkDestroyImageView(m_vulkanDevice.getDevice(), m_vkImageView, nullptr);
 	vkDestroyImage(m_vulkanDevice.getDevice(), m_vkImage, nullptr);
 	vkFreeMemory(m_vulkanDevice.getDevice(), m_vkDeviceMemory, nullptr);
 }

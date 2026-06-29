@@ -175,13 +175,15 @@ void VulkanDevice::pickPhysicalDevice()
 		if (suitableGPU && devProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) 
 		{
 			m_vkPhysicalDevice = dev;
+			m_vkPhysicalDeviceProperties = devProperties;
 			break;
 		}
-		//otherwise select andy suitable gpu
+		//otherwise select any suitable gpu
 		else if (suitableGPU)
 		{
 			//no break, will check next gpu incase it is a discrete gpu
 			m_vkPhysicalDevice = dev;
+			m_vkPhysicalDeviceProperties = devProperties;
 		}
 	}
 	if (!m_vkPhysicalDevice) { throw std::runtime_error("Failed to find suitable GPU"); }
@@ -204,11 +206,21 @@ void VulkanDevice::createDevice()
 		qCreateInfo.push_back(qCrInfo);
 	}
 
+	//enabling anisotropic filtering
+	VkPhysicalDeviceFeatures physicalDeviceFeatures{};
+	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
+
+	VkPhysicalDeviceFeatures2 physicalDeviceFeatures2{};
+	physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	physicalDeviceFeatures2.features = physicalDeviceFeatures;
+	physicalDeviceFeatures2.pNext = VK_NULL_HANDLE;
+
 	//enabling dynamic rendering and synchronization2
 	VkPhysicalDeviceVulkan13Features vkDevice13Features = {};
 	vkDevice13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 	vkDevice13Features.dynamicRendering = VK_TRUE;
 	vkDevice13Features.synchronization2 = VK_TRUE;
+	vkDevice13Features.pNext = &physicalDeviceFeatures2;
 
 	VkDeviceCreateInfo devCreateInfo = {};
 	devCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -275,6 +287,7 @@ VkSurfaceKHR VulkanDevice::getSurface() const { return m_vkSurfaceKHR; }
 VkQueue VulkanDevice::getGraphicsQueue() const { return m_graphicsQueue; }
 VkQueue VulkanDevice::getPresentQueue() const { return m_presentQueue; }
 VkCommandPool VulkanDevice::getCommandPool() const { return m_vkCommandPool; }
+VkPhysicalDeviceProperties VulkanDevice::getPhysicalDeviceProperties() const { return m_vkPhysicalDeviceProperties; }
 void VulkanDevice::getWindowFrameBufferSize(int* width, int* height) const { glfwGetFramebufferSize(m_window.getWindow(), width, height); }
 
 uint32_t VulkanDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) 
