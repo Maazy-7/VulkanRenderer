@@ -16,6 +16,10 @@ public:
 	void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void copyBufferToImage(VulkanBuffer& srcBuffer, uint32_t width, uint32_t height);
 
+	VkImage getVkImage() const;
+	VkImageView getVkImageView() const;
+	VkSampler getVkSampler() const; 
+
 private:
 	VulkanDevice& m_vulkanDevice;
 	VkImage m_vkImage;

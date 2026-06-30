@@ -20,26 +20,6 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanSwapCha
 	stagingBuffer.unMap();
 	VulkanBuffer::copyBuffer(stagingBuffer, indexBuffer, iBuffSize);
 
-	//allocating texture and staging buffer for texture
-	int width, height, channels;
-	stbi_uc* pixels = stbi_load("Assets/statue.jpg", &width, &height, &channels, STBI_rgb_alpha);
-	if (!pixels) { throw std::runtime_error("failed to load texture image"); }
-	VkDeviceSize imageSize = static_cast<uint64_t>(width * height * 4);
-
-	VulkanBuffer stagingBuffer(m_vkDevice, 1, imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	stagingBuffer.map(0, imageSize);
-	stagingBuffer.writeToBuffer(0, imageSize, pixels);
-	stbi_image_free(pixels);
-
-	VulkanImage textureImg(m_vkDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-	textureImg.transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	textureImg.copyBufferToImage(stagingBuffer, width, height);
-	textureImg.transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-
 	//allocating uniform buffers
 	for (size_t i = 0; i < swapChain.MAX_FRAMES_IN_FLIGHT; i++) 
 	{

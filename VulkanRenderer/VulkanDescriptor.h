@@ -55,6 +55,7 @@ public:
     ~VulkanDescriptorWriter();
 
     VulkanDescriptorWriter& writeBuffer(VkDescriptorBufferInfo* bufferInfo, uint32_t binding);
+    VulkanDescriptorWriter& writeImage(VkDescriptorImageInfo* imageInfo, uint32_t binding);
 
     bool build(VkDescriptorSet& descriptorSet);
     void overwrite(VkDescriptorSet& descriptorSet);

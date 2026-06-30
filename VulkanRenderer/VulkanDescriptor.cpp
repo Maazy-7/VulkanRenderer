@@ -43,16 +43,21 @@ const VkDescriptorSetLayout& VulkanDescriptorSetLayout::getDescriptorSetLayout()
 VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, uint32_t descriptorCount)
 	:m_vkDevice(device), m_descriptorCount(descriptorCount)
 {
-	VkDescriptorPoolSize descriptorPoolSize{};
-	descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorPoolSize.descriptorCount = descriptorCount;
+	//temp, need to have way of properly determining pool sizes
+	VkDescriptorPoolSize descriptorPoolSizes[2];
+	descriptorPoolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorPoolSizes[0].descriptorCount = descriptorCount;
+	descriptorPoolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorPoolSizes[1].descriptorCount = descriptorCount;
 
 	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
 	descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	descriptorPoolCreateInfo.poolSizeCount = 1;
-	descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
+	descriptorPoolCreateInfo.poolSizeCount = 2;
+	descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes;
 	descriptorPoolCreateInfo.maxSets = descriptorCount;
-
+	//temp//
+	
+	
 	if (vkCreateDescriptorPool(m_vkDevice.getDevice(), &descriptorPoolCreateInfo, nullptr, &m_vkDescriptorPool) != VK_SUCCESS) 
 	{
 		throw std::runtime_error("failed to create Vulkan descriptor pool");
@@ -98,6 +103,19 @@ VulkanDescriptorWriter& VulkanDescriptorWriter::writeBuffer(VkDescriptorBufferIn
 	writeDescriptorSet.dstBinding = binding;
 	writeDescriptorSet.dstArrayElement = 0;
 	writeDescriptorSet.pBufferInfo = bufferInfo;
+	writeDescriptorSet.descriptorType = m_vulkanDescriptorSetLayout.m_bindings[binding].descriptorType;
+	writeDescriptorSet.descriptorCount = 1;
+	m_descriptorWrites.push_back(writeDescriptorSet);
+	return *this;
+}
+
+VulkanDescriptorWriter& VulkanDescriptorWriter::writeImage(VkDescriptorImageInfo* imageInfo, uint32_t binding)
+{
+	VkWriteDescriptorSet writeDescriptorSet{};
+	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet.dstBinding = binding;
+	writeDescriptorSet.dstArrayElement = 0;
+	writeDescriptorSet.pImageInfo = imageInfo;
 	writeDescriptorSet.descriptorType = m_vulkanDescriptorSetLayout.m_bindings[binding].descriptorType;
 	writeDescriptorSet.descriptorCount = 1;
 	m_descriptorWrites.push_back(writeDescriptorSet);

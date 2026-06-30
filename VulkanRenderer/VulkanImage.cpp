@@ -157,3 +157,18 @@ void VulkanImage::copyBufferToImage(VulkanBuffer& srcBuffer, uint32_t width, uin
 
 	m_vulkanDevice.endSingleTimeCommands(commandBuffer);
 }
+
+VkImage VulkanImage::getVkImage() const
+{
+	return m_vkImage;
+}
+
+VkImageView VulkanImage::getVkImageView() const
+{
+	return m_vkImageView;
+}
+
+VkSampler VulkanImage::getVkSampler() const
+{
+	return m_vkSampler;
+}
