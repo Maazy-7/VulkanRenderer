@@ -177,9 +177,10 @@ void VulkanSwapChain::createImageViews()
 void VulkanSwapChain::createDepthBuffer()
 {
 	VkFormat format = m_vkDevice.findDepthFormat();
+	VK_IMAGE_ASPECT_COLOR_BIT;
 	m_depthBuffer = std::make_unique<VulkanImage>(m_vkDevice, m_extent.width, m_extent.height, format, 
-		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	m_depthBuffer->transitionImageLayout(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
+	m_depthBuffer->transitionImageLayout(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 void VulkanSwapChain::createSyncObjects() 
