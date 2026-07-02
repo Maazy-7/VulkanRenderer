@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include "VulkanDevice.h"
+#include "VulkanImage.h"
 
 
 class VulkanSwapChain
@@ -27,7 +28,9 @@ public:
 	size_t getCurrentFrameIndex() const;
 	VkExtent2D getSwapChainExtent() const;
 	VkImageView getSwapChainImageView(int index) const;
+	VkImageView getSwapChainDepthBufferView() const;
 	VkImage getSwapChainImage(int index) const;
+	VkImage getSwapChainDepthBuffer() const;
 	VkFormat getSwapChainFormat() const;
 
 	VkResult acquireNextImage(uint32_t* imageIndex);
@@ -37,8 +40,7 @@ private:
 
 	void createSwapChain();
 	void createImageViews();
-	//void createRenderPass();
-	//void createFramebuffers();
+	void createDepthBuffer();
 	void createSyncObjects();
 	void cleanupSwapChain();
 
@@ -52,8 +54,9 @@ private:
 	VkFormat m_swapChainFormat;
 	VkExtent2D m_extent;
 
-	std::vector<VkImage> m_swapChainImages;
+	std::vector<VkImage> m_swapChainImages;//could also make these a VulkanImage
 	std::vector<VkImageView> m_swapChainImageViews;
+	std::unique_ptr<VulkanImage> m_depthBuffer;
 
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;

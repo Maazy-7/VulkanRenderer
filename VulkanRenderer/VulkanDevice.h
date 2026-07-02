@@ -44,6 +44,8 @@ public:
 	bool checkValidationLayerSupport() const;
 	std::vector<const char*> getRequiredExtensions() const;
 	QueueFamilyIndices findQueueIndices();
+	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling imgTiling, VkFormatFeatureFlags formatFeatureFlags) const;
+	VkFormat findDepthFormat() const;
 	
 
 	VkInstance getVkInstance() const;

@@ -7,6 +7,7 @@
 #include "VulkanDevice.h"
 #include "VulkanSwapChain.h"
 #include "VulkanBuffer.h"
+#include "VulkanImage.h"
 #include "VulkanDescriptor.h"
 
 struct PipelineConfigurationInfo
@@ -27,7 +28,6 @@ public:
 
 	VkPipelineLayout getPipelineLayout() const;
 
-	//temp
 	VkPipeline getPipeline() const;
 
 private:

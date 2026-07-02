@@ -6,6 +6,7 @@ VulkanSwapChain::VulkanSwapChain(VulkanDevice& device)
 {
 	createSwapChain();
 	createImageViews();
+	createDepthBuffer();
 	createSyncObjects();
 }
 
@@ -173,6 +174,14 @@ void VulkanSwapChain::createImageViews()
 	}
 }
 
+void VulkanSwapChain::createDepthBuffer()
+{
+	VkFormat format = m_vkDevice.findDepthFormat();
+	m_depthBuffer = std::make_unique<VulkanImage>(m_vkDevice, m_extent.width, m_extent.height, format, 
+		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	m_depthBuffer->transitionImageLayout(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+}
+
 void VulkanSwapChain::createSyncObjects() 
 {
 	m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -227,9 +236,19 @@ VkImageView VulkanSwapChain::getSwapChainImageView(int index) const
 	return m_swapChainImageViews[index];
 }
 
+VkImageView VulkanSwapChain::getSwapChainDepthBufferView() const
+{
+	return m_depthBuffer->getVkImageView();
+}
+
 VkImage VulkanSwapChain::getSwapChainImage(int index) const 
 {
 	return m_swapChainImages[index];
+}
+
+VkImage VulkanSwapChain::getSwapChainDepthBuffer() const
+{
+	return m_depthBuffer->getVkImage();
 }
 
 VkFormat VulkanSwapChain::getSwapChainFormat() const 

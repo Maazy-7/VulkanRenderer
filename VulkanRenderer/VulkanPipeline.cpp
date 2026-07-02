@@ -122,6 +122,16 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 	colorBlendStateCreateInfo.blendConstants[2] = 0.f;
 	colorBlendStateCreateInfo.blendConstants[3] = 0.f;
 
+	VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{};
+	depthStencilStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depthStencilStateCreateInfo.depthTestEnable = VK_TRUE;
+	depthStencilStateCreateInfo.depthWriteEnable = VK_TRUE;
+	depthStencilStateCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+	depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
+	depthStencilStateCreateInfo.minDepthBounds = 0.f;
+	depthStencilStateCreateInfo.maxDepthBounds = 1.f;
+	depthStencilStateCreateInfo.stencilTestEnable = VK_FALSE;
+
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutCreateInfo.setLayoutCount = 1;
@@ -140,7 +150,7 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 	pipelineRenderingCreateInfo.colorAttachmentCount = 1;
 	VkFormat colorFormat = swapChain.getSwapChainFormat();
 	pipelineRenderingCreateInfo.pColorAttachmentFormats = &colorFormat;
-	pipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+	pipelineRenderingCreateInfo.depthAttachmentFormat = m_vkDevice.findDepthFormat();
 	pipelineRenderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
 
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {};
@@ -152,7 +162,7 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 	graphicsPipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
 	graphicsPipelineCreateInfo.pViewportState = &viewPortStateCreateInfo;
 	graphicsPipelineCreateInfo.pMultisampleState = &multiSampleStateCreateInfo;
-	graphicsPipelineCreateInfo.pDepthStencilState = nullptr;
+	graphicsPipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
 	graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
 	graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
 	graphicsPipelineCreateInfo.layout = m_vkPipelineLayout;

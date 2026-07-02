@@ -140,6 +140,35 @@ QueueFamilyIndices VulkanDevice::findQueueIndices()
 	return findQueueIndices(m_vkPhysicalDevice);
 }
 
+VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling imgTiling, VkFormatFeatureFlags formatFeatureFlags) const
+{
+	for (VkFormat format : candidates) 
+	{
+		VkFormatProperties formatProperties;
+		vkGetPhysicalDeviceFormatProperties(m_vkPhysicalDevice, format, &formatProperties);
+
+		if (imgTiling == VK_IMAGE_TILING_LINEAR && (formatProperties.linearTilingFeatures & formatFeatureFlags) == formatFeatureFlags) 
+		{
+			return format;
+		}
+		else if (imgTiling == VK_IMAGE_TILING_OPTIMAL && (formatProperties.optimalTilingFeatures & formatFeatureFlags) == formatFeatureFlags) 
+		{
+			return format;
+		}
+	}
+
+	throw std::runtime_error("failed to find supported format!");
+}
+
+VkFormat VulkanDevice::findDepthFormat() const
+{
+	return findSupportedFormat(
+		{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+	);
+}
+
 QueueFamilyIndices VulkanDevice::findQueueIndices(VkPhysicalDevice device) 
 {
 	uint32_t qFamPropertyCount;

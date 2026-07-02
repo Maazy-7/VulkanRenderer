@@ -156,6 +156,14 @@ void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer)
 	colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachmentInfo.clearValue = { {0.f, 0.f, 0.f, 1.f} };
+	
+	VkRenderingAttachmentInfo depthAttachmentInfo{};
+	depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+	depthAttachmentInfo.imageView = m_vkSwapChain->getSwapChainDepthBufferView();
+	depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+	depthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;  // Clear old depth data
+	depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // Store new depth data
+	depthAttachmentInfo.clearValue.depthStencil = { 1.0f, 0 }; // 1.0 is the furthest distance
 
 	VkRenderingInfo renderingInfo = {};
 	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
@@ -164,7 +172,7 @@ void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer)
 	renderingInfo.layerCount = 1;
 	renderingInfo.colorAttachmentCount = 1;
 	renderingInfo.pColorAttachments = &colorAttachmentInfo;
-	renderingInfo.pDepthAttachment = VK_NULL_HANDLE;
+	renderingInfo.pDepthAttachment = &depthAttachmentInfo;
 	renderingInfo.pStencilAttachment = VK_NULL_HANDLE;
 
 	vkCmdBeginRendering(commandBuffer, &renderingInfo);
