@@ -23,6 +23,9 @@ public:
 	GLFWwindow* getWindow() const;
 
 	void setKeyCallback(void (*keyCallback)(GLFWwindow*, int, int, int, int));
+	void setCursorPosCallBack(void (*cursorCallback)(GLFWwindow* window, double xpos, double ypos));
+	void setMouseButtonCallBack(void (*mouseButtonCallback)(GLFWwindow* window, int button, int action, int mods));
+	void setScrollCallback(void (*scrollCallback)(GLFWwindow* window, double xoffset, double yoffset));
 	void setWindowClose(bool close);
 	void pollEvents();
 

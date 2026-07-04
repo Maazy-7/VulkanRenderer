@@ -62,6 +62,21 @@ void Window::setKeyCallback(void (*keyCallback)(GLFWwindow*, int, int, int, int)
 	glfwSetKeyCallback(m_window, keyCallback);
 }
 
+void Window::setCursorPosCallBack(void(*cursorPosCallback)(GLFWwindow* window, double xpos, double ypos))
+{
+	glfwSetCursorPosCallback(m_window, cursorPosCallback);
+}
+
+void Window::setMouseButtonCallBack(void(*mouseButtonCallback)(GLFWwindow* window, int button, int action, int mods))
+{
+	glfwSetMouseButtonCallback(m_window, mouseButtonCallback);
+}
+
+void Window::setScrollCallback(void(*scrollCallback)(GLFWwindow* window, double xoffset, double yoffset))
+{
+	glfwSetScrollCallback(m_window, scrollCallback);
+}
+
 void Window::setWindowClose(bool close) 
 {
 	glfwSetWindowShouldClose(m_window, close);

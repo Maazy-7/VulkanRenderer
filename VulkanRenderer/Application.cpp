@@ -11,6 +11,9 @@ Application::Application()
 	m_vkDescriptorPool(m_vkDevice, m_vkRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT)
 {
 	m_window->setKeyCallback(&InputManager::keyCallback);
+	m_window->setCursorPosCallBack(&InputManager::cursorPosCallback);
+	m_window->setMouseButtonCallBack(&InputManager::mouseButtonCallback);
+	m_window->setScrollCallback(&InputManager::scrollCallback);
 }
 
 Application::~Application() 
