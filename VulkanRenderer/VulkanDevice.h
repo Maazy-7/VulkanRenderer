@@ -51,6 +51,7 @@ public:
 	VkInstance getVkInstance() const;
 	VkDevice getDevice() const;
 	VkSurfaceKHR getSurface() const;
+	float getAspect() const;
 	VkQueue getGraphicsQueue() const;
 	VkQueue getPresentQueue() const;
 	VkCommandPool getCommandPool() const;

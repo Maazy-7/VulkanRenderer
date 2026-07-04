@@ -19,6 +19,7 @@ class InputManager
 	static std::unordered_map<int, KeyState> m_keys;
 	static vec2 m_mousePos;
 	static vec2 m_scrollOffsets;
+	static bool mouseScrolled;
 
 	InputManager() = delete;
 
@@ -34,6 +35,6 @@ public:
 	static bool getKey(int key);//returns true if key is in held state which happens when key has been in pressed state for more than 1 frame
 	static vec2 getCursorPos();//returns x and y position of cursor relative to window
 	static void getCursorPos(float& xpos, float& ypos);//sets x and y pos variables to cursor x and y pos
-	static float getScrollOffset();//returns the y offset of the scroll wheel
+	static bool getScrollOffset(float& yoffset);//returns whether scroll wheel was scrolled and sets y offset value
 };
 

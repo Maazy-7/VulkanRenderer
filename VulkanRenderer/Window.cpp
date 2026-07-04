@@ -20,6 +20,8 @@ void Window::innitWindow()
 	m_window = glfwCreateWindow(m_width, m_height, m_name.c_str(), nullptr, nullptr);
 	glfwSetWindowUserPointer(m_window, this);
 	glfwSetFramebufferSizeCallback(m_window, frameBufferResizeCallback);
+	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPos(m_window, 0.0, 0.0);
 }
 
 bool Window::windowShouldClose() const 

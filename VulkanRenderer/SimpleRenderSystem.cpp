@@ -6,7 +6,9 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanSwapCha
 	//m_vulkanDescriptorSetLayout(vulkanDescriptorSetLayout),
 	stagingBuffer(VulkanBuffer(m_vkDevice, vCount, vBuffSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)),
 	vertexBuffer(VulkanBuffer(m_vkDevice, vCount, vBuffSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)),
-	indexBuffer(VulkanBuffer(m_vkDevice, iCount, iBuffSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
+	indexBuffer(VulkanBuffer(m_vkDevice, iCount, iBuffSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)),
+	m_camera(Camera(glm::vec3(0.f, 0.f, 2.f), static_cast<float>(swapChain.getSwapChainExtent().width)
+		/ static_cast<float>(swapChain.getSwapChainExtent().height)))
 {
 	
 	//allocating vertex and index buffers
@@ -29,10 +31,11 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanSwapCha
 	}
 
 	ubo.model = glm::mat4(1.f);//glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	ubo.view = glm::lookAt(glm::vec3(0.0f, 0.f, 2.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapChain.getSwapChainExtent().width) 
-		/ static_cast<float>(swapChain.getSwapChainExtent().height), 0.1f, 10.0f);
+	ubo.view = m_camera.getView();//glm::lookAt(glm::vec3(0.0f, 0.f, 2.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo.proj = m_camera.getProjection();//glm::perspective(glm::radians(45.0f), static_cast<float>(swapChain.getSwapChainExtent().width) 
+		/// static_cast<float>(swapChain.getSwapChainExtent().height), 0.1f, 10.0f);
 	ubo.proj[1][1] *= -1;
+	
 
 	m_vkDescriptorSets.resize(m_vkSwapChain.MAX_FRAMES_IN_FLIGHT);
 }
@@ -44,8 +47,11 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 
 void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float dt)
 {
-	ubo.model = glm::rotate(ubo.model, dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	//ubo.model = glm::translate(ubo.model, glm::vec3(0.f, 0.01f, 0.f));
+	m_camera.update(dt);
+	//ubo.model = glm::rotate(ubo.model, dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = m_camera.getProjection();
+	ubo.proj[1][1] *= -1;
+	ubo.view = m_camera.getView();
 	m_uniformBuffers[m_vkSwapChain.getCurrentFrameIndex()]->writeToBuffer(0, sizeof(UniformBufferObject), &ubo);
 	//m_uniformBuffers[m_vkSwapChain.getCurrentFrameIndex()]->unMap();
 	//m_uniformBuffers[m_vkSwapChain.getCurrentFrameIndex()]->map(0, sizeof(UniformBufferObject));

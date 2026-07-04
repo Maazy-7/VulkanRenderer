@@ -3,6 +3,7 @@
 std::unordered_map<int, KeyState> InputManager::m_keys;
 vec2 InputManager::m_mousePos;
 vec2 InputManager::m_scrollOffsets;
+bool InputManager::mouseScrolled = false;
 
 void InputManager::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -39,6 +40,7 @@ void InputManager::scrollCallback(GLFWwindow* window, double xoffset, double yof
 {
 	m_scrollOffsets.x = static_cast<float>(xoffset);
 	m_scrollOffsets.y = static_cast<float>(yoffset);
+	mouseScrolled = true;
 }
 
 void InputManager::update() 
@@ -83,7 +85,16 @@ void InputManager::getCursorPos(float& xpos, float& ypos)
 	ypos = m_mousePos.y;
 }
 
-float InputManager::getScrollOffset()
+bool InputManager::getScrollOffset(float& yoffset)
 {
-	return m_scrollOffsets.y;
+	if (mouseScrolled) 
+	{
+		yoffset = m_scrollOffsets.y;
+		mouseScrolled = false;
+		return true;
+	}
+	else 
+	{
+		return false;
+	}
 }

@@ -52,6 +52,7 @@ void Camera::processMouse()
 	
 	static bool firstMouse = true;
 	static float prevX, prevY = 0;
+	static float scrollOffset = 0.f;
 	
 	InputManager::getCursorPos(xpos, ypos);
 
@@ -73,17 +74,19 @@ void Camera::processMouse()
 	prevX = xpos;
 	prevY = ypos;
 
-	m_fov -= (float)InputManager::getScrollOffset() * 3.f;
-
-	if (m_fov < 1.f)
+	if (InputManager::getScrollOffset(scrollOffset)) 
 	{
-		m_fov = 1.f;
+		m_fov -= scrollOffset * 3.f;
+		if (m_fov < 1.f)
+		{
+			m_fov = 1.f;
+		}
+		if (m_fov > 120.f)
+		{
+			m_fov = 120.f;
+		}
+		calculateProjection();
 	}
-	if (m_fov > 120.f)
-	{
-		m_fov = 120.f;
-	}
-	calculateProjection();
 }
 
 void Camera::calculateFront() 
@@ -105,7 +108,7 @@ void Camera::calculateFront()
 
 void Camera::calculateProjection() 
 {
-	m_proj = glm::perspective(glm::radians(m_fov), m_aspect, 0.1f, 100.f);
+	m_proj = glm::perspective(glm::radians(m_fov), m_aspect, 0.1f, 10.f);
 }
 
 const glm::mat4& Camera::getProjection() const

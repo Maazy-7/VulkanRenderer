@@ -313,6 +313,7 @@ SwapChainSupportDetails VulkanDevice::querySwapChainSupportDetails() const
 VkInstance VulkanDevice::getVkInstance() const { return m_vkInstance; }
 VkDevice VulkanDevice::getDevice() const { return m_vkDevice; }
 VkSurfaceKHR VulkanDevice::getSurface() const { return m_vkSurfaceKHR; }
+float VulkanDevice::getAspect() const { return m_window.getAspect(); }
 VkQueue VulkanDevice::getGraphicsQueue() const { return m_graphicsQueue; }
 VkQueue VulkanDevice::getPresentQueue() const { return m_presentQueue; }
 VkCommandPool VulkanDevice::getCommandPool() const { return m_vkCommandPool; }

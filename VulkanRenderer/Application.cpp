@@ -66,6 +66,7 @@ void Application::run()
 
 		descriptorWriter.writeBuffer(&descriptorBufferInfo, 0).writeImage(&descriptorImageInfo, 1).build(m_simpleRenderSystem.m_vkDescriptorSets[i]);
 	}
+	//Camera camera(glm::vec3(0.f), m_window->getAspect());
 	//temp
 	while (!m_window->windowShouldClose()) 
 	{

@@ -37,7 +37,7 @@ private:
 	float m_aspect;
 	float m_pitch;
 	float m_yaw;
-	float m_fov = 90.f;
+	float m_fov = 45.f;
 	float m_sens = 0.075f;
 	float m_speed = 3.5;
 	const glm::vec3 initialLookDirection = { 0.f,0.f,-1.f };

@@ -13,6 +13,7 @@
 #include "VulkanSwapChain.h"
 #include "VulkanPipeline.h"
 #include "VulkanBuffer.h"
+#include "Camera.h"
 
 const std::vector<Vertex> vertices = {
 	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
@@ -73,6 +74,7 @@ private:
 	std::vector<VkDescriptorSet> m_vkDescriptorSets;
 	//VulkanDescriptorSetLayout& m_vulkanDescriptorSetLayout;
 	UniformBufferObject ubo;
+	Camera m_camera;
 
 	friend class Application;
 };
