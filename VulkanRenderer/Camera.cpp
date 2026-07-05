@@ -8,8 +8,9 @@ Camera::Camera(glm::vec3 pos, float aspect, float near, float far, float pitch, 
 	calculateProjection();
 }
 
-void Camera::update(float dt) 
+void Camera::update(float dt, float aspect) 
 {
+	m_aspect = aspect;
 	processMouse();
 
 	float prevY = m_position.y;

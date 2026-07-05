@@ -3,8 +3,7 @@
 SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer)
 	:m_vkDevice(device),
 	m_vulkanRenderer(renderer),
-	m_camera(Camera(glm::vec3(0.f, 0.f, 2.f), static_cast<float>(m_vulkanRenderer.getSwapChain().getSwapChainExtent().width)
-		/ static_cast<float>(m_vulkanRenderer.getSwapChain().getSwapChainExtent().height), 0.1f, 100.f)),
+	m_camera(Camera(glm::vec3(0.f, 0.f, 2.f), m_vulkanRenderer.getSwapChain().getSwapChainAspect(), 0.1f, 100.f)),
 	m_model(std::make_unique<Model>(m_vkDevice, "Assets/viking_room.obj"))
 {
 	//allocating uniform buffers
@@ -15,10 +14,9 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 		m_uniformBuffers[i]->map(0, sizeof(UniformBufferObject));
 	}
 
-	ubo.model = glm::mat4(1.f);//glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	ubo.view = m_camera.getView();//glm::lookAt(glm::vec3(0.0f, 0.f, 2.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.proj = m_camera.getProjection();//glm::perspective(glm::radians(45.0f), static_cast<float>(swapChain.getSwapChainExtent().width) 
-		/// static_cast<float>(swapChain.getSwapChainExtent().height), 0.1f, 10.0f);
+	ubo.model = glm::mat4(1.f);
+	ubo.view = m_camera.getView();
+	ubo.proj = m_camera.getProjection();
 	ubo.proj[1][1] *= -1;
 	
 	m_vkDescriptorSets.resize(m_vulkanRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT);
@@ -31,7 +29,7 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 
 void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float dt)
 {
-	m_camera.update(dt);
+	m_camera.update(dt, m_vulkanRenderer.getSwapChain().getSwapChainAspect());
 	//ubo.model = glm::rotate(ubo.model, dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = m_camera.getProjection();
 	ubo.proj[1][1] *= -1;

@@ -30,6 +30,7 @@ public:
 	VkImage getSwapChainImage(int index) const;
 	VkImage getSwapChainDepthBuffer() const;
 	VkFormat getSwapChainFormat() const;
+	float getSwapChainAspect() const;
 
 	VkResult acquireNextImage(uint32_t* imageIndex);
 	VkResult submitCommandBuffers(const VkCommandBuffer* commandBuffers, uint32_t* imageIndex);

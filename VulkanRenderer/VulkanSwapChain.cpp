@@ -258,6 +258,11 @@ VkFormat VulkanSwapChain::getSwapChainFormat() const
 	return m_swapChainFormat;
 }
 
+float VulkanSwapChain::getSwapChainAspect() const
+{
+	return static_cast<float>(m_extent.width) / static_cast<float>(m_extent.height);
+}
+
 VkResult VulkanSwapChain::acquireNextImage(uint32_t* imageIndex) 
 {
 	vkWaitForFences(m_vkDevice.getDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());

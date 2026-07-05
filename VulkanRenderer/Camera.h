@@ -15,7 +15,7 @@ public:
 	const glm::mat4& getProjection() const;
 	const glm::mat4& getView() const;
 
-	void update(float dt);
+	void update(float dt, float aspect);
 
 	glm::vec3 getPos() const { return m_position; }
 	glm::vec3 getFront() const { return m_front; }
