@@ -18,7 +18,7 @@ void VulkanRenderer::createCommandBuffer()
 	vkCmdBufAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	vkCmdBufAllocateInfo.commandPool = m_vkDevice.getCommandPool();
 	vkCmdBufAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	vkCmdBufAllocateInfo.commandBufferCount = (uint32_t) m_vkCommandBuffers.size();
+	vkCmdBufAllocateInfo.commandBufferCount = static_cast<uint32_t>(m_vkCommandBuffers.size());
 
 	if (vkAllocateCommandBuffers(m_vkDevice.getDevice(), &vkCmdBufAllocateInfo, m_vkCommandBuffers.data()) != VK_SUCCESS) 
 	{

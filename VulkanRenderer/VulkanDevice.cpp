@@ -253,7 +253,7 @@ void VulkanDevice::createDevice()
 
 	VkDeviceCreateInfo devCreateInfo = {};
 	devCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	devCreateInfo.queueCreateInfoCount = (uint32_t)qCreateInfo.size();
+	devCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(qCreateInfo.size());
 	devCreateInfo.pQueueCreateInfos = qCreateInfo.data();
 	devCreateInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
 	devCreateInfo.ppEnabledExtensionNames = m_deviceExtensions.data();

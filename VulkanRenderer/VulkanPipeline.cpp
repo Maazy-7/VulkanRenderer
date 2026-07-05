@@ -50,7 +50,7 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 	vertInputStateCreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertInputStateCreateinfo.vertexBindingDescriptionCount = 1;
 	vertInputStateCreateinfo.pVertexBindingDescriptions = &bindingDescription;
-	vertInputStateCreateinfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescriptions.size();
+	vertInputStateCreateinfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 	vertInputStateCreateinfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo = {};
@@ -201,7 +201,7 @@ std::vector<char> VulkanPipeline::readFromFile(const std::string& filename)
 	{
 		throw std::runtime_error("Failed to open shader file");
 	}
-	size_t fileSize = (uint32_t)file.tellg();
+	size_t fileSize = static_cast<uint32_t>(file.tellg());
 	std::vector<char> buffer(fileSize);
 	file.seekg(0);
 	file.read(buffer.data(), fileSize);

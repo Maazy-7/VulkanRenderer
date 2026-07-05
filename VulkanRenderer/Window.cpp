@@ -46,7 +46,7 @@ glm::vec2 Window::getDimensions() const
 
 float Window::getAspect() const
 {
-	return (float)m_width / (float)m_height;
+	return static_cast<float>(m_width) / static_cast<float>(m_height);
 }
 
 float Window::getTime() const 
