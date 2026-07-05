@@ -11,10 +11,11 @@ VulkanSwapChain::VulkanSwapChain(VulkanDevice& device)
 }
 
 VulkanSwapChain::VulkanSwapChain(VulkanDevice& device, std::shared_ptr<VulkanSwapChain> previousSwapChain)
-	: m_vkDevice(device), m_oldSwapChain(previousSwapChain)
+	: m_vkDevice(device), m_oldSwapChain(previousSwapChain), m_currentFrame(0)
 {
 	createSwapChain();
 	createImageViews();
+	createDepthBuffer();
 	createSyncObjects();
 	m_oldSwapChain = nullptr;
 }

@@ -1,7 +1,7 @@
 #include "Camera.h"
 
-Camera::Camera(glm::vec3 pos, float aspect, float pitch, float yaw, glm::vec3 up)
-	: m_position(pos), m_aspect(aspect), m_pitch(pitch), m_yaw(yaw), m_up(up), 
+Camera::Camera(glm::vec3 pos, float aspect, float near, float far, float pitch, float yaw, glm::vec3 up)
+	: m_position(pos), m_aspect(aspect), m_pitch(pitch), m_yaw(yaw), m_up(up), m_near(near), m_far(far),
 	m_front(initialLookDirection), m_right(glm::normalize(glm::cross(m_front,m_up)))
 {
 	calculateFront();
@@ -108,7 +108,7 @@ void Camera::calculateFront()
 
 void Camera::calculateProjection() 
 {
-	m_proj = glm::perspective(glm::radians(m_fov), m_aspect, 0.1f, 10.f);
+	m_proj = glm::perspective(glm::radians(m_fov), m_aspect, m_near, m_far);
 }
 
 const glm::mat4& Camera::getProjection() const

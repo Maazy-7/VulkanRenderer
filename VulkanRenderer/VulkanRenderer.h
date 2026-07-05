@@ -19,8 +19,8 @@ public:
 	VulkanRenderer(Window& window, VulkanDevice& device);
 	~VulkanRenderer();
 
-	VkCommandBuffer getCurrentCommandBuffer();
-	const VulkanSwapChain& getSwapChain();
+	VkCommandBuffer getCurrentCommandBuffer() const;
+	const VulkanSwapChain& getSwapChain() const;
 
 	VkCommandBuffer beginFrame();
 	void endFrame();

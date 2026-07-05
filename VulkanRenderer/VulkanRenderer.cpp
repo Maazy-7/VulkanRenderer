@@ -48,12 +48,12 @@ void VulkanRenderer::recreateSwapChain()
 	}
 }
 
-VkCommandBuffer VulkanRenderer::getCurrentCommandBuffer() 
+VkCommandBuffer VulkanRenderer::getCurrentCommandBuffer() const
 {
 	return m_vkCommandBuffers[m_currentFrameIndex];
 }
 
-const VulkanSwapChain& VulkanRenderer::getSwapChain() 
+const VulkanSwapChain& VulkanRenderer::getSwapChain() const
 {
 	return *m_vkSwapChain.get();
 }
