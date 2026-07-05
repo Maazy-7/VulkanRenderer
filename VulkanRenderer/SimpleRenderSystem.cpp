@@ -8,7 +8,8 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanSwapCha
 	vertexBuffer(VulkanBuffer(m_vkDevice, vCount, vBuffSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)),
 	indexBuffer(VulkanBuffer(m_vkDevice, iCount, iBuffSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)),
 	m_camera(Camera(glm::vec3(0.f, 0.f, 2.f), static_cast<float>(swapChain.getSwapChainExtent().width)
-		/ static_cast<float>(swapChain.getSwapChainExtent().height)))
+		/ static_cast<float>(swapChain.getSwapChainExtent().height))),
+	m_model(std::make_unique<Model>(m_vkDevice, "Assets/viking_room.obj"))
 {
 	
 	//allocating vertex and index buffers
@@ -38,6 +39,8 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanSwapCha
 	
 
 	m_vkDescriptorSets.resize(m_vkSwapChain.MAX_FRAMES_IN_FLIGHT);
+
+	
 }
 
 void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescriptorSetLayout) 
@@ -57,11 +60,12 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 	//m_uniformBuffers[m_vkSwapChain.getCurrentFrameIndex()]->map(0, sizeof(UniformBufferObject));
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipeline());
-	vertexBuffer.bindVertexBuffer(commandBuffer);
-	indexBuffer.bindIndexBuffer(commandBuffer);
+	//vertexBuffer.bindVertexBuffer(commandBuffer);
+	//indexBuffer.bindIndexBuffer(commandBuffer);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipelineLayout(), 0, 1, 
 		&m_vkDescriptorSets[m_vkSwapChain.getCurrentFrameIndex()], 0, nullptr);
-	vkCmdDrawIndexed(commandBuffer, indexBuffer.getBufferElementCount(), 1, 0, 0, 0);
+	//vkCmdDrawIndexed(commandBuffer, indexBuffer.getBufferElementCount(), 1, 0, 0, 0);
+	m_model->draw(commandBuffer);
 }
 
 std::vector<VkDescriptorSet>& SimpleRenderSystem::getDescriptorSets() 

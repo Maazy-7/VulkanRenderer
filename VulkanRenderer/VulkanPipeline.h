@@ -9,6 +9,7 @@
 #include "VulkanBuffer.h"
 #include "VulkanImage.h"
 #include "VulkanDescriptor.h"
+#include "Model.h"
 
 struct PipelineConfigurationInfo
 {

@@ -27,7 +27,7 @@ void Application::run()
 	
 	//allocating texture and staging buffer for texture
 	int width, height, channels;
-	stbi_uc* pixels = stbi_load("Assets/statue.jpg", &width, &height, &channels, STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load("Assets/viking_room.png", &width, &height, &channels, STBI_rgb_alpha);
 	if (!pixels) { throw std::runtime_error("failed to load texture image"); }
 	VkDeviceSize imageSize = static_cast<uint64_t>(width * height * 4);
 

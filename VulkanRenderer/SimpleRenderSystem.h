@@ -14,6 +14,7 @@
 #include "VulkanPipeline.h"
 #include "VulkanBuffer.h"
 #include "Camera.h"
+#include "Model.h"
 
 const std::vector<Vertex> vertices = {
 	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
@@ -75,6 +76,7 @@ private:
 	//VulkanDescriptorSetLayout& m_vulkanDescriptorSetLayout;
 	UniformBufferObject ubo;
 	Camera m_camera;
+	std::unique_ptr<Model> m_model;
 
 	friend class Application;
 };
