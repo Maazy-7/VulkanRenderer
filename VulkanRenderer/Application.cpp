@@ -30,6 +30,7 @@ void Application::run()
 	stbi_uc* pixels = stbi_load("Assets/viking_room.png", &width, &height, &channels, STBI_rgb_alpha);
 	if (!pixels) { throw std::runtime_error("failed to load texture image"); }
 	VkDeviceSize imageSize = static_cast<uint64_t>(width * height * 4);
+	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width,height)))) + 1;
 
 	VulkanBuffer stagingBuffer(m_vkDevice, 1, imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -37,13 +38,14 @@ void Application::run()
 	stagingBuffer.writeToBuffer(0, imageSize, pixels);
 	stbi_image_free(pixels);
 
-	VulkanImage textureImg(m_vkDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VulkanImage textureImg(m_vkDevice, static_cast<uint32_t>(width), static_cast<uint32_t>(height), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mipLevels);
 
 	textureImg.transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	textureImg.copyBufferToImage(stagingBuffer, width, height);
-	textureImg.transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	
+	//textureImg.transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	textureImg.generateMipMaps(static_cast<uint32_t>(width), static_cast<uint32_t>(height), mipLevels);
+
 	//creating descriptor layout and sets
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
 	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1);

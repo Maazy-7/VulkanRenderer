@@ -1,8 +1,8 @@
 #include "VulkanImage.h"
 
 VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t height, VkFormat format, 
-	VkImageTiling imgTilling, VkImageUsageFlags imgUsage, VkMemoryPropertyFlags memoryPropertyFlags)
-	:m_vulkanDevice(vulkanDevice)
+	VkImageTiling imgTilling, VkImageUsageFlags imgUsage, VkMemoryPropertyFlags memoryPropertyFlags, uint32_t mipLevels)
+	:m_vulkanDevice(vulkanDevice), m_vkFormat(format)
 {
 	//creating vk image
 	VkImageCreateInfo imgCreateInfo{};
@@ -11,7 +11,7 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 	imgCreateInfo.extent.width = width;
 	imgCreateInfo.extent.height = height;
 	imgCreateInfo.extent.depth = 1;
-	imgCreateInfo.mipLevels = 1;
+	imgCreateInfo.mipLevels = mipLevels;
 	imgCreateInfo.arrayLayers = 1;
 	imgCreateInfo.format = format;
 	imgCreateInfo.tiling = imgTilling;
@@ -49,7 +49,7 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 	imgViewCreateInfo.format = format;
 	imgViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	imgViewCreateInfo.subresourceRange.baseMipLevel = 0;
-	imgViewCreateInfo.subresourceRange.levelCount = 1;
+	imgViewCreateInfo.subresourceRange.levelCount = mipLevels;
 	imgViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 	imgViewCreateInfo.subresourceRange.layerCount = 1;
 
@@ -75,7 +75,7 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 	samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	samplerCreateInfo.mipLodBias = 0.f;
 	samplerCreateInfo.minLod = 0.f;
-	samplerCreateInfo.maxLod = 0.f;
+	samplerCreateInfo.maxLod = VK_LOD_CLAMP_NONE;
 
 	if (vkCreateSampler(m_vulkanDevice.getDevice(), &samplerCreateInfo, nullptr, &m_vkSampler) != VK_SUCCESS) 
 	{
@@ -83,8 +83,9 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 	}
 }
 
-VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling imgTilling, VkImageUsageFlags imgUsage, VkMemoryPropertyFlags memoryPropertyFlags, VkImageAspectFlags imgAspectFlags, bool useSampler)
-	:m_vulkanDevice(vulkanDevice)
+VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling imgTilling, 
+	VkImageUsageFlags imgUsage, VkMemoryPropertyFlags memoryPropertyFlags, VkImageAspectFlagBits imgAspectFlags, bool useSampler)
+	:m_vulkanDevice(vulkanDevice), m_vkFormat(format)
 {
 	//ideally for making a non sampling image ie swapchain images or depth buffer
 	//creating vk image
@@ -130,7 +131,7 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 	imgViewCreateInfo.image = m_vkImage;
 	imgViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	imgViewCreateInfo.format = format;
-	imgViewCreateInfo.subresourceRange.aspectMask = imgAspectFlags;
+	imgViewCreateInfo.subresourceRange.aspectMask = static_cast<VkImageAspectFlags>(imgAspectFlags);
 	imgViewCreateInfo.subresourceRange.baseMipLevel = 0;
 	imgViewCreateInfo.subresourceRange.levelCount = 1;
 	imgViewCreateInfo.subresourceRange.baseArrayLayer = 0;
@@ -179,7 +180,7 @@ VulkanImage::~VulkanImage()
 	vkFreeMemory(m_vulkanDevice.getDevice(), m_vkDeviceMemory, nullptr);
 }
 
-void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels)
 {
 	VkCommandBuffer commandBuffer = m_vulkanDevice.beginSingleTimeCommands();
 
@@ -190,9 +191,8 @@ void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout
 	imgMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	imgMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	imgMemoryBarrier.image = m_vkImage;
-	//imgMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	imgMemoryBarrier.subresourceRange.baseMipLevel = 0;
-	imgMemoryBarrier.subresourceRange.levelCount = 1;
+	imgMemoryBarrier.subresourceRange.levelCount = mipLevels;
 	imgMemoryBarrier.subresourceRange.baseArrayLayer = 0;
 	imgMemoryBarrier.subresourceRange.layerCount = 1;
 
@@ -260,6 +260,102 @@ void VulkanImage::copyBufferToImage(VulkanBuffer& srcBuffer, uint32_t width, uin
 	imgCopyRegion.imageExtent = { width, height, 1 };
 
 	vkCmdCopyBufferToImage(commandBuffer, srcBuffer.getBuffer(), m_vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imgCopyRegion);
+
+	m_vulkanDevice.endSingleTimeCommands(commandBuffer);
+}
+
+void VulkanImage::generateMipMaps(int width, int height, uint32_t mipLevels)
+{
+	//checking if image supports linear blitting
+	m_vulkanDevice.findSupportedFormat({m_vkFormat}, VK_IMAGE_TILING_LINEAR, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT, 
+		"texture image format does not support linear blitting");
+
+	VkCommandBuffer commandBuffer = m_vulkanDevice.beginSingleTimeCommands();
+	VkImageMemoryBarrier imgMemoryBarrier{};
+	imgMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	imgMemoryBarrier.image = m_vkImage;
+	imgMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imgMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imgMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;//fine because depth maps ideally wouldn't need mipmaps
+	imgMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+	imgMemoryBarrier.subresourceRange.layerCount = 1;
+	imgMemoryBarrier.subresourceRange.levelCount = 1;
+
+	int mipWidth = width;
+	int mipHeight = height;
+
+	for (uint32_t i = 1; i < mipLevels; i++) 
+	{
+		imgMemoryBarrier.subresourceRange.baseMipLevel = i;
+		imgMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imgMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		imgMemoryBarrier.srcAccessMask = 0;
+		imgMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer,
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+			0, nullptr,
+			0, nullptr,
+			1, &imgMemoryBarrier);
+
+		imgMemoryBarrier.subresourceRange.baseMipLevel = i - 1;
+		imgMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		imgMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		imgMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imgMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer,
+			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+			0, nullptr,
+			0, nullptr,
+			1, &imgMemoryBarrier);
+
+		VkImageBlit imgBlit{};
+		imgBlit.srcOffsets[0] = { 0, 0, 0 };
+		imgBlit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+		imgBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imgBlit.srcSubresource.mipLevel = i - 1;
+		imgBlit.srcSubresource.baseArrayLayer = 0;
+		imgBlit.srcSubresource.layerCount = 1;
+		imgBlit.dstOffsets[0] = { 0, 0, 0 };
+		imgBlit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+		imgBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imgBlit.dstSubresource.mipLevel = i;
+		imgBlit.dstSubresource.baseArrayLayer = 0;
+		imgBlit.dstSubresource.layerCount = 1;
+
+		vkCmdBlitImage(commandBuffer,
+			m_vkImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			m_vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1, &imgBlit,
+			VK_FILTER_LINEAR);
+
+		imgMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		imgMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imgMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		imgMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer,
+			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+			0, nullptr,
+			0, nullptr,
+			1, &imgMemoryBarrier);
+
+		if (mipWidth > 1) { mipWidth /= 2; }
+		if (mipHeight > 1) { mipHeight /= 2; }
+	}
+
+	imgMemoryBarrier.subresourceRange.baseMipLevel = mipLevels - 1;
+	imgMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imgMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imgMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	imgMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	vkCmdPipelineBarrier(commandBuffer,
+		VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+		0, nullptr,
+		0, nullptr,
+		1, &imgMemoryBarrier);
 
 	m_vulkanDevice.endSingleTimeCommands(commandBuffer);
 }

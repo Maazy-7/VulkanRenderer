@@ -140,7 +140,8 @@ QueueFamilyIndices VulkanDevice::findQueueIndices()
 	return findQueueIndices(m_vkPhysicalDevice);
 }
 
-VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling imgTiling, VkFormatFeatureFlags formatFeatureFlags) const
+VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling imgTiling, VkFormatFeatureFlags formatFeatureFlags,
+	std::string errorMsg) const
 {
 	for (VkFormat format : candidates) 
 	{
@@ -157,7 +158,7 @@ VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidat
 		}
 	}
 
-	throw std::runtime_error("failed to find supported format!");
+	throw std::runtime_error(errorMsg);
 }
 
 VkFormat VulkanDevice::findDepthFormat() const
