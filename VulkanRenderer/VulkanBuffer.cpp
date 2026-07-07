@@ -89,9 +89,18 @@ void VulkanBuffer::copyBuffer(VulkanBuffer& srcBuffer, VulkanBuffer& dstBuffer, 
 {
 	VkCommandBuffer commandBuffer = srcBuffer.m_vkDevice.beginSingleTimeCommands();
 
-	VkBufferCopy copyRegion{};
+	VkBufferCopy2 copyRegion{};
+	copyRegion.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2;
 	copyRegion.size = size;
-	vkCmdCopyBuffer(commandBuffer, srcBuffer.getBuffer(), dstBuffer.getBuffer(), 1, &copyRegion);
+
+	VkCopyBufferInfo2 copyBufferInfo2{};
+	copyBufferInfo2.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2;
+	copyBufferInfo2.srcBuffer = srcBuffer.getBuffer();
+	copyBufferInfo2.dstBuffer = dstBuffer.getBuffer();
+	copyBufferInfo2.regionCount = 1;
+	copyBufferInfo2.pRegions = &copyRegion;
+
+	vkCmdCopyBuffer2(commandBuffer, &copyBufferInfo2);
 
 	srcBuffer.m_vkDevice.endSingleTimeCommands(commandBuffer);
 }
