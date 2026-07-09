@@ -148,8 +148,8 @@ void VulkanPipeline::createGraphicsPipeline(const std::string& vertexPath, const
 	VkPipelineRenderingCreateInfo pipelineRenderingCreateInfo = {};
 	pipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
 	pipelineRenderingCreateInfo.colorAttachmentCount = 1;
-	VkFormat colorFormat = swapChain.getSwapChainFormat();
-	pipelineRenderingCreateInfo.pColorAttachmentFormats = &colorFormat;
+	std::vector<VkFormat> colorFormat = { swapChain.getSwapChainFormat() };
+	pipelineRenderingCreateInfo.pColorAttachmentFormats = colorFormat.data();
 	pipelineRenderingCreateInfo.depthAttachmentFormat = m_vkDevice.findDepthFormat();
 	pipelineRenderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
 
@@ -212,6 +212,55 @@ std::vector<char> VulkanPipeline::readFromFile(const std::string& filename)
 VkPipeline VulkanPipeline::getPipeline() const 
 {
 	return m_vkPipeline;
+}
+
+VulkanPipeline& VulkanPipeline::vertexInputState(uint32_t vertexBindingDescriptionCount, VkVertexInputBindingDescription* pVertexInputBindingDescriptions, 
+	uint32_t vertexAttributeDescriptionCount, VkVertexInputAttributeDescription* pVertexAttributeDescriptions, const void* pNext)
+{
+	return *this;
+}
+
+VulkanPipeline& VulkanPipeline::inputAssemblyState(VkPrimitiveTopology topology, VkBool32 primitiveRestartEnable, const void* pNext)
+{
+	return *this;
+}
+
+VulkanPipeline& VulkanPipeline::rasterizationState(VkBool32 depthClampEnable, VkBool32 rasterizeDiscardEnable, VkPolygonMode polygonMode, float lineWidth, 
+	VkCullModeFlags cullMode, VkFrontFace frontFace, VkBool32 depthBiasEnable, float depthBiasConstFactor, float depthBiasClamp, float depthBiasSlopeFactor, const void* pNext)
+{
+	return *this;
+}
+
+VulkanPipeline& VulkanPipeline::viewportState(uint32_t viewportCount, VkViewport* pViewport, uint32_t scissorCount, VkRect2D* pScissor)
+{
+	return *this;
+}
+
+VulkanPipeline& VulkanPipeline::multiSampleState(VkBool32 sampleShadingEnable, VkSampleCountFlagBits rasterizationSamples, float minSampleShading, 
+	VkSampleMask* pSampleMask, VkBool32 alphaToConvergeEnable, VkBool32 alphaToOneEnable, const void*)
+{
+	return *this;
+}
+
+VulkanPipeline& VulkanPipeline::colorBlendState(VkBool32 logicOpEnable, VkLogicOp logicOp, uint32_t attachmentCount, 
+	const VkPipelineColorBlendAttachmentState* pAttachments, float* blendConstants, const void* pNext)
+{
+	return *this;
+}
+
+VulkanPipeline& VulkanPipeline::depthStencilState(VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp compareOp, 
+	VkBool32 depthBoundsTestEnable, float minDepthBounds, float maxDepthBounds, VkBool32 stencilTestEnable, const void* pNext)
+{
+	return *this;
+}
+
+VulkanPipeline& VulkanPipeline::dynamicState(uint32_t dynamicStateCount, VkDynamicState* pDynamicStates, const void* pNext)
+{
+	return *this;
+}
+
+void VulkanPipeline::build()
+{
 }
 
 VkPipelineLayout VulkanPipeline::getPipelineLayout() const 
