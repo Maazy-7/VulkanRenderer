@@ -24,7 +24,39 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 
 void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescriptorSetLayout) 
 {
-	m_vkPipeline = std::make_unique<VulkanPipeline>(m_vkDevice, "Shaders/shader.vert.spv", "Shaders/shader.frag.spv", m_vulkanRenderer.getSwapChain(), vulkanDescriptorSetLayout);
+	//variables and structs for pipeline create info structs
+	std::vector<std::pair<VkShaderStageFlagBits, const std::string>> shaderStages = {
+		{VK_SHADER_STAGE_VERTEX_BIT, "Shaders/shader.vert.spv"}, {VK_SHADER_STAGE_FRAGMENT_BIT, "Shaders/shader.frag.spv"} };
+	VkVertexInputBindingDescription bindingDescription = Vertex::getBindingDescription();
+	std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = Vertex::getAttributeDescriptions();
+	float blendConstants[4] = {0.f, 0.f, 0.f, 0.f};
+	VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
+	colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendAttachmentState.blendEnable = VK_FALSE; colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; colorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; colorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
+	VkDynamicState dynamicStates[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+	VkFormat colorAttachments[1] = { m_vulkanRenderer.getSwapChain().getSwapChainFormat() };
+
+
+	m_vkPipeline = std::make_unique<VulkanPipeline>(m_vkDevice, shaderStages, m_vulkanRenderer.getSwapChain());
+	
+	//pipeline layout
+	const VkDescriptorSetLayout* setLayout = &vulkanDescriptorSetLayout.getDescriptorSetLayout();
+	m_vkPipeline->createPipelineLayout(1, const_cast<VkDescriptorSetLayout*>(setLayout), 0, nullptr);
+
+	//pipeline create info structs
+	m_vkPipeline->vertexInputState(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), Vertex::getAttributeDescriptions().data())
+		.inputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE)
+		.viewportState(1, VK_NULL_HANDLE, 1, VK_NULL_HANDLE)
+		.rasterizationState(VK_FALSE, VK_FALSE, VK_POLYGON_MODE_FILL, 1.f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, 0.f, 0.f, 0.f)
+		.multiSampleState(VK_FALSE, VK_SAMPLE_COUNT_1_BIT, 1.f, VK_NULL_HANDLE, VK_FALSE, VK_FALSE)
+		.colorBlendState(VK_FALSE, VK_LOGIC_OP_COPY, 1, &colorBlendAttachmentState, blendConstants)
+		.depthStencilState(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_FALSE, 0.f, 1.f, VK_FALSE)
+		.dynamicState(2, dynamicStates)
+		.pipelineRendering(1, colorAttachments, m_vkDevice.findDepthFormat(), VK_FORMAT_UNDEFINED)
+		.build();
 }
 
 void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float dt)

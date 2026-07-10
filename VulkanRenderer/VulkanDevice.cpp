@@ -21,6 +21,10 @@ VulkanDevice::~VulkanDevice()
 			func(m_vkInstance, m_vkDebugMessenger, nullptr);
 		}
 	}
+	for (auto& pair : m_shaderCache) 
+	{
+		vkDestroyShaderModule(m_vkDevice, pair.second, nullptr);
+	}
 	vkDestroyCommandPool(m_vkDevice, m_vkCommandPool, nullptr);
 	vkDestroyDevice(m_vkDevice, nullptr);
 }
@@ -372,4 +376,23 @@ void VulkanDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer)
 	vkQueueWaitIdle(m_graphicsQueue);
 
 	vkFreeCommandBuffers(m_vkDevice, m_vkCommandPool, 1, &commandBuffer);
+}
+
+bool VulkanDevice::getShader(const std::string& shaderPath, VkShaderModule& shaderOut)
+{
+	auto it = m_shaderCache.find(shaderPath);
+	if (it != m_shaderCache.end()) 
+	{
+		shaderOut = it->second;
+		return true;
+	}
+	else 
+	{
+		return false;
+	}
+}
+
+void VulkanDevice::addShader(const std::string& shaderPath, VkShaderModule shader)
+{
+	m_shaderCache[shaderPath] = shader;
 }

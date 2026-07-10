@@ -59,6 +59,8 @@ public:
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	[[nodiscard]] VkCommandBuffer beginSingleTimeCommands();
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+	bool getShader(const std::string& shaderPath, VkShaderModule& shaderOut);
+	void addShader(const std::string& shaderPath, VkShaderModule shader);
 
 private:
 
@@ -88,5 +90,6 @@ private:
 	VkCommandPool m_vkCommandPool;
 
 	std::vector<const char*> m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	std::unordered_map<std::string, VkShaderModule> m_shaderCache;
 };
 
