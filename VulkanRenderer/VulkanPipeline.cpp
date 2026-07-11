@@ -1,7 +1,7 @@
 #include "VulkanPipeline.h"
 
 VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths, const VulkanSwapChain& swapChain)
-	:m_vkDevice(device)
+	:m_vkDevice(device), m_vkPipeline(VK_NULL_HANDLE), m_vkPipelineLayout(VK_NULL_HANDLE)
 {
 	//createGraphicsPipeline(vertexPath, fragmentPath, swapChain);
 	m_vkgraphicsPipelineCreateInfo = new VkGraphicsPipelineCreateInfo{};
@@ -40,7 +40,15 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkSha
 
 VulkanPipeline::~VulkanPipeline() 
 {
+	if (!m_vkPipelineLayout) 
+	{
+		throw std::runtime_error("vulkan pipeline layout object was never created");
+	}
 	vkDestroyPipelineLayout(m_vkDevice.getDevice(), m_vkPipelineLayout, nullptr);
+	if (!m_vkPipeline)
+	{
+		throw std::runtime_error("vulkan pipeline object was never created");
+	}
 	vkDestroyPipeline(m_vkDevice.getDevice(), m_vkPipeline, nullptr);
 }
 
@@ -230,6 +238,10 @@ void VulkanPipeline::createPipelineLayout(uint32_t setLayoutCount, VkDescriptorS
 
 void VulkanPipeline::build()
 {
+	if (!m_vkPipelineLayout) 
+	{
+		throw std::runtime_error("pipeline layout was not created");
+	}
 	m_vkgraphicsPipelineCreateInfo->layout = m_vkPipelineLayout;
 	m_vkgraphicsPipelineCreateInfo->basePipelineHandle = VK_NULL_HANDLE;
 	m_vkgraphicsPipelineCreateInfo->basePipelineIndex = -1;
@@ -248,28 +260,10 @@ void VulkanPipeline::build()
 	delete m_vkgraphicsPipelineCreateInfo->pDepthStencilState;
 	delete m_vkgraphicsPipelineCreateInfo->pColorBlendState;
 	delete m_vkgraphicsPipelineCreateInfo->pDynamicState;
-	delete m_vkgraphicsPipelineCreateInfo->pNext;
+	delete static_cast<const VkPipelineRenderingCreateInfo*>(m_vkgraphicsPipelineCreateInfo->pNext);
 
 	//and finally deleting the graphics pipeline create info struct
 	delete m_vkgraphicsPipelineCreateInfo;
-	
-	/*graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	graphicsPipelineCreateInfo.stageCount = 2;
-	graphicsPipelineCreateInfo.pStages = shaderStages;
-	graphicsPipelineCreateInfo.pVertexInputState = &vertInputStateCreateinfo;
-	graphicsPipelineCreateInfo.pInputAssemblyState = &inputAssemblyStateCreateInfo;
-	graphicsPipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
-	graphicsPipelineCreateInfo.pViewportState = &viewPortStateCreateInfo;
-	graphicsPipelineCreateInfo.pMultisampleState = &multiSampleStateCreateInfo;
-	graphicsPipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
-	graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
-	graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
-	graphicsPipelineCreateInfo.layout = m_vkPipelineLayout;
-	graphicsPipelineCreateInfo.pNext = &pipelineRenderingCreateInfo;
-	graphicsPipelineCreateInfo.subpass = 0;
-	graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
-	graphicsPipelineCreateInfo.basePipelineIndex = -1;*/
-
 }
 
 VkPipelineLayout VulkanPipeline::getPipelineLayout() const 
