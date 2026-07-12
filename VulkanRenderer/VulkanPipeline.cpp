@@ -86,6 +86,11 @@ VkPipeline VulkanPipeline::getPipeline() const
 	return m_vkPipeline;
 }
 
+void VulkanPipeline::bindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint) const
+{
+	vkCmdBindPipeline(commandBuffer, pipelineBindPoint, m_vkPipeline);
+}
+
 VulkanPipeline& VulkanPipeline::vertexInputState(uint32_t vertexBindingDescriptionCount, VkVertexInputBindingDescription* pVertexBindingDescriptions, 
 	uint32_t vertexAttributeDescriptionCount, VkVertexInputAttributeDescription* pVertexAttributeDescriptions, const void* pNext)
 {

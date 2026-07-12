@@ -68,7 +68,7 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 	ubo.view = m_camera.getView();
 	m_uniformBuffers[m_vulkanRenderer.getSwapChain().getCurrentFrameIndex()]->writeToBuffer(0, sizeof(UniformBufferObject), &ubo);
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipeline());
+	m_vkPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipelineLayout(), 0, 1, 
 		&m_vkDescriptorSets[m_vulkanRenderer.getSwapChain().getCurrentFrameIndex()], 0, nullptr);
 	m_model->draw(commandBuffer);

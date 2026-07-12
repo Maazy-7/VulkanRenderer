@@ -33,6 +33,8 @@ public:
 
 	VkPipeline getPipeline() const;
 
+	void bindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint) const;
+
 	VulkanPipeline& vertexInputState(uint32_t vertexBindingDescriptionCount, VkVertexInputBindingDescription* pVertexBindingDescriptions, 
 		uint32_t vertexAttributeDescriptionCount, VkVertexInputAttributeDescription* pVertexAttributeDescriptions, const void* pNext = nullptr);
 	VulkanPipeline& inputAssemblyState(VkPrimitiveTopology topology, VkBool32 primitiveRestartEnable, const void* pNext = nullptr);
