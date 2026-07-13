@@ -121,3 +121,8 @@ const glm::mat4& Camera::getView() const
 {
 	return m_view;
 }
+
+CamMatrices Camera::getCameraMatrices() const
+{
+	return { m_view, m_proj };
+}

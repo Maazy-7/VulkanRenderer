@@ -7,6 +7,12 @@
 #include "InputManager.h"
 #include "util.h"
 
+struct CamMatrices
+{
+	alignas (16) glm::mat4 view;
+	alignas (16) glm::mat4 proj;
+};
+
 class Camera 
 {	
 public:
@@ -14,6 +20,7 @@ public:
 
 	const glm::mat4& getProjection() const;
 	const glm::mat4& getView() const;
+	CamMatrices getCameraMatrices() const;
 
 	void update(float dt, float aspect);
 

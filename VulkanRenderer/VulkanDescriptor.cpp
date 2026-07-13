@@ -40,23 +40,25 @@ const VkDescriptorSetLayout& VulkanDescriptorSetLayout::getDescriptorSetLayout()
 	return m_vkDescriptorSetLayout;
 }
 
-VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, uint32_t descriptorCount)
-	:m_vkDevice(device), m_descriptorCount(descriptorCount)
+VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, std::unordered_map<uint32_t, VkDescriptorType> descriptorTypeAndCount)
+	:m_vkDevice(device)
 {
-	//temp, need to have way of properly determining pool sizes
-	VkDescriptorPoolSize descriptorPoolSizes[2];
-	descriptorPoolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorPoolSizes[0].descriptorCount = descriptorCount;
-	descriptorPoolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorPoolSizes[1].descriptorCount = descriptorCount;
+	std::vector<VkDescriptorPoolSize> poolSizes;
+	uint32_t maxSets = 0;
+	for (auto& descriptor : descriptorTypeAndCount) 
+	{
+		VkDescriptorPoolSize poolSize;
+		poolSize.type = descriptor.second;
+		poolSize.descriptorCount = descriptor.first;
+		maxSets += descriptor.first;
+		poolSizes.push_back(poolSize);
+	}
 
 	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
 	descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	descriptorPoolCreateInfo.poolSizeCount = 2;
-	descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes;
-	descriptorPoolCreateInfo.maxSets = descriptorCount;
-	//temp//
-	
+	descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+	descriptorPoolCreateInfo.pPoolSizes = poolSizes.data();
+	descriptorPoolCreateInfo.maxSets = maxSets;
 	
 	if (vkCreateDescriptorPool(m_vkDevice.getDevice(), &descriptorPoolCreateInfo, nullptr, &m_vkDescriptorPool) != VK_SUCCESS) 
 	{

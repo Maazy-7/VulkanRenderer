@@ -24,6 +24,8 @@ public:
 
 private:
 
+	void createBuffersAndDescriptors();
+
 	std::unique_ptr<Window> m_window;
 	float m_deltaTime = 0.f;
 	float m_prevTime = 0.f;
@@ -31,7 +33,11 @@ private:
 	//temp
 	VulkanDevice m_vkDevice;
 	VulkanRenderer  m_vkRenderer;
-	SimpleRenderSystem m_simpleRenderSystem;
-	VulkanDescriptorPool m_vkDescriptorPool;
+	std::unique_ptr<VulkanDescriptorPool> m_vkDescriptorPool;
+	std::unique_ptr<SimpleRenderSystem> m_simpleRenderSystem;
+	std::unique_ptr<VulkanDescriptorSetLayout> m_globalSetLayout;
+	std::vector<std::unique_ptr<VulkanBuffer>> m_camaraMatrixBuffers;
+	std::vector<VkDescriptorSet> m_camaraMatrixDescriptorSets;
+	Camera m_camera;
 };
 

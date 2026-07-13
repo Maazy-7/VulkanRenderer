@@ -1,8 +1,12 @@
 #include "SimpleRenderSystem.h"
 
-SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer)
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+
+SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer, VulkanDescriptorPool& descriptorPool)
 	:m_vkDevice(device),
 	m_vulkanRenderer(renderer),
+	m_vulkanDescriptorPool(descriptorPool),
 	m_camera(Camera(glm::vec3(0.f, 0.f, 2.f), m_vulkanRenderer.getSwapChain().getSwapChainAspect(), 0.1f, 100.f)),
 	m_model(std::make_unique<Model>(m_vkDevice, "Assets/viking_room.obj"))
 {
@@ -19,7 +23,44 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 	ubo.proj = m_camera.getProjection();
 	ubo.proj[1][1] *= -1;
 	
-	m_vkDescriptorSets.resize(m_vulkanRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT);
+	m_vkDescriptorSets.resize(1);//descriptor set containing 1 texture
+
+	//allocating texture and staging buffer for texture
+	int width, height, channels;
+	stbi_uc* pixels = stbi_load("Assets/viking_room.png", &width, &height, &channels, STBI_rgb_alpha);
+	if (!pixels) { throw std::runtime_error("failed to load texture image"); }
+	VkDeviceSize imageSize = static_cast<uint64_t>(width * height * 4);
+	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+
+	VulkanBuffer stagingBuffer(m_vkDevice, 1, imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	stagingBuffer.map(0, imageSize);
+	stagingBuffer.writeToBuffer(0, imageSize, pixels);
+	stbi_image_free(pixels);
+
+	m_texture = std::make_unique<VulkanImage>(m_vkDevice, static_cast<uint32_t>(width), static_cast<uint32_t>(height), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mipLevels);
+
+	m_texture->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	m_texture->copyBufferToImage(stagingBuffer, width, height);
+	//textureImg.transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	m_texture->generateMipMaps(static_cast<uint32_t>(width), static_cast<uint32_t>(height), mipLevels);
+
+	//creating descriptor layout and sets
+	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
+	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+	m_renderSystemDescriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_vkDevice, bindings);
+	VulkanDescriptorWriter descriptorWriter(m_vulkanDescriptorPool, *m_renderSystemDescriptorSetLayout.get());
+	for (size_t i = 0; i < m_vkDescriptorSets.size(); i++)
+	{
+
+		VkDescriptorImageInfo descriptorImageInfo{};
+		descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		descriptorImageInfo.imageView = m_texture->getVkImageView();
+		descriptorImageInfo.sampler = m_texture->getVkSampler();
+
+		descriptorWriter.writeImage(&descriptorImageInfo, 0).build(m_vkDescriptorSets[i]);
+	}
 }
 
 void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescriptorSetLayout) 
@@ -43,8 +84,14 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 	m_vkPipeline = std::make_unique<VulkanPipeline>(m_vkDevice, shaderStages, m_vulkanRenderer.getSwapChain());
 	
 	//pipeline layout
-	const VkDescriptorSetLayout* setLayout = &vulkanDescriptorSetLayout.getDescriptorSetLayout();
-	m_vkPipeline->createPipelineLayout(1, const_cast<VkDescriptorSetLayout*>(setLayout), 0, nullptr);
+	VkPushConstantRange pushConstantRange{};
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(glm::mat4);
+
+	VkDescriptorSetLayout descriptorSetLayouts[2] =
+	{ vulkanDescriptorSetLayout.getDescriptorSetLayout(), m_renderSystemDescriptorSetLayout->getDescriptorSetLayout() };
+	m_vkPipeline->createPipelineLayout(2, descriptorSetLayouts, 1, &pushConstantRange);
 
 	//pipeline create info structs
 	m_vkPipeline->vertexInputState(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), Vertex::getAttributeDescriptions().data())
@@ -61,20 +108,19 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 
 void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float dt)
 {
-	m_camera.update(dt, m_vulkanRenderer.getSwapChain().getSwapChainAspect());
-	//ubo.model = glm::rotate(ubo.model, dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = m_camera.getProjection();
-	ubo.proj[1][1] *= -1;
-	ubo.view = m_camera.getView();
-	m_uniformBuffers[m_vulkanRenderer.getSwapChain().getCurrentFrameIndex()]->writeToBuffer(0, sizeof(UniformBufferObject), &ubo);
-
 	m_vkPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipelineLayout(), 0, 1, 
-		&m_vkDescriptorSets[m_vulkanRenderer.getSwapChain().getCurrentFrameIndex()], 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipelineLayout(), 1, 1, 
+		&m_vkDescriptorSets[0], 0, nullptr);
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
 	m_model->draw(commandBuffer);
 }
 
 std::vector<VkDescriptorSet>& SimpleRenderSystem::getDescriptorSets() 
 {
 	return m_vkDescriptorSets;
+}
+
+VulkanPipeline& SimpleRenderSystem::getVulkanPipeline() const
+{
+	return *m_vkPipeline.get();
 }

@@ -30,11 +30,12 @@ public:
 	SimpleRenderSystem(const SimpleRenderSystem&) = delete;
 	SimpleRenderSystem& operator=(const SimpleRenderSystem&) = delete;
 
-	SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer);
+	SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer, VulkanDescriptorPool& descriptorPool);
 
 	void renderGameObjects(VkCommandBuffer commandBuffer, float dt);
 
 	std::vector<VkDescriptorSet>& getDescriptorSets();
+	VulkanPipeline& getVulkanPipeline() const;
 
 private:
 
@@ -42,10 +43,12 @@ private:
 
 	VulkanDevice& m_vkDevice;
 	const VulkanRenderer& m_vulkanRenderer;
+	VulkanDescriptorPool& m_vulkanDescriptorPool;
 	std::unique_ptr<VulkanPipeline> m_vkPipeline;
 	std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
+	std::unique_ptr<VulkanImage> m_texture;
 	std::vector<VkDescriptorSet> m_vkDescriptorSets;
-	//VulkanDescriptorSetLayout& m_vulkanDescriptorSetLayout;
+	std::unique_ptr<VulkanDescriptorSetLayout> m_renderSystemDescriptorSetLayout;
 	UniformBufferObject ubo;
 	Camera m_camera;
 	std::unique_ptr<Model> m_model;
