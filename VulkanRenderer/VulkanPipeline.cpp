@@ -7,7 +7,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkSha
 	m_vkgraphicsPipelineCreateInfo = new VkGraphicsPipelineCreateInfo{};
 	m_vkgraphicsPipelineCreateInfo->sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	m_vkgraphicsPipelineCreateInfo->stageCount = static_cast<uint32_t>(shaderPaths.size());
-	std::vector<VkPipelineShaderStageCreateInfo>* shaderStages = new std::vector<VkPipelineShaderStageCreateInfo>;//deleted after pipeline creation
+	m_shaderStages = new std::vector<VkPipelineShaderStageCreateInfo>;//deleted after pipeline creation
 	for (auto& path : shaderPaths) //shader paths should be in order, vertex, geom, tess, fragment
 	{
 		//path.first = shader type, path.second = shader path
@@ -19,7 +19,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkSha
 			shaderStageCreateInfo.stage = path.first;
 			shaderStageCreateInfo.module = shaderModule;
 			shaderStageCreateInfo.pName = "main";
-			shaderStages->push_back(shaderStageCreateInfo);
+			m_shaderStages->push_back(shaderStageCreateInfo);
 		}
 		else 
 		{
@@ -32,10 +32,10 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkSha
 			shaderStageCreateInfo.stage = path.first;
 			shaderStageCreateInfo.module = shaderModule;
 			shaderStageCreateInfo.pName = "main";
-			shaderStages->push_back(shaderStageCreateInfo);
+			m_shaderStages->push_back(shaderStageCreateInfo);
 		}
 	}
-	m_vkgraphicsPipelineCreateInfo->pStages = shaderStages->data();
+	m_vkgraphicsPipelineCreateInfo->pStages = m_shaderStages->data();
 }
 
 VulkanPipeline::~VulkanPipeline() 
@@ -256,7 +256,8 @@ void VulkanPipeline::build()
 	}
 
 	//deleting all heap allocated pipeline create info structs
-	delete m_vkgraphicsPipelineCreateInfo->pStages;
+	m_shaderStages->clear(); //deletes the m_vkgraphicsPipelineCreateInfo->pStages data
+	delete m_shaderStages;
 	delete m_vkgraphicsPipelineCreateInfo->pVertexInputState;
 	delete m_vkgraphicsPipelineCreateInfo->pInputAssemblyState;
 	delete m_vkgraphicsPipelineCreateInfo->pRasterizationState;

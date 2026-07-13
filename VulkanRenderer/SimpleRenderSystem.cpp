@@ -112,15 +112,7 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipelineLayout(), 1, 1, 
 		&m_vkDescriptorSets[0], 0, nullptr);
 
-	VkPushConstantsInfo pushConstantInfo{};
-	pushConstantInfo.sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO;
-	pushConstantInfo.layout = m_vkPipeline->getPipelineLayout();
-	pushConstantInfo.offset = 0;
-	pushConstantInfo.size = sizeof(glm::mat4);
-	pushConstantInfo.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	pushConstantInfo.pValues = &ubo.model;
-
-	vkCmdPushConstants2(commandBuffer, &pushConstantInfo);
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
 	m_model->draw(commandBuffer);
 }
 

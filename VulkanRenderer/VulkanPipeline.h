@@ -64,6 +64,7 @@ private:
 	VkPipeline m_vkPipeline;
 	VkGraphicsPipelineCreateInfo* m_vkgraphicsPipelineCreateInfo;//create info struct and all the other structs it links to deleted after pipeline creation
 	VkPipelineLayout m_vkPipelineLayout;
+	std::vector<VkPipelineShaderStageCreateInfo>* m_shaderStages;
 	//VulkanDescriptorSetLayout& m_vulkanDescriptorSetLayout;
 };
 
