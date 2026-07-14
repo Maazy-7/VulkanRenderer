@@ -1,8 +1,5 @@
 #include "SimpleRenderSystem.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
-
 SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer, VulkanDescriptorPool& descriptorPool)
 	:m_vkDevice(device),
 	m_vulkanRenderer(renderer),
@@ -25,26 +22,8 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 	
 	m_vkDescriptorSets.resize(1);//descriptor set containing 1 texture
 
-	//allocating texture and staging buffer for texture
-	int width, height, channels;
-	stbi_uc* pixels = stbi_load("Assets/viking_room.png", &width, &height, &channels, STBI_rgb_alpha);
-	if (!pixels) { throw std::runtime_error("failed to load texture image"); }
-	VkDeviceSize imageSize = static_cast<uint64_t>(width * height * 4);
-	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
-
-	VulkanBuffer stagingBuffer(m_vkDevice, 1, imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	stagingBuffer.map(0, imageSize);
-	stagingBuffer.writeToBuffer(0, imageSize, pixels);
-	stbi_image_free(pixels);
-
-	m_texture = std::make_unique<VulkanImage>(m_vkDevice, static_cast<uint32_t>(width), static_cast<uint32_t>(height), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mipLevels);
-
-	m_texture->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	m_texture->copyBufferToImage(stagingBuffer, width, height);
-	//textureImg.transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	m_texture->generateMipMaps(static_cast<uint32_t>(width), static_cast<uint32_t>(height), mipLevels);
+	m_texture = std::make_unique<Texture>(m_vkDevice, "Assets/viking_room.png", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	//creating descriptor layout and sets
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;

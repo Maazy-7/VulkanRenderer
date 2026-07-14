@@ -12,6 +12,7 @@
 #include "VulkanPipeline.h"
 #include "VulkanBuffer.h"
 #include "Camera.h"
+#include "Texture.h"
 #include "Model.h"
 
 struct UniformBufferObject {
@@ -46,7 +47,7 @@ private:
 	VulkanDescriptorPool& m_vulkanDescriptorPool;
 	std::unique_ptr<VulkanPipeline> m_vkPipeline;
 	std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
-	std::unique_ptr<VulkanImage> m_texture;
+	std::unique_ptr<Texture> m_texture;
 	std::vector<VkDescriptorSet> m_vkDescriptorSets;
 	std::unique_ptr<VulkanDescriptorSetLayout> m_renderSystemDescriptorSetLayout;
 	UniformBufferObject ubo;

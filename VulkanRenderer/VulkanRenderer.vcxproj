@@ -162,6 +162,7 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="SimpleRenderSystem.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="VulkanBuffer.cpp" />
     <ClCompile Include="VulkanDescriptor.cpp" />
     <ClCompile Include="VulkanDevice.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="SimpleRenderSystem.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="VulkanBuffer.h" />
     <ClInclude Include="VulkanDescriptor.h" />
