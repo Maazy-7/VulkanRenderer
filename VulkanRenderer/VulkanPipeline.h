@@ -9,16 +9,6 @@
 #include "VulkanDescriptor.h"
 #include "Model.h"
 
-struct PipelineConfigurationInfo
-{
-
-};
-
-//TODO: so one make the pipeline creation similar to that of the descriptor writer thing ie pipeline.descriptor(args).multisample(args).blendstate.(args) etc
-// second to also make shaders have only 1 file instead of seperate vert and frag etc - a quick parser will create the necessary shaders needed
-
-
-
 class VulkanPipeline
 {
 public:
