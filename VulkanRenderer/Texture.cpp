@@ -8,7 +8,7 @@ Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkF
 	:m_vulkanDevice(vulkanDevice)
 {
 	int width, height, channels;
-	stbi_uc* pixels = stbi_load("Assets/viking_room.png", &width, &height, &channels, STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load(texturePath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 	if (!pixels) 
 	{
 		//need to set default image/color
