@@ -45,7 +45,11 @@ void Model::loadModel(VulkanDevice& vulkanDevice, const std::string filepath)
 				1.f - attrib.texcoords[2 * index.texcoord_index + 1]
 			};
 
-			vertex.color = { 1.f, 1.f, 1.f };
+			vertex.normal = { 
+				attrib.normals[3 * index.normal_index + 0],
+				attrib.normals[3 * index.normal_index + 1],
+				attrib.normals[3 * index.normal_index + 2]
+			};
 
 			if (uniqueVertices.count(vertex) == 0) 
 			{
