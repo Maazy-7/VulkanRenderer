@@ -16,9 +16,15 @@
 #include "Model.h"
 
 struct UniformBufferObject {
-	glm::mat4 model;
-	glm::mat4 view;
-	glm::mat4 proj;
+	alignas(16) glm::mat4 model;
+	alignas(16) glm::mat4 view;
+	alignas(16) glm::mat4 proj;
+};
+
+struct LightData
+{
+	alignas(16) glm::vec4 lightPos;
+	alignas(16) glm::vec4 viewPos;
 };
 
 class Application; //friendship
@@ -31,7 +37,7 @@ public:
 	SimpleRenderSystem(const SimpleRenderSystem&) = delete;
 	SimpleRenderSystem& operator=(const SimpleRenderSystem&) = delete;
 
-	SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer, VulkanDescriptorPool& descriptorPool);
+	SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer, VulkanDescriptorPool& descriptorPool, Camera& camera);
 
 	void renderGameObjects(VkCommandBuffer commandBuffer, float dt);
 
@@ -51,7 +57,7 @@ private:
 	std::vector<VkDescriptorSet> m_vkDescriptorSets;
 	std::unique_ptr<VulkanDescriptorSetLayout> m_renderSystemDescriptorSetLayout;
 	UniformBufferObject ubo;
-	Camera m_camera;
+	Camera& m_camera;
 	std::unique_ptr<Model> m_model;
 
 	friend class Application;

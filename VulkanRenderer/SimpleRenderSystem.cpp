@@ -1,11 +1,11 @@
 #include "SimpleRenderSystem.h"
 
-SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer, VulkanDescriptorPool& descriptorPool)
+SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer, VulkanDescriptorPool& descriptorPool, Camera& camera)
 	:m_vkDevice(device),
 	m_vulkanRenderer(renderer),
 	m_vulkanDescriptorPool(descriptorPool),
-	m_camera(Camera(glm::vec3(0.f, 0.f, 2.f), m_vulkanRenderer.getSwapChain().getSwapChainAspect(), 0.1f, 100.f)),
-	m_model(std::make_unique<Model>(m_vkDevice, "Assets/viking_room.obj"))
+	m_camera(camera),
+	m_model(std::make_unique<Model>(m_vkDevice, "Assets/metalCube.obj"))
 {
 	//allocating uniform buffers
 	for (size_t i = 0; i < m_vulkanRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT; i++) 
@@ -22,7 +22,7 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 	
 	m_vkDescriptorSets.resize(1);//descriptor set containing 1 texture
 
-	m_texture = std::make_unique<Texture>(m_vkDevice, "Assets/viking_room.png", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+	m_texture = std::make_unique<Texture>(m_vkDevice, "Assets/cubeMetalTexture.png", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	//creating descriptor layout and sets
@@ -68,9 +68,16 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 	pushConstantRange.offset = 0;
 	pushConstantRange.size = sizeof(glm::mat4);
 
+	VkPushConstantRange lightPushConstantRange{};
+	lightPushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	lightPushConstantRange.offset = 64;
+	lightPushConstantRange.size = 32;//for now 2 vec4 light pos and view pos
+
+	VkPushConstantRange pushConstants[2] = { pushConstantRange, lightPushConstantRange};
+
 	VkDescriptorSetLayout descriptorSetLayouts[2] =
 	{ vulkanDescriptorSetLayout.getDescriptorSetLayout(), m_renderSystemDescriptorSetLayout->getDescriptorSetLayout() };
-	m_vkPipeline->createPipelineLayout(2, descriptorSetLayouts, 1, &pushConstantRange);
+	m_vkPipeline->createPipelineLayout(2, descriptorSetLayouts, 2, pushConstants);
 
 	//pipeline create info structs
 	m_vkPipeline->vertexInputState(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), Vertex::getAttributeDescriptions().data())
@@ -87,11 +94,18 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 
 void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float dt)
 {
+	
 	m_vkPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipelineLayout(), 1, 1, 
 		&m_vkDescriptorSets[0], 0, nullptr);
 
+	ubo.model = glm::rotate(glm::mat4(ubo.model), 1.f*dt, glm::vec3(1.f,1.f,0.f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	
+	glm::vec4 LightPos = glm::vec4(0.f, 2.f, 0.f, 0.f);
+	glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
+	LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(LightData), &lightData);
 	m_model->draw(commandBuffer);
 }
 
