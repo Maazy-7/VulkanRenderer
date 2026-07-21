@@ -10,7 +10,7 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 	//allocating uniform buffers
 	for (size_t i = 0; i < m_vulkanRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT; i++) 
 	{
-		m_uniformBuffers.push_back(std::make_unique<VulkanBuffer>(m_vkDevice, 3/*temp*/, sizeof(UniformBufferObject),
+		m_uniformBuffers.push_back(std::make_unique<VulkanBuffer>(m_vkDevice, 21/*temp*/, sizeof(UniformBufferObject),
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
 		m_uniformBuffers[i]->map(0, sizeof(UniformBufferObject));
 	}
@@ -99,10 +99,10 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipelineLayout(), 1, 1, 
 		&m_vkDescriptorSets[0], 0, nullptr);
 
-	ubo.model = glm::rotate(glm::mat4(ubo.model), 1.f*dt, glm::vec3(1.f,1.f,0.f));
+	//ubo.model = glm::rotate(glm::mat4(ubo.model), 1.f*dt, glm::vec3(1.f,1.f,0.f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
 	
-	glm::vec4 LightPos = glm::vec4(0.f, 2.f, 0.f, 0.f);
+	glm::vec4 LightPos = glm::vec4(1.5f, 1.f, 1.5f, 0.f);
 	glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
 	LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(LightData), &lightData);
