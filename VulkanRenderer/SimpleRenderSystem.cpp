@@ -7,13 +7,6 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 	m_camera(camera),
 	m_model(std::make_unique<Model>(m_vkDevice, "Assets/metalCube.obj"))
 {
-	//allocating uniform buffers
-	for (size_t i = 0; i < m_vulkanRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT; i++) 
-	{
-		m_uniformBuffers.push_back(std::make_unique<VulkanBuffer>(m_vkDevice, 2, sizeof(UniformBufferObject),
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
-		m_uniformBuffers[i]->map(0, sizeof(UniformBufferObject));
-	}
 
 	ubo.model = glm::mat4(1.f);
 	ubo.view = m_camera.getView();
