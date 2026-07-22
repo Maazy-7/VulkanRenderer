@@ -10,7 +10,7 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 	//allocating uniform buffers
 	for (size_t i = 0; i < m_vulkanRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT; i++) 
 	{
-		m_uniformBuffers.push_back(std::make_unique<VulkanBuffer>(m_vkDevice, 21/*temp*/, sizeof(UniformBufferObject),
+		m_uniformBuffers.push_back(std::make_unique<VulkanBuffer>(m_vkDevice, 2, sizeof(UniformBufferObject),
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
 		m_uniformBuffers[i]->map(0, sizeof(UniformBufferObject));
 	}
@@ -32,7 +32,6 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 	VulkanDescriptorWriter descriptorWriter(m_vulkanDescriptorPool, *m_renderSystemDescriptorSetLayout.get());
 	for (size_t i = 0; i < m_vkDescriptorSets.size(); i++)
 	{
-
 		VkDescriptorImageInfo descriptorImageInfo{};
 		descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		descriptorImageInfo.imageView = m_texture->getVkImageView();
