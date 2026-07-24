@@ -16,17 +16,18 @@ layout (push_constant) uniform LightData
 
 void main() 
 {
+	vec3 norm = normalize(fragNormal);
 	vec3 lightColor = vec3(0.3);
 	vec3 texColor = texture(texSampler, fragTexCoord).rgb;
 	vec3 ambient = 0.1 * texColor;
 
 	vec3 lightDir = normalize(vec3(lightData.lightPos) - fragPos);
-	float diff = max(dot(lightDir, fragNormal), 0.0);
+	float diff = max(dot(lightDir, norm), 0.0);
 	vec3 diffuse = texColor * diff;
 
 	vec3 viewDir = normalize(vec3(lightData.viewPos) - fragPos);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(fragNormal, halfwayDir), 0.0), 32);
+	float spec = pow(max(dot(norm, halfwayDir), 0.0), 32);
 	vec3 specular = spec * lightColor;
 
 	FragColor = vec4(ambient + diffuse + specular, 1.0);
