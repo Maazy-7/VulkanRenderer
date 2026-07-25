@@ -91,13 +91,30 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipelineLayout(), 1, 1, 
 		&m_vkDescriptorSets[0], 0, nullptr);
 
-	//ubo.model = glm::rotate(glm::mat4(ubo.model), 1.f*dt, glm::vec3(1.f,1.f,0.f));
+	ubo.model = glm::scale(glm::mat4(1.f), glm::vec3(0.5f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
 	
-	glm::vec4 LightPos = glm::vec4(1.5f, 1.f, 1.5f, 0.f);
+	glm::vec4 LightPos = glm::vec4(0.f, 2.f, 0.f, 0.f);
 	glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
 	LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(LightData), &lightData);
+	m_model->draw(commandBuffer);
+
+	//cube
+	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, -1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 0.15f, 3.f));
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	m_model->draw(commandBuffer);
+	//right wall
+	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(3.15f, 1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(0.15f, 2.f, 3.f));
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	m_model->draw(commandBuffer);
+	//left wall
+	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(-3.15f, 1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(0.15f, 2.f, 3.f));
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	m_model->draw(commandBuffer);
+	//back wall
+	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 1.f, -3.15f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 2.f, 0.15f));
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
 	m_model->draw(commandBuffer);
 }
 
