@@ -82,6 +82,30 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 		.dynamicState(2, dynamicStates)
 		.pipelineRendering(1, colorAttachments, m_vkDevice.findDepthFormat(), VK_FORMAT_UNDEFINED)
 		.build();
+
+	//creating pipeline to render lights
+	std::vector<std::pair<VkShaderStageFlagBits, const std::string>> singleColorShaderStages = {
+		{VK_SHADER_STAGE_VERTEX_BIT, "Shaders/shader.vert.spv"}, {VK_SHADER_STAGE_FRAGMENT_BIT, "Shaders/singleColor.frag.spv"} };
+	m_singleColorObjectPipeline = std::make_unique<VulkanPipeline>(m_vkDevice, singleColorShaderStages, m_vulkanRenderer.getSwapChain());
+	VkPushConstantRange singleColorPushConstantRange{};
+	singleColorPushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	singleColorPushConstantRange.offset = 64;
+	singleColorPushConstantRange.size = 32;
+
+	VkPushConstantRange singlColorPushConstants[2] = { pushConstantRange, singleColorPushConstantRange };
+
+	m_singleColorObjectPipeline->createPipelineLayout(1, descriptorSetLayouts, 2, singlColorPushConstants);//uses only the camera matrices descriptor set
+
+	m_singleColorObjectPipeline->vertexInputState(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), Vertex::getAttributeDescriptions().data())
+		.inputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE)
+		.viewportState(1, VK_NULL_HANDLE, 1, VK_NULL_HANDLE)
+		.rasterizationState(VK_FALSE, VK_FALSE, VK_POLYGON_MODE_FILL, 1.f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, 0.f, 0.f, 0.f)
+		.multiSampleState(VK_FALSE, VK_SAMPLE_COUNT_1_BIT, 1.f, VK_NULL_HANDLE, VK_FALSE, VK_FALSE)
+		.colorBlendState(VK_FALSE, VK_LOGIC_OP_COPY, 1, &colorBlendAttachmentState, blendConstants)
+		.depthStencilState(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_FALSE, 0.f, 1.f, VK_FALSE)
+		.dynamicState(2, dynamicStates)
+		.pipelineRendering(1, colorAttachments, m_vkDevice.findDepthFormat(), VK_FORMAT_UNDEFINED)
+		.build();
 }
 
 void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float dt)
@@ -115,6 +139,14 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 	//back wall
 	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 1.f, -3.15f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 2.f, 0.15f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	m_model->draw(commandBuffer);
+
+	m_singleColorObjectPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+	
+	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(lightData.lightPos)) * glm::scale(glm::mat4(1.f), glm::vec3(0.4f));
+	vkCmdPushConstants(commandBuffer, m_singleColorObjectPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	struct temp { glm::vec4 x, y; }; temp lightColor; lightColor.x = glm::vec4(1.f); lightColor.y = glm::vec4(1.f);
+	vkCmdPushConstants(commandBuffer, m_singleColorObjectPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(temp), &lightColor);
 	m_model->draw(commandBuffer);
 }
 

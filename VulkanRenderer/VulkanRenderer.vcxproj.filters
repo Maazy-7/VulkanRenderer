@@ -132,7 +132,9 @@
     <None Include="shaderCompile.bat">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="Shaders\shader.frag.spv" />
+    <None Include="Shaders\singleColor.frag" />
+    <None Include="Shaders\singleColor.frag.spv" />
     <None Include="Shaders\shader.vert.spv" />
+    <None Include="Shaders\shader.frag.spv" />
   </ItemGroup>
 </Project>
