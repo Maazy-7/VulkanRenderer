@@ -43,29 +43,28 @@ size_t vertexHasher::operator()(Vertex const& vertex) const
 }
 
 Mesh::Mesh(VulkanDevice& vulkanDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t> indices)
-	:m_vertices(vertices), m_indices(indices)
 {
-	VkDeviceSize verticesSize = sizeof(m_vertices[0]) * m_vertices.size();
-	VkDeviceSize indicesSize = sizeof(m_indices[0]) * m_indices.size();
+	VkDeviceSize verticesSize = sizeof(vertices[0]) * vertices.size();
+	VkDeviceSize indicesSize = sizeof(indices[0]) * indices.size();
 	
-	VulkanBuffer stagingBuffer(vulkanDevice, m_vertices.size(), verticesSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+	VulkanBuffer stagingBuffer(vulkanDevice, vertices.size(), verticesSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-	m_vertexBuffer = std::make_unique<VulkanBuffer>(vulkanDevice, m_vertices.size(), verticesSize, 
+	m_vertexBuffer = std::make_unique<VulkanBuffer>(vulkanDevice, vertices.size(), verticesSize, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	m_indexBuffer = std::make_unique<VulkanBuffer>(vulkanDevice, m_indices.size(), indicesSize, 
+	m_indexBuffer = std::make_unique<VulkanBuffer>(vulkanDevice, indices.size(), indicesSize, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	//allocating vertex buffer using a staging buffer
 	stagingBuffer.map(0, verticesSize);
-	stagingBuffer.writeToBuffer(0, verticesSize, m_vertices.data());
+	stagingBuffer.writeToBuffer(0, verticesSize, vertices.data());
 	stagingBuffer.unMap();
 	VulkanBuffer::copyBuffer(stagingBuffer, *m_vertexBuffer.get(), verticesSize);
 
 	//allocating index buffer using staging buffer
 	stagingBuffer.map(0, indicesSize);
-	stagingBuffer.writeToBuffer(0, indicesSize, m_indices.data()); //should make a global staging buffer
+	stagingBuffer.writeToBuffer(0, indicesSize, indices.data()); //should make a global staging buffer
 	stagingBuffer.unMap();
 	VulkanBuffer::copyBuffer(stagingBuffer, *m_indexBuffer.get(), indicesSize);
 	
