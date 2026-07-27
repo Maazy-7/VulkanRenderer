@@ -16,7 +16,7 @@ public:
 	VulkanPipeline(const VulkanPipeline&) = delete;
 	VulkanPipeline& operator=(const VulkanPipeline&) = delete;
 
-	VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths, const VulkanSwapChain& swapChain);
+	VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths);
 	~VulkanPipeline();
 
 	VkPipelineLayout getPipelineLayout() const;
@@ -55,6 +55,5 @@ private:
 	VkGraphicsPipelineCreateInfo* m_vkgraphicsPipelineCreateInfo;//create info struct and all the other structs it links to deleted after pipeline creation
 	VkPipelineLayout m_vkPipelineLayout;
 	std::vector<VkPipelineShaderStageCreateInfo>* m_shaderStages;
-	//VulkanDescriptorSetLayout& m_vulkanDescriptorSetLayout;
 };
 

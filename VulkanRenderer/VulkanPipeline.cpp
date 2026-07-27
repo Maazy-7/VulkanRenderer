@@ -1,9 +1,8 @@
 #include "VulkanPipeline.h"
 
-VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths, const VulkanSwapChain& swapChain)
+VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths)
 	:m_vkDevice(device), m_vkPipeline(VK_NULL_HANDLE), m_vkPipelineLayout(VK_NULL_HANDLE)
 {
-	//createGraphicsPipeline(vertexPath, fragmentPath, swapChain);
 	m_vkgraphicsPipelineCreateInfo = new VkGraphicsPipelineCreateInfo{};
 	m_vkgraphicsPipelineCreateInfo->sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	m_vkgraphicsPipelineCreateInfo->stageCount = static_cast<uint32_t>(shaderPaths.size());
