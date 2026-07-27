@@ -14,10 +14,12 @@ public:
 		uint32_t mipLevels = 1);
 	VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t height, VkFormat format,
 		VkImageTiling imgTilling, VkImageUsageFlags imgUsage, VkMemoryPropertyFlags memoryPropertyFlags, 
-		VkImageAspectFlagBits imgAspectFlags, bool useSampler = false);
+		VkImageAspectFlagBits imgAspectFlags, bool useSampler = false, VkSampler sampler = VK_NULL_HANDLE);
 	~VulkanImage();
 
 	void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1);
+	void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags2 srcAccess, VkAccessFlags2 dstAccess,
+		VkPipelineStageFlags2 srcStage, VkPipelineStageFlags2 dstStage);
 	void copyBufferToImage(VulkanBuffer& srcBuffer, uint32_t width, uint32_t height);
 	void generateMipMaps(int width, int height, uint32_t mipLevels);
 

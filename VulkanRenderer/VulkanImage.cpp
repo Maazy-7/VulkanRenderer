@@ -84,7 +84,7 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 }
 
 VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling imgTilling, 
-	VkImageUsageFlags imgUsage, VkMemoryPropertyFlags memoryPropertyFlags, VkImageAspectFlagBits imgAspectFlags, bool useSampler)
+	VkImageUsageFlags imgUsage, VkMemoryPropertyFlags memoryPropertyFlags, VkImageAspectFlagBits imgAspectFlags, bool useSampler, VkSampler sampler)
 	:m_vulkanDevice(vulkanDevice), m_vkFormat(format)
 {
 	//ideally for making a non sampling image ie swapchain images or depth buffer
@@ -144,7 +144,12 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 
 	//only creating sampler if its needed
 	m_vkSampler = VK_NULL_HANDLE;
-	if (useSampler) 
+	
+	if (sampler) //existing sampler given
+	{
+		m_vkSampler = sampler;
+	}
+	else if (useSampler) //create one if not given
 	{
 		//creating vk sampler
 		VkSamplerCreateInfo samplerCreateInfo{};
@@ -230,10 +235,58 @@ void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout
 		imgMemoryBarrier2.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 		imgMemoryBarrier2.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) 
+	{
+		imgMemoryBarrier2.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		imgMemoryBarrier2.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		//TODO correct and proper the transtions to support shadow maps
+	}
 	else 
 	{
 		throw std::invalid_argument("unsupported layout transition");
 	}
+
+	VkDependencyInfo dependencyInfo{};
+	dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	dependencyInfo.imageMemoryBarrierCount = 1;
+	dependencyInfo.pImageMemoryBarriers = &imgMemoryBarrier2;
+
+	vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
+
+	m_vulkanDevice.endSingleTimeCommands(commandBuffer);
+}
+
+void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags2 srcAccess, VkAccessFlags2 dstAccess, VkPipelineStageFlags2 srcStage, VkPipelineStageFlags2 dstStage)
+{
+	VkCommandBuffer commandBuffer = m_vulkanDevice.beginSingleTimeCommands();
+
+	VkImageMemoryBarrier2 imgMemoryBarrier2{};
+	imgMemoryBarrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	imgMemoryBarrier2.oldLayout = oldLayout;
+	imgMemoryBarrier2.newLayout = newLayout;
+	imgMemoryBarrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imgMemoryBarrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imgMemoryBarrier2.image = m_vkImage;
+	imgMemoryBarrier2.subresourceRange.baseMipLevel = 0;
+	imgMemoryBarrier2.subresourceRange.levelCount = 1;
+	imgMemoryBarrier2.subresourceRange.baseArrayLayer = 0;
+	imgMemoryBarrier2.subresourceRange.layerCount = 1;
+
+	imgMemoryBarrier2.srcAccessMask = srcAccess;
+	imgMemoryBarrier2.dstAccessMask = dstAccess;
+	imgMemoryBarrier2.srcStageMask = srcStage;
+	imgMemoryBarrier2.dstStageMask = dstStage;
+
+	if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+	{
+		imgMemoryBarrier2.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+		if (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT)
+		{
+			imgMemoryBarrier2.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+		}
+	}
+	else { imgMemoryBarrier2.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; }
 
 	VkDependencyInfo dependencyInfo{};
 	dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
