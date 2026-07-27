@@ -25,12 +25,12 @@ Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkF
 	stagingBuffer.writeToBuffer(0, imageSize, pixels);
 	stbi_image_free(pixels);
 
-	m_vulkanImage= std::make_unique<VulkanImage>(m_vulkanDevice, static_cast<uint32_t>(width), static_cast<uint32_t>(height), imgFormat, imgTiling,
+	m_vulkanImage = std::make_unique<VulkanImage>(m_vulkanDevice, static_cast<uint32_t>(width), static_cast<uint32_t>(height), imgFormat, imgTiling,
 		imgUsageFlags, memoryPropertyFlags, mipLevels);
 
 	m_vulkanImage->transitionImageLayout(imgFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	m_vulkanImage->copyBufferToImage(stagingBuffer, width, height);
-	//textureImg.transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	//m_vulkanImage.transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	m_vulkanImage->generateMipMaps(static_cast<uint32_t>(width), static_cast<uint32_t>(height), mipLevels);
 }
 
