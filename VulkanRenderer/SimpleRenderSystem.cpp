@@ -18,6 +18,28 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 	m_texture = std::make_unique<Texture>(m_vkDevice, "Assets/cubeMetalTexture.png", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
+	//temp sampler for shadows
+	VkSamplerCreateInfo shadowSamplerCreateInfo{};
+	shadowSamplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	shadowSamplerCreateInfo.minFilter = VK_FILTER_LINEAR;
+	shadowSamplerCreateInfo.magFilter = VK_FILTER_LINEAR;
+	shadowSamplerCreateInfo.anisotropyEnable = VK_FALSE;
+	shadowSamplerCreateInfo.maxAnisotropy = 1.f;
+	shadowSamplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	shadowSamplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	shadowSamplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	shadowSamplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+	shadowSamplerCreateInfo.compareEnable = VK_TRUE;
+	shadowSamplerCreateInfo.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+	
+	VkSampler sampler;
+	if (vkCreateSampler(m_vkDevice.getDevice(), &shadowSamplerCreateInfo, nullptr, &sampler) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create vulkan Sampler");
+	}
+	m_shadowMap = std::make_unique<VulkanImage>(m_vkDevice, 1024, 1024, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, true, sampler);
+	
 	//creating descriptor layout and sets
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
 	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
@@ -63,7 +85,7 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 	VkPushConstantRange lightPushConstantRange{};
 	lightPushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	lightPushConstantRange.offset = 64;
-	lightPushConstantRange.size = 32;//for now 2 vec4 light pos and view pos
+	lightPushConstantRange.size = 48;//3 vec4, light pos, view pos and object color so that can be used instead of texture
 
 	VkPushConstantRange pushConstants[2] = { pushConstantRange, lightPushConstantRange};
 
@@ -90,7 +112,7 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 	VkPushConstantRange singleColorPushConstantRange{};
 	singleColorPushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	singleColorPushConstantRange.offset = 64;
-	singleColorPushConstantRange.size = 32;
+	singleColorPushConstantRange.size = 48;//matching other pipeline's push constant size
 
 	VkPushConstantRange singlColorPushConstants[2] = { pushConstantRange, singleColorPushConstantRange };
 
@@ -114,39 +136,60 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 	m_vkPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipelineLayout(), 1, 1, 
 		&m_vkDescriptorSets[0], 0, nullptr);
+	
+	glm::vec4 red = glm::vec4(0.65f, 0.05f, 0.05f, 1.f);
+	glm::vec4 green = glm::vec4(0.12f, 0.45f, 0.15f, 1.f);
+	glm::vec4 white = glm::vec4(0.73f);
 
-	ubo.model = glm::scale(glm::mat4(1.f), glm::vec3(0.5f));
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	static float count = 0.f;
+	count += dt;
+	ubo.model = glm::mat4(1.f);//reset model matrix
+	float x = std::cos(2.f*count);
+	float y = std::sin(2.f*count);
+	cubeMat = glm::translate(glm::mat4(1.f), glm::vec3(x, 0.f, y)) * glm::scale(glm::mat4(1.f), glm::vec3(0.5f));
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &cubeMat);
 	
 	glm::vec4 LightPos = glm::vec4(0.f, 2.f, 0.f, 0.f);
 	glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
 	LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(LightData), &lightData);
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &white);//offset for color at 96
 	m_model->draw(commandBuffer);
 
-	//cube
+	//bottom wall
 	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, -1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 0.15f, 3.f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &white);//offset for color at 96
 	m_model->draw(commandBuffer);
+	
+	//top wall
+	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 3.15f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 0.15f, 3.f));
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &white);//offset for color at 96
+	m_model->draw(commandBuffer);
+	
 	//right wall
 	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(3.15f, 1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(0.15f, 2.f, 3.f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &red);//offset for color at 96
 	m_model->draw(commandBuffer);
 	//left wall
 	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(-3.15f, 1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(0.15f, 2.f, 3.f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &green);//offset for color at 96
 	m_model->draw(commandBuffer);
 	//back wall
 	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 1.f, -3.15f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 2.f, 0.15f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &white);//offset for color at 96
 	m_model->draw(commandBuffer);
 
 	m_singleColorObjectPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 	
-	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(lightData.lightPos)) * glm::scale(glm::mat4(1.f), glm::vec3(0.4f));
+	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(lightData.lightPos)) * glm::scale(glm::mat4(1.f), glm::vec3(0.1f));
 	vkCmdPushConstants(commandBuffer, m_singleColorObjectPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
-	struct temp { glm::vec4 x, y; }; temp lightColor; lightColor.x = glm::vec4(1.f); lightColor.y = glm::vec4(1.f);
-	vkCmdPushConstants(commandBuffer, m_singleColorObjectPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(temp), &lightColor);
+	glm::vec4 lightColor = glm::vec4(1.f);
+	vkCmdPushConstants(commandBuffer, m_singleColorObjectPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(LightData), &lightColor);
 	m_model->draw(commandBuffer);
 }
 

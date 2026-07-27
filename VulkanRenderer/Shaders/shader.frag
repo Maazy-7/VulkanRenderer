@@ -12,13 +12,19 @@ layout (push_constant) uniform LightData
 {
 	layout(offset = 64) vec4 lightPos;
 	vec4 viewPos;
+	vec4 objectColor;
 } lightData;
 
 void main() 
 {
 	vec3 norm = normalize(fragNormal);
 	vec3 lightColor = vec3(0.3);
-	vec3 texColor = texture(texSampler, fragTexCoord).rgb;
+	vec3 texColor;
+	if (lightData.objectColor.w > 0.0) 
+	{
+		texColor = lightData.objectColor.xyz;
+	}
+	else { texColor = texture(texSampler, fragTexCoord).rgb; }
 	vec3 ambient = 0.1 * texColor;
 
 	vec3 lightDir = normalize(vec3(lightData.lightPos) - fragPos);
