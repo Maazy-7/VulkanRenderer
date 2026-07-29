@@ -46,7 +46,8 @@ void Application::run()
 		glm::vec4 LightPos = glm::vec4(2.f, 2.f, -1.5f, 0.f);
 		glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
 		LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
-		glm::mat4 lightSpaceMat = glm::ortho(-20.f, 20.f, -20.f, 20.f, 0.1f, 25.f);
+		glm::mat4 lightSpaceMat = glm::orthoZO(-20.f, 20.f, -20.f, 20.f, 0.1f, 25.f);
+		lightSpaceMat[1][1] *= -1;
 		lightSpaceMat *= glm::lookAt(glm::vec3(LightPos), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
 
 		m_shadowRendererSystem->renderShadowPass(commandBuffer, &lightSpaceMat);
