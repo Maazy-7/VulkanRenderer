@@ -14,7 +14,7 @@ Application::Application()
 	std::unordered_map<uint32_t, VkDescriptorType> descriptorTypes = { {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER}, {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER} };
 	m_vkDescriptorPool = std::make_unique<VulkanDescriptorPool>(m_vkDevice, descriptorTypes);
 	m_simpleRenderSystem = std::make_unique<SimpleRenderSystem>(m_vkDevice, m_vkRenderer, *m_vkDescriptorPool.get(), m_camera);
-
+	m_shadowRendererSystem = std::make_unique<ShadowRendererSystem>(m_vkDevice, m_camera, m_simpleRenderSystem->getModels());
 	createBuffersAndDescriptors();
 }
 
@@ -43,13 +43,21 @@ void Application::run()
 		//renderer update
 		auto commandBuffer = m_vkRenderer.beginFrame();
 
+		glm::vec4 LightPos = glm::vec4(2.f, 2.f, -1.5f, 0.f);
+		glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
+		LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
+		glm::mat4 lightSpaceMat = glm::ortho(-20.f, 20.f, -20.f, 20.f, 0.1f, 25.f);
+		lightSpaceMat *= glm::lookAt(glm::vec3(LightPos), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+
+		m_shadowRendererSystem->renderShadowPass(commandBuffer, &lightSpaceMat);
+
 		size_t frameIndex = m_vkRenderer.getSwapChain().getCurrentFrameIndex();
 		CamMatrices view_proj = m_camera.getCameraMatrices();
 		view_proj.proj[1][1] *= -1;
 		m_camaraMatrixBuffers[frameIndex]->writeToBuffer(0, sizeof(glm::mat4) * 2, &view_proj);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_simpleRenderSystem->getVulkanPipeline().getPipelineLayout(), 0, 
 			1, &m_camaraMatrixDescriptorSets[frameIndex], 0, nullptr);
-		
+
 		m_vkRenderer.beginRendering(commandBuffer);
 		m_simpleRenderSystem->renderGameObjects(commandBuffer, dt);
 		m_vkRenderer.endRendering(commandBuffer);

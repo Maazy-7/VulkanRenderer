@@ -69,6 +69,9 @@
     <ClCompile Include="DeferredRendererSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ShadowRendererSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window.h">
@@ -125,6 +128,9 @@
     <ClInclude Include="DeferredRendererSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ShadowRendererSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\shader.vert" />
@@ -136,5 +142,9 @@
     <None Include="Shaders\singleColor.frag.spv" />
     <None Include="Shaders\shader.vert.spv" />
     <None Include="Shaders\shader.frag.spv" />
+    <None Include="Shaders\shadowMapDepthShader.vert" />
+    <None Include="Shaders\shadowMapDepthShader.frag" />
+    <None Include="Shaders\shadowMapDepthShader.frag.spv" />
+    <None Include="Shaders\shadowMapDepthShader.vert.spv" />
   </ItemGroup>
 </Project>

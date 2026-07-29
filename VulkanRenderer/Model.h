@@ -11,6 +11,10 @@ public:
 	Model(const Model&) = delete;
 	const Model& operator=(const Model&) = delete;
 
+	//move operators allowed so class can be stored within a vector
+	Model(Model&&) noexcept = default;
+	Model& operator=(Model&&) noexcept = default;
+
 	Model(VulkanDevice& vulkanDevice, const std::string filepath);
 	~Model();
 

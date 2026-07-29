@@ -14,6 +14,7 @@
 #include "Camera.h"
 #include "Texture.h"
 #include "Model.h"
+#include "ShadowRendererSystem.h"
 
 struct UniformBufferObject {
 	alignas(16) glm::mat4 model;
@@ -43,6 +44,7 @@ public:
 
 	std::vector<VkDescriptorSet>& getDescriptorSets();
 	VulkanPipeline& getVulkanPipeline() const;
+	std::vector<Model>& getModels();
 
 private:
 
@@ -54,13 +56,12 @@ private:
 	std::unique_ptr<VulkanPipeline> m_vkPipeline;
 	std::unique_ptr<VulkanPipeline> m_singleColorObjectPipeline;
 	std::unique_ptr<Texture> m_texture;
-	std::unique_ptr<VulkanImage> m_shadowMap;
 	std::vector<VkDescriptorSet> m_vkDescriptorSets;
 	std::unique_ptr<VulkanDescriptorSetLayout> m_renderSystemDescriptorSetLayout;
 	UniformBufferObject ubo;
 	glm::mat4 cubeMat = glm::scale(glm::mat4(1.f), glm::vec3(0.5f));
 	Camera& m_camera;
-	std::unique_ptr<Model> m_model;
+	std::vector<Model> m_models;
 
 	friend class Application;
 };
