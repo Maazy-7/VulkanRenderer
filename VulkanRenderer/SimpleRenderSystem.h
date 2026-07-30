@@ -45,6 +45,7 @@ public:
 	std::vector<VkDescriptorSet>& getDescriptorSets();
 	VulkanPipeline& getVulkanPipeline() const;
 	std::vector<Model>& getModels();
+	void setShadowMap(VulkanImage& vulkanImage);//could put in constructor but for now will just pass it through this function
 
 private:
 
@@ -57,6 +58,7 @@ private:
 	std::unique_ptr<VulkanPipeline> m_singleColorObjectPipeline;
 	std::unique_ptr<Texture> m_texture;
 	std::vector<VkDescriptorSet> m_vkDescriptorSets;
+	VulkanImage* m_shadowMap = nullptr;
 	std::unique_ptr<VulkanDescriptorSetLayout> m_renderSystemDescriptorSetLayout;
 	UniformBufferObject ubo;
 	glm::mat4 cubeMat = glm::scale(glm::mat4(1.f), glm::vec3(0.5f));

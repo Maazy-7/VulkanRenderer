@@ -17,9 +17,15 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 	m_texture = std::make_unique<Texture>(m_vkDevice, "Assets/cubeMetalTexture.png", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	
+	m_models.emplace_back(m_vkDevice, "Assets/metalCube.obj");
+}
+
+void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescriptorSetLayout) 
+{
 	//creating descriptor layout and sets
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
 	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 	m_renderSystemDescriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_vkDevice, bindings);
 	VulkanDescriptorWriter descriptorWriter(m_vulkanDescriptorPool, *m_renderSystemDescriptorSetLayout.get());
 	for (size_t i = 0; i < m_vkDescriptorSets.size(); i++)
@@ -29,13 +35,14 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 		descriptorImageInfo.imageView = m_texture->getVkImageView();
 		descriptorImageInfo.sampler = m_texture->getVkSampler();
 
-		descriptorWriter.writeImage(&descriptorImageInfo, 0).build(m_vkDescriptorSets[i]);
-	}
-	m_models.emplace_back(m_vkDevice, "Assets/metalCube.obj");
-}
+		VkDescriptorImageInfo descriptorImage2Info{};
+		descriptorImage2Info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		descriptorImage2Info.imageView = m_shadowMap->getVkImageView();
+		descriptorImage2Info.sampler = m_shadowMap->getVkSampler();
 
-void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescriptorSetLayout) 
-{
+		descriptorWriter.writeImage(&descriptorImageInfo, 0).writeImage(&descriptorImage2Info, 1).build(m_vkDescriptorSets[i]);
+	}
+
 	//variables and structs for pipeline create info structs
 	std::vector<std::pair<VkShaderStageFlagBits, const std::string>> shaderStages = {
 		{VK_SHADER_STAGE_VERTEX_BIT, "Shaders/shader.vert.spv"}, {VK_SHADER_STAGE_FRAGMENT_BIT, "Shaders/shader.frag.spv"} };
@@ -113,7 +120,7 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 	
 	m_vkPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipelineLayout(), 1, 1, 
-		&m_vkDescriptorSets[0], 0, nullptr);
+		m_vkDescriptorSets.data(), 0, nullptr);
 	
 	glm::vec4 red = glm::vec4(0.65f, 0.05f, 0.05f, 1.f);
 	glm::vec4 green = glm::vec4(0.12f, 0.45f, 0.15f, 1.f);
@@ -185,4 +192,9 @@ VulkanPipeline& SimpleRenderSystem::getVulkanPipeline() const
 std::vector<Model>& SimpleRenderSystem::getModels()
 {
 	return m_models;
+}
+
+void SimpleRenderSystem::setShadowMap(VulkanImage& vulkanImage)
+{
+	m_shadowMap = &vulkanImage;
 }

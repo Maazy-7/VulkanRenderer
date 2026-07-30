@@ -11,10 +11,11 @@ Application::Application()
 	m_window->setMouseButtonCallBack(&InputManager::mouseButtonCallback);
 	m_window->setScrollCallback(&InputManager::scrollCallback);
 
-	std::unordered_map<uint32_t, VkDescriptorType> descriptorTypes = { {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER}, {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER} };
+	std::unordered_map<uint32_t, VkDescriptorType> descriptorTypes = { {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER}, {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER} };
 	m_vkDescriptorPool = std::make_unique<VulkanDescriptorPool>(m_vkDevice, descriptorTypes);
 	m_simpleRenderSystem = std::make_unique<SimpleRenderSystem>(m_vkDevice, m_vkRenderer, *m_vkDescriptorPool.get(), m_camera);
 	m_shadowRendererSystem = std::make_unique<ShadowRendererSystem>(m_vkDevice, m_camera, m_simpleRenderSystem->getModels());
+	m_simpleRenderSystem->setShadowMap(m_shadowRendererSystem->getShadowMap());
 	createBuffersAndDescriptors();
 }
 

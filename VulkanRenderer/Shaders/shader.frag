@@ -1,6 +1,7 @@
 #version 450
 
 layout (set = 1, binding = 0) uniform sampler2D texSampler;
+layout (set = 1, binding = 1) uniform sampler2D shadowMap;
 
 layout (location = 0) in vec3 fragNormal;
 layout (location = 1) in vec2 fragTexCoord;
@@ -36,5 +37,5 @@ void main()
 	float spec = pow(max(dot(norm, halfwayDir), 0.0), 32);
 	vec3 specular = spec * lightColor;
 
-	FragColor = vec4(ambient + diffuse + specular, 1.0);
+	FragColor = vec4(texture(shadowMap, fragTexCoord));//vec4(ambient + diffuse + specular, 1.0);
 }
