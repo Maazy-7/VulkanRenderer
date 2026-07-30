@@ -33,7 +33,7 @@ public:
     VulkanDescriptorPool(const VulkanDescriptorPool&) = delete;
     VulkanDescriptorPool& operator=(const VulkanDescriptorPool&) = delete;
 
-    VulkanDescriptorPool(VulkanDevice& device, std::unordered_map<uint32_t, VkDescriptorType> descriptorCountAndType);
+    VulkanDescriptorPool(VulkanDevice& device, std::unordered_map<VkDescriptorType, uint32_t> descriptorCountAndType);
     ~VulkanDescriptorPool();
 
     bool allocateDescriptorSet(const VulkanDescriptorSetLayout& descriptorLayout, VkDescriptorSet& descriptorSet);

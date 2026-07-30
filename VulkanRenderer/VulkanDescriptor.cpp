@@ -40,7 +40,7 @@ const VkDescriptorSetLayout& VulkanDescriptorSetLayout::getDescriptorSetLayout()
 	return m_vkDescriptorSetLayout;
 }
 
-VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, std::unordered_map<uint32_t, VkDescriptorType> descriptorTypeAndCount)
+VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, std::unordered_map<VkDescriptorType, uint32_t> descriptorTypeAndCount)
 	:m_vkDevice(device)
 {
 	std::vector<VkDescriptorPoolSize> poolSizes;
@@ -48,9 +48,9 @@ VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, std::unordered_
 	for (auto& descriptor : descriptorTypeAndCount) 
 	{
 		VkDescriptorPoolSize poolSize;
-		poolSize.type = descriptor.second;
-		poolSize.descriptorCount = descriptor.first;
-		maxSets += descriptor.first;
+		poolSize.type = descriptor.first;
+		poolSize.descriptorCount = descriptor.second;
+		maxSets += descriptor.second;
 		poolSizes.push_back(poolSize);
 	}
 
