@@ -257,9 +257,11 @@ void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout
 	m_vulkanDevice.endSingleTimeCommands(commandBuffer);
 }
 
-void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags2 srcAccess, VkAccessFlags2 dstAccess, VkPipelineStageFlags2 srcStage, VkPipelineStageFlags2 dstStage)
+void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags2 srcAccess, 
+	VkAccessFlags2 dstAccess, VkPipelineStageFlags2 srcStage, VkPipelineStageFlags2 dstStage, VkCommandBuffer mainCommandBuffer)
 {
-	VkCommandBuffer commandBuffer = m_vulkanDevice.beginSingleTimeCommands();
+	//can use either single time command buffer or main command buffer
+	VkCommandBuffer commandBuffer = mainCommandBuffer == VK_NULL_HANDLE ? m_vulkanDevice.beginSingleTimeCommands() : mainCommandBuffer;
 
 	VkImageMemoryBarrier2 imgMemoryBarrier2{};
 	imgMemoryBarrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
@@ -295,7 +297,10 @@ void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout
 
 	vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
 
-	m_vulkanDevice.endSingleTimeCommands(commandBuffer);
+	if (mainCommandBuffer == VK_NULL_HANDLE)
+	{
+		m_vulkanDevice.endSingleTimeCommands(commandBuffer);
+	}
 }
 
 void VulkanImage::copyBufferToImage(VulkanBuffer& srcBuffer, uint32_t width, uint32_t height)
