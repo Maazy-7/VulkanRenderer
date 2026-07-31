@@ -18,7 +18,7 @@ public:
 
 	Application();
 	~Application();
-
+	
 	void run();
 	float getDeltaTime();
 
@@ -42,3 +42,12 @@ private:
 	Camera m_camera;
 };
 
+//temp
+struct FrameUbo 
+{
+	alignas(16) glm::mat4 viewMat;
+	alignas(16) glm::mat4 projMat;
+	alignas(16) glm::mat4 lightSpaceMat;
+	alignas(16) glm::vec4 viewPos;
+	alignas(16) glm::vec4 lightPos;
+};

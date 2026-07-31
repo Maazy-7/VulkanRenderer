@@ -22,6 +22,14 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 
 void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescriptorSetLayout) 
 {
+
+	/*glm::vec4 LightPos = glm::vec4(2.f, 2.f, -1.5f, 0.f);
+	glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
+	LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
+	glm::mat4 lightSpaceMat = glm::ortho(-20.f, 20.f, -20.f, 20.f, 0.1f, 25.f);
+	lightSpaceMat[1][1] *= -1;
+	lightSpaceMat *= glm::lookAt(glm::vec3(LightPos), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));*/
+
 	//creating descriptor layout and sets
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
 	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
@@ -70,7 +78,7 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 	VkPushConstantRange lightPushConstantRange{};
 	lightPushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	lightPushConstantRange.offset = 64;
-	lightPushConstantRange.size = 48;//3 vec4, light pos, view pos and object color so that can be used instead of texture
+	lightPushConstantRange.size = 16;
 
 	VkPushConstantRange pushConstants[2] = { pushConstantRange, lightPushConstantRange};
 
@@ -97,7 +105,7 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 	VkPushConstantRange singleColorPushConstantRange{};
 	singleColorPushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	singleColorPushConstantRange.offset = 64;
-	singleColorPushConstantRange.size = 48;//matching other pipeline's push constant size
+	singleColorPushConstantRange.size = 16;
 
 	VkPushConstantRange singlColorPushConstants[2] = { pushConstantRange, singleColorPushConstantRange };
 
@@ -129,53 +137,53 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 	static float count = 0.f;
 	count += dt;
 	ubo.model = glm::mat4(1.f);//reset model matrix
-	float x = std::cos(2.f*count);
-	float y = std::sin(2.f*count);
+	float x = 6.f*std::cos(2.f*count);
+	float y = 6.f*std::sin(2.f*count);
 	cubeMat = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(0.5f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &cubeMat);
 	
-	glm::vec4 LightPos = glm::vec4(2.f, 2.f, -1.5f, 0.f);
-	glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
-	LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
+	glm::vec4 LightPos = glm::vec4(6.f, 10.f, 0.f, 0.f);
+	//glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
+	//LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
 	
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(LightData), &lightData);
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &white);//offset for color at 96
+	//vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(LightData), &lightData);
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &white);//offset for color at 96
 	m_models[0].draw(commandBuffer);
 
 	//bottom wall
 	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, -1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 0.15f, 3.f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &white);//offset for color at 96
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &white);//offset for color at 96
 	m_models[0].draw(commandBuffer);
 	
 	////top wall
 	//ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 3.15f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 0.15f, 3.f));
 	//vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
-	//vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &white);//offset for color at 96
+	//vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &white);//offset for color at 96
 	//m_models-[0].draw(commandBuffer);
 	
 	//right wall
 	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(3.15f, 1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(0.15f, 2.f, 3.f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &red);//offset for color at 96
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &red);//offset for color at 96
 	m_models[0].draw(commandBuffer);
 	//left wall
 	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(-3.15f, 1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(0.15f, 2.f, 3.f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &green);//offset for color at 96
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &green);//offset for color at 96
 	m_models[0].draw(commandBuffer);
 	//back wall
 	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 1.f, -3.15f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 2.f, 0.15f));
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 96, sizeof(glm::vec4), &white);//offset for color at 96
+	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &white);//offset for color at 96
 	m_models[0].draw(commandBuffer);
 
 	m_singleColorObjectPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 	
-	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(lightData.lightPos)) * glm::scale(glm::mat4(1.f), glm::vec3(0.1f));
+	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(x, 8.f, y)) * glm::scale(glm::mat4(1.f), glm::vec3(0.1f));
 	vkCmdPushConstants(commandBuffer, m_singleColorObjectPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
 	glm::vec4 lightColor = glm::vec4(1.f);
-	vkCmdPushConstants(commandBuffer, m_singleColorObjectPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(LightData), &lightColor);
+	vkCmdPushConstants(commandBuffer, m_singleColorObjectPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &lightColor);
 	m_models[0].draw(commandBuffer);
 }
 

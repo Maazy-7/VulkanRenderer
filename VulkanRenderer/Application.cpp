@@ -44,19 +44,28 @@ void Application::run()
 		//renderer update
 		auto commandBuffer = m_vkRenderer.beginFrame();
 
-		glm::vec4 LightPos = glm::vec4(2.f, 2.f, -1.5f, 0.f);
+
+		static float acc = 0.f;
+		acc += dt;
+		float x = 8.f * std::cos(2.f * acc);
+		float y = 8.f * std::sin(2.f * acc);
+
+		glm::vec4 LightPos = glm::vec4(x, 6.f, y, 0.f);
 		glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
 		LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
-		glm::mat4 lightSpaceMat = glm::ortho(-20.f, 20.f, -20.f, 20.f, 0.1f, 25.f);
+		glm::mat4 lightSpaceMat = glm::ortho(-15.f, 15.f, -15.f, 15.f, 0.1f, 25.f);
 		lightSpaceMat[1][1] *= -1;
 		lightSpaceMat *= glm::lookAt(glm::vec3(LightPos), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
 
 		m_shadowRendererSystem->renderShadowPass(commandBuffer, &lightSpaceMat);
 
+		FrameUbo frameUbo{}; frameUbo.lightSpaceMat = lightSpaceMat; frameUbo.viewPos = ViewPos; frameUbo.lightPos = LightPos;
+
 		size_t frameIndex = m_vkRenderer.getSwapChain().getCurrentFrameIndex();
 		CamMatrices view_proj = m_camera.getCameraMatrices();
-		view_proj.proj[1][1] *= -1;
-		m_camaraMatrixBuffers[frameIndex]->writeToBuffer(0, sizeof(glm::mat4) * 2, &view_proj);
+		view_proj.proj[1][1] *= -1; frameUbo.projMat = view_proj.proj; frameUbo.viewMat = view_proj.view;
+
+		m_camaraMatrixBuffers[frameIndex]->writeToBuffer(0, sizeof(FrameUbo), &frameUbo);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_simpleRenderSystem->getVulkanPipeline().getPipelineLayout(), 0, 
 			1, &m_camaraMatrixDescriptorSets[frameIndex], 0, nullptr);
 
@@ -82,9 +91,9 @@ void Application::createBuffersAndDescriptors()
 	//allocating uniform buffers
 	for (size_t i = 0; i < m_vkRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		m_camaraMatrixBuffers.push_back(std::make_unique<VulkanBuffer>(m_vkDevice, 2, sizeof(glm::mat4) * 2,
+		m_camaraMatrixBuffers.push_back(std::make_unique<VulkanBuffer>(m_vkDevice, 4, sizeof(FrameUbo),
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
-		m_camaraMatrixBuffers[i]->map(0, sizeof(glm::mat4) * 2);
+		m_camaraMatrixBuffers[i]->map(0, sizeof(FrameUbo));
 	}
 
 	//creating descriptor layout and sets
@@ -101,7 +110,7 @@ void Application::createBuffersAndDescriptors()
 		VkDescriptorBufferInfo descriptorBufferInfo{};
 		descriptorBufferInfo.buffer = m_camaraMatrixBuffers[i]->getBuffer();
 		descriptorBufferInfo.offset = 0;
-		descriptorBufferInfo.range = sizeof(glm::mat4) * 2;
+		descriptorBufferInfo.range = sizeof(FrameUbo);
 
 		descriptorWriter.writeBuffer(&descriptorBufferInfo, 0).build(m_camaraMatrixDescriptorSets[i]);
 	}
