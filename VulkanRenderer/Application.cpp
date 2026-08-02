@@ -45,12 +45,12 @@ void Application::run()
 		auto commandBuffer = m_vkRenderer.beginFrame();
 
 
-		static float acc = 0.f;
+		/*static float acc = 0.f;
 		acc += dt;
 		float x = 8.f * std::cos(2.f * acc);
-		float y = 8.f * std::sin(2.f * acc);
+		float y = 8.f * std::sin(2.f * acc);*/
 
-		glm::vec4 LightPos = glm::vec4(x, 6.f, y, 0.f);
+		glm::vec4 LightPos = glm::vec4(10.f, 15.f, -10.f, 0.f);
 		glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
 		LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
 		glm::mat4 lightSpaceMat = glm::ortho(-15.f, 15.f, -15.f, 15.f, 0.1f, 25.f);
@@ -91,7 +91,7 @@ void Application::createBuffersAndDescriptors()
 	//allocating uniform buffers
 	for (size_t i = 0; i < m_vkRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		m_camaraMatrixBuffers.push_back(std::make_unique<VulkanBuffer>(m_vkDevice, 4, sizeof(FrameUbo),
+		m_camaraMatrixBuffers.push_back(std::make_unique<VulkanBuffer>(m_vkDevice, 5, sizeof(FrameUbo),
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
 		m_camaraMatrixBuffers[i]->map(0, sizeof(FrameUbo));
 	}
