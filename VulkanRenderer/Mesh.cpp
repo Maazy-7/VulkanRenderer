@@ -50,23 +50,23 @@ Mesh::Mesh(VulkanDevice& vulkanDevice, const std::vector<Vertex>& vertices, cons
 	VulkanBuffer stagingBuffer(vulkanDevice, vertices.size(), verticesSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-	m_vertexBuffer = std::make_unique<VulkanBuffer>(vulkanDevice, vertices.size(), verticesSize, 
+	m_vertexBuffer.emplace(vulkanDevice, vertices.size(), verticesSize, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	m_indexBuffer = std::make_unique<VulkanBuffer>(vulkanDevice, indices.size(), indicesSize, 
+	m_indexBuffer.emplace(vulkanDevice, indices.size(), indicesSize, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	//allocating vertex buffer using a staging buffer
 	stagingBuffer.map(0, verticesSize);
 	stagingBuffer.writeToBuffer(0, verticesSize, vertices.data());
 	stagingBuffer.unMap();
-	VulkanBuffer::copyBuffer(stagingBuffer, *m_vertexBuffer.get(), verticesSize);
+	VulkanBuffer::copyBuffer(stagingBuffer, *m_vertexBuffer, verticesSize);
 
 	//allocating index buffer using staging buffer
 	stagingBuffer.map(0, indicesSize);
 	stagingBuffer.writeToBuffer(0, indicesSize, indices.data()); //should make a global staging buffer
 	stagingBuffer.unMap();
-	VulkanBuffer::copyBuffer(stagingBuffer, *m_indexBuffer.get(), indicesSize);
+	VulkanBuffer::copyBuffer(stagingBuffer, *m_indexBuffer, indicesSize);
 	
 }
 
@@ -75,7 +75,7 @@ Mesh::~Mesh()
 
 }
 
-void Mesh::draw(VkCommandBuffer commandBufer)
+void Mesh::draw(VkCommandBuffer commandBufer) const
 {
 	m_vertexBuffer->bindVertexBuffer(commandBufer);
 	m_indexBuffer->bindIndexBuffer(commandBufer);

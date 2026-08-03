@@ -24,6 +24,6 @@ private:
 
 	void loadModel(VulkanDevice& vulkanDevice, std::string filepath);
 
-	std::vector<std::unique_ptr<Mesh>> m_meshes;
+	std::vector<Mesh> m_meshes;
 };
 

@@ -60,7 +60,7 @@ void Model::loadModel(VulkanDevice& vulkanDevice, const std::string filepath)
 			indices.push_back(uniqueVertices[vertex]);
 		}
 
-		m_meshes.push_back(std::make_unique<Mesh>(vulkanDevice, vertices, indices));
+		m_meshes.emplace_back(vulkanDevice, vertices, indices);
 	}
 }
 
@@ -68,6 +68,6 @@ void Model::draw(VkCommandBuffer commandBuffer)
 {
 	for (const auto& mesh : m_meshes) 
 	{
-		mesh->draw(commandBuffer);
+		mesh.draw(commandBuffer);
 	}
 }

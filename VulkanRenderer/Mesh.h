@@ -24,15 +24,19 @@ public:
 	Mesh(const Mesh&) = delete;
 	Mesh& operator=(const Mesh&) = delete;
 
+	//move constructor and assignment
+	Mesh(Mesh&&) noexcept = default;
+	Mesh& operator=(Mesh&&) noexcept = default;
+
 	Mesh(VulkanDevice& vulkanDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t> indices);
 	~Mesh();
 
-	void draw(VkCommandBuffer commandBuffer);
+	void draw(VkCommandBuffer commandBuffer) const;
 
 private:
 	//void calculateAABB();
 	
-	std::unique_ptr<VulkanBuffer> m_vertexBuffer;
-	std::unique_ptr<VulkanBuffer> m_indexBuffer;
+	std::optional<VulkanBuffer> m_vertexBuffer;
+	std::optional<VulkanBuffer> m_indexBuffer;
 };
 
