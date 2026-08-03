@@ -172,6 +172,7 @@
     <ClCompile Include="VulkanImage.cpp" />
     <ClCompile Include="VulkanPipeline.cpp" />
     <ClCompile Include="VulkanRenderer.cpp" />
+    <ClCompile Include="VulkanRenderingBackend.cpp" />
     <ClCompile Include="VulkanSwapChain.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -193,6 +194,7 @@
     <ClInclude Include="VulkanImage.h" />
     <ClInclude Include="VulkanPipeline.h" />
     <ClInclude Include="VulkanRenderer.h" />
+    <ClInclude Include="VulkanRenderingBackend.h" />
     <ClInclude Include="VulkanSwapChain.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
