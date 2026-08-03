@@ -1,5 +1,8 @@
 #include "ShadowRendererSystem.h"
 
+//temp
+uint32_t SHADOW_WIDTH = 4096; 
+
 VkVertexInputBindingDescription PosOnlyVertex::getBindingDescription()
 {
 	VkVertexInputBindingDescription bindingDescription{};
@@ -19,8 +22,8 @@ VkVertexInputAttributeDescription PosOnlyVertex::getAttributeDescription()
 	return vertexInputAttributeDescription;
 }
 
-ShadowRendererSystem::ShadowRendererSystem(VulkanDevice& vulkanDevice, Camera& camera, std::vector<Model>& models)
-	:m_vulkanDevice(vulkanDevice), m_camera(camera), m_models(models)
+ShadowRendererSystem::ShadowRendererSystem(VulkanDevice& vulkanDevice, std::vector<Model>& models)
+	:m_vulkanDevice(vulkanDevice), m_models(models)
 {
 	//creating shadow map image
 
@@ -43,7 +46,7 @@ ShadowRendererSystem::ShadowRendererSystem(VulkanDevice& vulkanDevice, Camera& c
 	{
 		throw std::runtime_error("failed to create vulkan Sampler");
 	}
-	m_shadowMap = std::make_unique<VulkanImage>(m_vulkanDevice, 2048, 2048, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
+	m_shadowMap = std::make_unique<VulkanImage>(m_vulkanDevice, SHADOW_WIDTH, SHADOW_WIDTH, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, true, sampler);
 	
 	//variables for pipeline create info structs
@@ -91,7 +94,7 @@ void ShadowRendererSystem::renderShadowPass(VkCommandBuffer commandBuffer, const
 
 	VkRenderingInfo renderingInfo{};
 	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-	renderingInfo.renderArea = { {0, 0}, {2048, 2048} };
+	renderingInfo.renderArea = { {0, 0}, {SHADOW_WIDTH, SHADOW_WIDTH } };
 	renderingInfo.layerCount = 1;
 	renderingInfo.pDepthAttachment = &depthAttachmentInfo;
 	renderingInfo.colorAttachmentCount = 0;
@@ -99,12 +102,12 @@ void ShadowRendererSystem::renderShadowPass(VkCommandBuffer commandBuffer, const
 	vkCmdBeginRendering(commandBuffer, &renderingInfo);
 
 	VkViewport viewport{};
-	viewport.width = 2048;
-	viewport.height = 2048;
+	viewport.width = static_cast<float>(SHADOW_WIDTH);
+	viewport.height = static_cast<float>(SHADOW_WIDTH);
 	viewport.maxDepth = 1.f;
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-	VkRect2D scissor{ {0,0}, {2048, 2048} };
+	VkRect2D scissor{ {0,0}, {SHADOW_WIDTH, SHADOW_WIDTH} };
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	m_shadowMapRenderingPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);

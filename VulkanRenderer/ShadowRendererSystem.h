@@ -19,7 +19,7 @@ public:
 	ShadowRendererSystem(const ShadowRendererSystem&) = delete;
 	ShadowRendererSystem& operator=(const ShadowRendererSystem&) = delete;
 
-	ShadowRendererSystem(VulkanDevice& vulkanDevice, Camera& camera, std::vector<Model>& models);
+	ShadowRendererSystem(VulkanDevice& vulkanDevice, std::vector<Model>& models);
 	~ShadowRendererSystem();
 
 	void renderShadowPass(VkCommandBuffer commandBuffer, const glm::mat4* lightSpaceMatrix);
@@ -28,7 +28,6 @@ public:
 
 private:
 	VulkanDevice& m_vulkanDevice;
-	Camera& m_camera;
 	std::unique_ptr<VulkanPipeline> m_shadowMapRenderingPipeline;
 	std::unique_ptr<VulkanImage> m_shadowMap;
 	std::vector<Model>& m_models;
