@@ -29,6 +29,7 @@ struct LightData
 };
 
 class Application; //friendship
+class VulkanRenderingBackend; //friendship
 
 class SimpleRenderSystem
 {
@@ -38,7 +39,7 @@ public:
 	SimpleRenderSystem(const SimpleRenderSystem&) = delete;
 	SimpleRenderSystem& operator=(const SimpleRenderSystem&) = delete;
 
-	SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer, VulkanDescriptorPool& descriptorPool, Camera& camera);
+	SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer, VulkanDescriptorPool& descriptorPool, const Camera* camera);
 
 	void renderGameObjects(VkCommandBuffer commandBuffer, float dt);
 
@@ -46,6 +47,7 @@ public:
 	VulkanPipeline& getVulkanPipeline() const;
 	std::vector<Model>& getModels();
 	void setShadowMap(VulkanImage& vulkanImage);//could put in constructor but for now will just pass it through this function
+	void attachCamera(const Camera* camera);
 
 private:
 
@@ -62,9 +64,10 @@ private:
 	std::unique_ptr<VulkanDescriptorSetLayout> m_renderSystemDescriptorSetLayout;
 	UniformBufferObject ubo;
 	glm::mat4 cubeMat = glm::scale(glm::mat4(1.f), glm::vec3(0.5f));
-	Camera& m_camera;
+	const Camera* m_camera = nullptr;
 	std::vector<Model> m_models;
 
 	friend class Application;
+	friend class VulkanRenderingBackend;
 };
 

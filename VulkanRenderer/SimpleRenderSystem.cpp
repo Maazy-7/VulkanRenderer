@@ -1,17 +1,11 @@
 #include "SimpleRenderSystem.h"
 
-SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer, VulkanDescriptorPool& descriptorPool, Camera& camera)
+SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRenderer& renderer, VulkanDescriptorPool& descriptorPool, const Camera* camera)
 	:m_vkDevice(device),
 	m_vulkanRenderer(renderer),
 	m_vulkanDescriptorPool(descriptorPool),
 	m_camera(camera)
-{
-
-	ubo.model = glm::mat4(1.f);
-	ubo.view = m_camera.getView();
-	ubo.proj = m_camera.getProjection();
-	ubo.proj[1][1] *= -1;
-	
+{	
 	m_vkDescriptorSets.resize(1);//descriptor set containing 1 texture
 
 	m_texture = std::make_unique<Texture>(m_vkDevice, "Assets/cubeMetalTexture.png", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
@@ -24,7 +18,7 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 {
 
 	/*glm::vec4 LightPos = glm::vec4(2.f, 2.f, -1.5f, 0.f);
-	glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
+	glm::vec4 ViewPos = glm::vec4(m_camera->getPos(), 1.f);
 	LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
 	glm::mat4 lightSpaceMat = glm::ortho(-20.f, 20.f, -20.f, 20.f, 0.1f, 25.f);
 	lightSpaceMat[1][1] *= -1;
@@ -143,7 +137,7 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &cubeMat);
 	
 	glm::vec4 LightPos = glm::vec4(6.f, 10.f, 0.f, 0.f);
-	//glm::vec4 ViewPos = glm::vec4(m_camera.getPos(), 1.f);
+	//glm::vec4 ViewPos = glm::vec4(m_camera->getPos(), 1.f);
 	//LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
 	
 	//vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(LightData), &lightData);
@@ -205,4 +199,13 @@ std::vector<Model>& SimpleRenderSystem::getModels()
 void SimpleRenderSystem::setShadowMap(VulkanImage& vulkanImage)
 {
 	m_shadowMap = &vulkanImage;
+}
+
+void SimpleRenderSystem::attachCamera(const Camera* camera)
+{
+	m_camera = camera;
+	ubo.model = glm::mat4(1.f);
+	ubo.view = m_camera->getView();
+	ubo.proj = m_camera->getProjection();
+	ubo.proj[1][1] *= -1;
 }
