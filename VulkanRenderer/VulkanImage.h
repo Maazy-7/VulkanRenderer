@@ -9,6 +9,9 @@ public:
 	VulkanImage(const VulkanImage&) = delete;
 	VulkanImage& operator=(const VulkanImage&) = delete;
 
+	//move constructor
+	VulkanImage(VulkanImage&& other) noexcept;
+
 	VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t height, VkFormat format, 
 		VkImageTiling imgTilling, VkImageUsageFlags imgUsage, VkMemoryPropertyFlags memoryPropertyFlags, 
 		uint32_t mipLevels = 1);

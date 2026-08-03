@@ -1,6 +1,21 @@
 #include "VulkanBuffer.h"
 
-VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDeviceSize elementCount, VkDeviceSize size, 
+VulkanBuffer::VulkanBuffer(VulkanBuffer&& other) noexcept
+	: m_vkDevice(other.m_vkDevice),
+	m_mapped(other.m_mapped),
+	m_vkBuffer(other.m_vkBuffer),
+	m_vkDeviceMemory(other.m_vkDeviceMemory),
+	m_count(other.m_count),
+	m_buffSize(other.m_buffSize)
+{
+	other.m_mapped = nullptr;
+	other.m_vkBuffer = VK_NULL_HANDLE;
+	other.m_vkDeviceMemory = VK_NULL_HANDLE;
+	other.m_count = 0;
+	other.m_buffSize = 0;
+}
+
+VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDeviceSize elementCount, VkDeviceSize size,
 	VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 	:m_vkDevice(device), m_count((uint32_t)elementCount), m_buffSize(size)
 {

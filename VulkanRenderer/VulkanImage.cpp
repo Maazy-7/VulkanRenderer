@@ -1,6 +1,21 @@
 #include "VulkanImage.h"
 
-VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t height, VkFormat format, 
+VulkanImage::VulkanImage(VulkanImage&& other) noexcept
+	: m_vulkanDevice(other.m_vulkanDevice),
+	m_vkImage(other.m_vkImage),
+	m_vkDeviceMemory(other.m_vkDeviceMemory),
+	m_vkImageView(other.m_vkImageView),
+	m_vkSampler(other.m_vkSampler),
+	m_vkFormat(other.m_vkFormat)
+{
+	other.m_vkImage = VK_NULL_HANDLE;
+	other.m_vkDeviceMemory = VK_NULL_HANDLE;
+	other.m_vkImageView = VK_NULL_HANDLE;
+	other.m_vkSampler = VK_NULL_HANDLE;
+	other.m_vkFormat = VK_FORMAT_UNDEFINED;
+}
+
+VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t height, VkFormat format,
 	VkImageTiling imgTilling, VkImageUsageFlags imgUsage, VkMemoryPropertyFlags memoryPropertyFlags, uint32_t mipLevels)
 	:m_vulkanDevice(vulkanDevice), m_vkFormat(format)
 {

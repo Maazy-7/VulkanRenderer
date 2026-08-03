@@ -12,6 +12,9 @@ public:
 	VulkanBuffer(const VulkanBuffer&) = delete;
 	VulkanBuffer& operator=(const VulkanBuffer&) = delete;
 
+	//move constructor
+	VulkanBuffer(VulkanBuffer&& other) noexcept;
+
 	VulkanBuffer(VulkanDevice& device, VkDeviceSize elementCount, VkDeviceSize size, 
 		VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 	~VulkanBuffer();
