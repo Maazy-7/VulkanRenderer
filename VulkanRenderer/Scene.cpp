@@ -22,6 +22,41 @@ glm::mat4 gameObject::getModelMat() const
 	return glm::translate(glm::mat4(1.f), m_pos) * rot_mat * glm::scale(glm::mat4(1.f), m_scale);
 }
 
+void gameObject::setPos(glm::vec3 pos)
+{
+	m_pos = pos;
+}
+
+void gameObject::setOrientation(glm::vec3 orientation)
+{
+	m_orientation = orientation;
+}
+
+void gameObject::setScale(glm::vec3 scale)
+{
+	m_scale = scale;
+}
+
+void gameObject::translate(glm::vec3 translation)
+{
+	m_pos += translation;
+}
+
+void gameObject::rotate(glm::vec3 axis, float angle)
+{
+	//todo
+}
+
+void gameObject::scale(float scale)
+{
+	m_scale *= scale;
+}
+
+void gameObject::scale(glm::vec3 scale)
+{
+	m_scale *= scale;
+}
+
 Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	:m_vulkanRenderingBackend(vulkanRenderingBackend),
 	m_camera(std::make_unique<Camera>(glm::vec3(0.f, 0.f, 0.2f), vulkanRenderingBackend->getSwapChainAspect(), 0.1f, 100.f))
