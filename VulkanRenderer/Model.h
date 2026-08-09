@@ -20,10 +20,16 @@ public:
 
 	void draw(VkCommandBuffer commandBuffer);
 
+	static void createDefaultCubeModel(VulkanDevice& vulkanDevice, const std::string filepath);
+	static Model& getDefaultCubeModel();
+
 private:
 
 	void loadModel(VulkanDevice& vulkanDevice, std::string filepath);
 
 	std::vector<Mesh> m_meshes;
+
+	//default model types
+	static std::optional<Model> DEFAULT_MODEL_CUBE;
 };
 

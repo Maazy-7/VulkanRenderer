@@ -4,6 +4,8 @@
 #define TINYOBJLOADER_DISABLE_FAST_FLOAT
 #include <tiny_obj_loader/tiny_obj_loader.h>
 
+std::optional<Model> Model::DEFAULT_MODEL_CUBE;
+
 Model::Model(VulkanDevice& vulkanDevice, const std::string filepath)
 {
 	loadModel(vulkanDevice, filepath);
@@ -70,4 +72,14 @@ void Model::draw(VkCommandBuffer commandBuffer)
 	{
 		mesh.draw(commandBuffer);
 	}
+}
+
+void Model::createDefaultCubeModel(VulkanDevice& vulkanDevice, const std::string filepath)
+{
+	DEFAULT_MODEL_CUBE = Model(vulkanDevice, filepath);
+}
+
+Model& Model::getDefaultCubeModel()
+{
+	return DEFAULT_MODEL_CUBE.value();
 }
