@@ -119,58 +119,21 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 
 void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float dt)
 {
-	
 	m_vkPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline->getPipelineLayout(), 1, 1, 
 		m_vkDescriptorSets.data(), 0, nullptr);
 	
-	glm::vec4 red = glm::vec4(0.65f, 0.05f, 0.05f, 1.f);
-	glm::vec4 green = glm::vec4(0.12f, 0.45f, 0.15f, 1.f);
-	glm::vec4 white = glm::vec4(0.73f);
+	glm::mat4 model;
+	glm::vec4 color;
+	for (gameObject& gameObj : *m_gameObjects) 
+	{
+		model = gameObj.getModelMat();
+		color = gameObj.getColor();
+		vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model);
+		vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &color);
 
-	static float count = 0.f;
-	count += dt;
-	ubo.model = glm::mat4(1.f);//reset model matrix
-	float x = 6.f*std::cos(2.f*count);
-	float y = 6.f*std::sin(2.f*count);
-	cubeMat = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(0.5f));
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &cubeMat);
-	
-	glm::vec4 LightPos = glm::vec4(6.f, 10.f, 0.f, 0.f);
-	//glm::vec4 ViewPos = glm::vec4(m_camera->getPos(), 1.f);
-	//LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
-	
-	//vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(LightData), &lightData);
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &white);//offset for color at 96
-	m_models[0].draw(commandBuffer);
-
-	//bottom wall
-	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, -1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 0.15f, 3.f));
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &white);//offset for color at 96
-	m_models[0].draw(commandBuffer);
-	
-	////top wall
-	//ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 3.15f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 0.15f, 3.f));
-	//vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
-	//vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &white);//offset for color at 96
-	//m_models-[0].draw(commandBuffer);
-	
-	//right wall
-	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(3.15f, 1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(0.15f, 2.f, 3.f));
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &red);//offset for color at 96
-	m_models[0].draw(commandBuffer);
-	//left wall
-	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(-3.15f, 1.f, 0.f)) * glm::scale(glm::mat4(1.f), glm::vec3(0.15f, 2.f, 3.f));
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &green);//offset for color at 96
-	m_models[0].draw(commandBuffer);
-	//back wall
-	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 1.f, -3.15f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 2.f, 0.15f));
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
-	vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &white);//offset for color at 96
-	m_models[0].draw(commandBuffer);
+		gameObj.render(commandBuffer);
+	}
 
 	m_singleColorObjectPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 	
@@ -199,6 +162,11 @@ std::vector<Model>& SimpleRenderSystem::getModels()
 void SimpleRenderSystem::setShadowMap(VulkanImage& vulkanImage)
 {
 	m_shadowMap = &vulkanImage;
+}
+
+void SimpleRenderSystem::setGameObjectList(std::vector<gameObject>* gameObjects) 
+{
+	m_gameObjects = gameObjects;
 }
 
 void SimpleRenderSystem::attachCamera(const Camera* camera)

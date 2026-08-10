@@ -5,6 +5,7 @@
 #include "VulkanRenderer.h"
 #include "SimpleRenderSystem.h"
 #include "ShadowRendererSystem.h"
+#include "gameObject.h"
 
 class VulkanRenderingBackend
 {
@@ -19,9 +20,10 @@ public:
 	void render(float dt);
 
 	void attachCamera(const Camera* camera);
-	//void attachScene(Scene* scene);
+	void setGameObjectList(std::vector<gameObject>* gameObjects);
 
 	float getSwapChainAspect() const;
+	VulkanDevice& getVulkanDevice();
 
 private:
 
@@ -39,6 +41,7 @@ private:
 	std::unique_ptr<SimpleRenderSystem> m_simpleRenderSystem;
 
 	const Camera* m_camera = nullptr;
+	std::vector<gameObject>* m_gameObjects = nullptr;
 };
 
 struct FrameUbo

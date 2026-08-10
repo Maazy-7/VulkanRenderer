@@ -3,8 +3,8 @@
 #include <memory>
 #include "Window.h"
 #include "InputManager.h"
-#include "VulkanRenderingBackend.h"
 #include "Scene.h"
+#include "VulkanRenderingBackend.h"
 
 #define DEFAULT_WIDTH 1920
 #define DEFUALT_HEIGHT 1080

@@ -114,8 +114,15 @@ void ShadowRendererSystem::renderShadowPass(VkCommandBuffer commandBuffer, const
 	//pushing light space matrix
 	vkCmdPushConstants(commandBuffer, m_shadowMapRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), lightSpaceMatrix);
 
+	glm::mat4 model;
+	for (gameObject& gameObj : *m_gameObjects) 
+	{
+		model = gameObj.getModelMat();
+		vkCmdPushConstants(commandBuffer, m_shadowMapRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 64, sizeof(glm::mat4), &model);
+		gameObj.render(commandBuffer);
+	}
 
-	glm::mat4 model = glm::scale(glm::mat4(1.f), glm::vec3(0.5f));
+	/*glm::mat4 model = glm::scale(glm::mat4(1.f), glm::vec3(0.5f));
 	vkCmdPushConstants(commandBuffer, m_shadowMapRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 64, sizeof(glm::mat4), &model);
 	m_models[0].draw(commandBuffer);
 	
@@ -143,13 +150,18 @@ void ShadowRendererSystem::renderShadowPass(VkCommandBuffer commandBuffer, const
 	//back wall
 	model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 1.f, -3.15f)) * glm::scale(glm::mat4(1.f), glm::vec3(3.f, 2.f, 0.15f));
 	vkCmdPushConstants(commandBuffer, m_shadowMapRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 64, sizeof(glm::mat4), &model);
-	m_models[0].draw(commandBuffer);
+	m_models[0].draw(commandBuffer);*/
 
 	vkCmdEndRendering(commandBuffer);
 
 	m_shadowMap->transitionImageLayout(VK_FORMAT_D32_SFLOAT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, 
 		VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, commandBuffer);
+}
+
+void ShadowRendererSystem::setGameObjectList(std::vector<gameObject>* gameObjects)
+{
+	m_gameObjects = gameObjects;
 }
 
 VulkanImage& ShadowRendererSystem::getShadowMap() const

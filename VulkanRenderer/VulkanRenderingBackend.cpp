@@ -58,9 +58,21 @@ void VulkanRenderingBackend::attachCamera(const Camera* camera)
 	createBuffersAndDescriptors();
 }
 
+void VulkanRenderingBackend::setGameObjectList(std::vector<gameObject>* gameObjects)
+{
+	m_gameObjects = gameObjects;
+	m_simpleRenderSystem->setGameObjectList(gameObjects);
+	m_shadowRendererSystem->setGameObjectList(gameObjects);
+}
+
 float VulkanRenderingBackend::getSwapChainAspect() const 
 {
 	return m_vulkanRenderer.getSwapChain().getSwapChainAspect();
+}
+
+VulkanDevice& VulkanRenderingBackend::getVulkanDevice()
+{
+	return m_vulkanDevice;
 }
 
 void VulkanRenderingBackend::createBuffersAndDescriptors()
