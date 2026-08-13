@@ -3,25 +3,6 @@
 //temp
 uint32_t SHADOW_WIDTH = 4096; 
 
-VkVertexInputBindingDescription PosOnlyVertex::getBindingDescription()
-{
-	VkVertexInputBindingDescription bindingDescription{};
-	bindingDescription.binding = 0;
-	bindingDescription.stride = sizeof(PosOnlyVertex);
-	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-	return bindingDescription;
-}
-
-VkVertexInputAttributeDescription PosOnlyVertex::getAttributeDescription() 
-{
-	VkVertexInputAttributeDescription vertexInputAttributeDescription{};
-	vertexInputAttributeDescription.binding = 0;
-	vertexInputAttributeDescription.location = 0;
-	vertexInputAttributeDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
-	vertexInputAttributeDescription.offset = offsetof(PosOnlyVertex, pos);
-	return vertexInputAttributeDescription;
-}
-
 ShadowRendererSystem::ShadowRendererSystem(VulkanDevice& vulkanDevice, std::vector<Model>& models)
 	:m_vulkanDevice(vulkanDevice), m_models(models)
 {
