@@ -18,6 +18,7 @@ public:
 	VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t height, VkFormat format,
 		VkImageTiling imgTilling, VkImageUsageFlags imgUsage, VkMemoryPropertyFlags memoryPropertyFlags, 
 		VkImageAspectFlagBits imgAspectFlags, bool useSampler = false, VkSampler sampler = VK_NULL_HANDLE);
+	VulkanImage(VulkanDevice& vulkanDevice, VkImage vkImage, VkImageView vkImageView, VkFormat format, VkSampler vkSampler = VK_NULL_HANDLE);
 	~VulkanImage();
 
 	void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1);

@@ -192,6 +192,34 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 	}
 }
 
+VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, VkImage vkImage, VkImageView vkImageView, VkFormat format, VkSampler vkSampler)
+	:m_vulkanDevice(vulkanDevice), m_vkImage(vkImage), m_vkImageView(vkImageView), m_vkSampler(vkSampler)
+{
+	m_vkFormat = format;
+
+	VkMemoryRequirements memoryRequirements;
+	vkGetImageMemoryRequirements(m_vulkanDevice.getDevice(), m_vkImage, &memoryRequirements);
+
+	VkMemoryAllocateInfo memAllocateInfo{};
+	memAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memAllocateInfo.allocationSize = memoryRequirements.size; VkMemoryPropertyFlags memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;//for just hardcoded
+	memAllocateInfo.memoryTypeIndex = m_vulkanDevice.findMemoryType(memoryRequirements.memoryTypeBits, memoryPropertyFlags);
+
+	if (vkAllocateMemory(m_vulkanDevice.getDevice(), &memAllocateInfo, nullptr, &m_vkDeviceMemory) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate Vulkan image memory");
+	}
+
+	vkBindImageMemory(m_vulkanDevice.getDevice(), m_vkImage, m_vkDeviceMemory, 0);
+
+	if (vkSampler == VK_NULL_HANDLE) { /*for now do nothing*/ }
+	else 
+	{
+		m_vkSampler = vkSampler;
+	}
+}
+
+
 VulkanImage::~VulkanImage()
 {
 	if (m_vkSampler) { vkDestroySampler(m_vulkanDevice.getDevice(), m_vkSampler, nullptr); }
@@ -254,8 +282,6 @@ void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout
 	{
 		imgMemoryBarrier2.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 		imgMemoryBarrier2.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-		//TODO correct and proper the transtions to support shadow maps
 	}
 	else 
 	{
