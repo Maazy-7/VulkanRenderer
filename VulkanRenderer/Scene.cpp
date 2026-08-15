@@ -5,13 +5,17 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	m_vulkanDevice(vulkanRenderingBackend->getVulkanDevice()),
 	m_camera(std::make_unique<Camera>(glm::vec3(0.f, 0.f, 0.2f), vulkanRenderingBackend->getSwapChainAspect(), 0.1f, 100.f))
 {
-	m_vulkanRenderingBackend->attachCamera(m_camera.get());
+	//m_vulkanRenderingBackend->attachCamera(m_camera.get());
 	m_vulkanRenderingBackend->setGameObjectList(&m_gameObjects);
+	m_vulkanRenderingBackend->setLightsList(&m_lights);
 
 	m_models.emplace_back(m_vulkanDevice, "Assets/metalCube.obj");
 
 	Model& cube = m_models[0];
 
+	Light& light1 = m_lights.emplace_back(glm::vec3(10.f, 15.f, -10.f), glm::vec4(0.3f, 0.3f, 0.3f, 0.f), cube, LightType::Directional);
+	m_vulkanRenderingBackend->createShadowCaster(light1, 2048, 2048);
+	m_vulkanRenderingBackend->attachCamera(m_camera.get());
 	glm::vec4 red = glm::vec4(0.65f, 0.05f, 0.05f, 1.f);
 	glm::vec4 green = glm::vec4(0.12f, 0.45f, 0.15f, 1.f);
 	glm::vec4 white = glm::vec4(0.73f);
@@ -25,6 +29,8 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	m_gameObjects.emplace_back(glm::vec3(3.15f, 1.f, 0.f), glm::vec3(0.f), glm::vec3(0.15f, 2.f, 3.f), cube).setColor(red);
 	//left wall
 	m_gameObjects.emplace_back(glm::vec3(-3.15f, 1.f, 0.f), glm::vec3(0.f), glm::vec3(0.15f, 2.f, 3.f), cube).setColor(green);
+
+
 }
 
 Scene::~Scene()

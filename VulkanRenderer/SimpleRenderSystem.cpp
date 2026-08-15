@@ -37,10 +37,10 @@ void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescrip
 		descriptorImageInfo.imageView = m_texture->getVkImageView();
 		descriptorImageInfo.sampler = m_texture->getVkSampler();
 
-		VkDescriptorImageInfo descriptorImage2Info{};
+		VkDescriptorImageInfo descriptorImage2Info{}; const VulkanImage& shadowMap = (*m_shadowCasters)[0].getShadowMap();
 		descriptorImage2Info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		descriptorImage2Info.imageView = m_shadowMap->getVkImageView();
-		descriptorImage2Info.sampler = m_shadowMap->getVkSampler();
+		descriptorImage2Info.imageView = shadowMap.getVkImageView();
+		descriptorImage2Info.sampler = shadowMap.getVkSampler();
 
 		descriptorWriter.writeImage(&descriptorImageInfo, 0).writeImage(&descriptorImage2Info, 1).build(m_vkDescriptorSets[i]);
 	}
@@ -159,14 +159,19 @@ std::vector<Model>& SimpleRenderSystem::getModels()
 	return m_models;
 }
 
-void SimpleRenderSystem::setShadowMap(VulkanImage& vulkanImage)
-{
-	m_shadowMap = &vulkanImage;
-}
-
 void SimpleRenderSystem::setGameObjectList(std::vector<gameObject>* gameObjects) 
 {
 	m_gameObjects = gameObjects;
+}
+
+void SimpleRenderSystem::setLightsList(std::vector<Light>* lights) 
+{
+	m_lights = lights;
+}
+
+void SimpleRenderSystem::setShadowCasterList(const std::vector<ShadowCaster>* shadowCasters)
+{
+	m_shadowCasters = shadowCasters;
 }
 
 void SimpleRenderSystem::attachCamera(const Camera* camera)

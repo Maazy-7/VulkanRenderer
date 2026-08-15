@@ -7,7 +7,7 @@ VulkanRenderingBackend::VulkanRenderingBackend(Window& window)
 	m_vulkanDescriptorPool = std::make_unique<VulkanDescriptorPool>(m_vulkanDevice, descriptorTypes);
 	m_simpleRenderSystem = std::make_unique<SimpleRenderSystem>(m_vulkanDevice, m_vulkanRenderer, *m_vulkanDescriptorPool.get(), nullptr);
 	m_shadowRendererSystem = std::make_unique<ShadowRendererSystem>(m_vulkanDevice, m_simpleRenderSystem->getModels());
-	m_simpleRenderSystem->setShadowMap(m_shadowRendererSystem->getShadowMap());
+	m_simpleRenderSystem->setShadowCasterList(m_shadowRendererSystem->getShadowCasters());
 }
 
 VulkanRenderingBackend::~VulkanRenderingBackend()
@@ -33,7 +33,7 @@ void VulkanRenderingBackend::render(float dt)
 	lightSpaceMat[1][1] *= -1;
 	lightSpaceMat *= glm::lookAt(glm::vec3(LightPos), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
 
-	m_shadowRendererSystem->renderShadowPass(commandBuffer, &lightSpaceMat);
+	m_shadowRendererSystem->renderShadowPass(commandBuffer);
 
 	FrameUbo frameUbo{}; frameUbo.lightSpaceMat = lightSpaceMat; frameUbo.viewPos = ViewPos; frameUbo.lightPos = LightPos;
 
@@ -63,6 +63,17 @@ void VulkanRenderingBackend::setGameObjectList(std::vector<gameObject>* gameObje
 	m_gameObjects = gameObjects;
 	m_simpleRenderSystem->setGameObjectList(gameObjects);
 	m_shadowRendererSystem->setGameObjectList(gameObjects);
+}
+
+void VulkanRenderingBackend::setLightsList(std::vector<Light>* lights)
+{
+	m_lights = lights;
+	m_simpleRenderSystem->setLightsList(lights);
+}
+
+void VulkanRenderingBackend::createShadowCaster(Light& light, uint32_t shadowWidth, uint32_t shadowHeight, float nearPlane, float farPlane) 
+{
+	m_shadowRendererSystem->createShadowCaster(light, shadowWidth, shadowHeight, nearPlane, farPlane);
 }
 
 float VulkanRenderingBackend::getSwapChainAspect() const 

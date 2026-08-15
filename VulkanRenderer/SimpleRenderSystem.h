@@ -47,8 +47,9 @@ public:
 	std::vector<VkDescriptorSet>& getDescriptorSets();
 	VulkanPipeline& getVulkanPipeline() const;
 	std::vector<Model>& getModels();
-	void setShadowMap(VulkanImage& vulkanImage);//could put in constructor but for now will just pass it through this function
 	void setGameObjectList(std::vector<gameObject>* gameObjects);
+	void setLightsList(std::vector<Light>* lights);
+	void setShadowCasterList(const std::vector<ShadowCaster>* shadowCasters);
 	void attachCamera(const Camera* camera);
 
 private:
@@ -62,13 +63,14 @@ private:
 	std::unique_ptr<VulkanPipeline> m_singleColorObjectPipeline;
 	std::unique_ptr<Texture> m_texture;
 	std::vector<VkDescriptorSet> m_vkDescriptorSets;
-	VulkanImage* m_shadowMap = nullptr;
 	std::unique_ptr<VulkanDescriptorSetLayout> m_renderSystemDescriptorSetLayout;
 	UniformBufferObject ubo;
 	glm::mat4 cubeMat = glm::scale(glm::mat4(1.f), glm::vec3(0.5f));
 	const Camera* m_camera = nullptr;
 	std::vector<Model> m_models;
 	std::vector<gameObject>* m_gameObjects = nullptr;
+	std::vector<Light>* m_lights = nullptr;
+	const std::vector<ShadowCaster>* m_shadowCasters = nullptr;
 
 	friend class Application;
 	friend class VulkanRenderingBackend;

@@ -3,6 +3,7 @@
 #include "VulkanRenderer.h"
 #include "Camera.h"
 #include "gameObject.h"
+#include "ShadowCaster.h"
 
 class ShadowRendererSystem
 {
@@ -14,16 +15,18 @@ public:
 	ShadowRendererSystem(VulkanDevice& vulkanDevice, std::vector<Model>& models);
 	~ShadowRendererSystem();
 
-	void renderShadowPass(VkCommandBuffer commandBuffer, const glm::mat4* lightSpaceMatrix);
+	void renderShadowPass(VkCommandBuffer commandBuffer);
 	void setGameObjectList(std::vector<gameObject>* gameObjects);
+	void createShadowCaster(Light& light, uint32_t shadowWidth, uint32_t shadowHeight, float nearPlane = 0.1f, float farPlane = 25.f);
 
-	VulkanImage& getShadowMap() const;
+	const std::vector<ShadowCaster>* getShadowCasters() const;
 
 private:
 	VulkanDevice& m_vulkanDevice;
 	std::unique_ptr<VulkanPipeline> m_shadowMapRenderingPipeline;
 	std::unique_ptr<VulkanImage> m_shadowMap;
+	std::vector<ShadowCaster> m_shadowCasters;
 	std::vector<Model>& m_models;
-	std::vector<gameObject>* m_gameObjects;
+	std::vector<gameObject>* m_gameObjects = nullptr;
 };
 

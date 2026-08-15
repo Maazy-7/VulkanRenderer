@@ -21,6 +21,9 @@ public:
 
 	void attachCamera(const Camera* camera);
 	void setGameObjectList(std::vector<gameObject>* gameObjects);
+	void setLightsList(std::vector<Light>* lights);
+	void createShadowCaster(Light& light, uint32_t shadowWidth, uint32_t shadowHeight, float nearPlane = 0.1f, float farPlane = 25.f);
+
 
 	float getSwapChainAspect() const;
 	VulkanDevice& getVulkanDevice();
@@ -42,6 +45,7 @@ private:
 
 	const Camera* m_camera = nullptr;
 	std::vector<gameObject>* m_gameObjects = nullptr;
+	std::vector<Light>* m_lights = nullptr;
 };
 
 struct FrameUbo
