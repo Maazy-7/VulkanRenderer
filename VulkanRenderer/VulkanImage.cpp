@@ -299,7 +299,7 @@ void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout
 }
 
 void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags2 srcAccess, 
-	VkAccessFlags2 dstAccess, VkPipelineStageFlags2 srcStage, VkPipelineStageFlags2 dstStage, VkCommandBuffer mainCommandBuffer)
+	VkAccessFlags2 dstAccess, VkPipelineStageFlags2 srcStage, VkPipelineStageFlags2 dstStage, uint32_t layerCount, VkCommandBuffer mainCommandBuffer)
 {
 	//can use either single time command buffer or main command buffer
 	VkCommandBuffer commandBuffer = mainCommandBuffer == VK_NULL_HANDLE ? m_vulkanDevice.beginSingleTimeCommands() : mainCommandBuffer;
@@ -314,7 +314,7 @@ void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout
 	imgMemoryBarrier2.subresourceRange.baseMipLevel = 0;
 	imgMemoryBarrier2.subresourceRange.levelCount = 1;
 	imgMemoryBarrier2.subresourceRange.baseArrayLayer = 0;
-	imgMemoryBarrier2.subresourceRange.layerCount = 1;
+	imgMemoryBarrier2.subresourceRange.layerCount = layerCount;
 
 	imgMemoryBarrier2.srcAccessMask = srcAccess;
 	imgMemoryBarrier2.dstAccessMask = dstAccess;
