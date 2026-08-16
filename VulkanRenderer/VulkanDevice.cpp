@@ -242,13 +242,13 @@ void VulkanDevice::createDevice()
 
 	//enabling anisotropic filtering
 	VkPhysicalDeviceFeatures physicalDeviceFeatures{};
-	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
+	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE; 
 
 	VkPhysicalDeviceFeatures2 physicalDeviceFeatures2{};
 	physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	physicalDeviceFeatures2.features = physicalDeviceFeatures;
 	physicalDeviceFeatures2.pNext = VK_NULL_HANDLE;
-
+	
 	//enabling dynamic rendering and synchronization2
 	VkPhysicalDeviceVulkan13Features vkDevice13Features = {};
 	vkDevice13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
@@ -256,13 +256,18 @@ void VulkanDevice::createDevice()
 	vkDevice13Features.synchronization2 = VK_TRUE;
 	vkDevice13Features.pNext = &physicalDeviceFeatures2;
 
+	VkPhysicalDeviceMultiviewFeatures physicalDeviceMultiviewFeatures{};
+	physicalDeviceMultiviewFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES;
+	physicalDeviceMultiviewFeatures.multiview = VK_TRUE;
+	physicalDeviceMultiviewFeatures.pNext = &vkDevice13Features;
+
 	VkDeviceCreateInfo devCreateInfo = {};
 	devCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	devCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(qCreateInfo.size());
 	devCreateInfo.pQueueCreateInfos = qCreateInfo.data();
 	devCreateInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
 	devCreateInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
-	devCreateInfo.pNext = &vkDevice13Features;
+	devCreateInfo.pNext = &physicalDeviceMultiviewFeatures;
 	if (vkCreateDevice(m_vkPhysicalDevice, &devCreateInfo, nullptr, &m_vkDevice) != VK_SUCCESS) 
 	{
 		throw std::runtime_error("Failed to create Vulkan device");
