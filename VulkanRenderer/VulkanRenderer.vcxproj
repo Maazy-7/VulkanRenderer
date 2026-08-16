@@ -205,6 +205,10 @@
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\cubemapShadowDepthShader.frag" />
+    <None Include="Shaders\cubemapShadowDepthShader.frag.spv" />
+    <None Include="Shaders\cubemapShadowDepthShader.vert" />
+    <None Include="Shaders\cubemapShadowDepthShader.vert.spv" />
     <None Include="Shaders\shader.frag" />
     <None Include="Shaders\shader.frag.spv" />
     <None Include="Shaders\shader.vert" />

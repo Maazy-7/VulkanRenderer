@@ -24,6 +24,11 @@ public:
 private:
 	VulkanDevice& m_vulkanDevice;
 	std::unique_ptr<VulkanPipeline> m_shadowMapRenderingPipeline;
+	std::unique_ptr<VulkanPipeline> m_cubeMapShadowRenderingPipeline;
+	std::unique_ptr<VulkanDescriptorPool> m_ShadowRendererDescriptorPool;
+	std::unique_ptr<VulkanDescriptorSetLayout> m_cubemapShadowMatrixDescriptorSetLayout;
+	std::optional<VulkanBuffer> m_cubemapMatrixBuffer;
+	VkDescriptorSet m_shadowMatrixDescriptorSet;
 	std::unique_ptr<VulkanImage> m_shadowMap;
 	std::vector<ShadowCaster> m_shadowCasters;
 	std::vector<Model>& m_models;

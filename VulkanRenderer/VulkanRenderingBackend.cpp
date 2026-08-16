@@ -95,7 +95,7 @@ void VulkanRenderingBackend::createBuffersAndDescriptors()
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		m_cameraMatrixBuffers[i].map(0, sizeof(FrameUbo));
 	}
-
+	
 	//creating descriptor layout and sets
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
 	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1);

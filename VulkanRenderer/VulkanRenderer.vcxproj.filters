@@ -170,5 +170,9 @@
     <None Include="Shaders\shadowMapDepthShader.frag" />
     <None Include="Shaders\shadowMapDepthShader.frag.spv" />
     <None Include="Shaders\shadowMapDepthShader.vert.spv" />
+    <None Include="Shaders\cubemapShadowDepthShader.vert" />
+    <None Include="Shaders\cubemapShadowDepthShader.frag" />
+    <None Include="Shaders\cubemapShadowDepthShader.frag.spv" />
+    <None Include="Shaders\cubemapShadowDepthShader.vert.spv" />
   </ItemGroup>
 </Project>
