@@ -29,6 +29,7 @@ private:
 	float m_farPlane;
 	std::vector<glm::mat4> m_lightSpaceMatrix;//either a singular matrix or 6 for cubemap shadows
 	std::optional<VulkanImage> m_shadowMap;
+	VkImageView m_cubemapLayerRenderImageView;//image view that hold view type of 2d image array so that it can be accessed within the geometry shader through layers
 
 	friend ShadowRendererSystem;
 };

@@ -23,7 +23,7 @@ ShadowCaster::ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t sh
 		throw std::runtime_error("failed to create vulkan Sampler");
 	}
 
-	if (m_light.getLightType() == LightType::Directional)
+	if (m_light.getLightType() == LightType::Directional) //directional light -> 2d shadow map
 	{
 		m_shadowMap.emplace(vulkanDevice, shadowWidth, shadowHeight, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
 	VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, true, sampler);
@@ -34,7 +34,7 @@ ShadowCaster::ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t sh
 		m_lightSpaceMatrix.reserve(1);
 		m_lightSpaceMatrix.emplace_back(lightSpaceMat);
 	}
-	else if (m_light.getLightType() == LightType::Point)
+	else if (m_light.getLightType() == LightType::Point)//point light -> cubemap shadows
 	{
 		VkImageCreateInfo imageCreateInfo{};
 		imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -69,6 +69,13 @@ ShadowCaster::ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t sh
 
 		VkImageView vkImageView;
 		if (vkCreateImageView(vulkanDevice.getDevice(), &imageViewCreateInfo, nullptr, &vkImageView) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create vulkan image view");
+		}
+
+		//creating image view for rendering to cubemap
+		imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;//second view type used for rendering to cubemap
+		if (vkCreateImageView(vulkanDevice.getDevice(), &imageViewCreateInfo, nullptr, &m_cubemapLayerRenderImageView) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create vulkan image view");
 		}
