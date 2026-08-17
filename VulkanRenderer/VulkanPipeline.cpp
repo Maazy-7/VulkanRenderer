@@ -211,7 +211,7 @@ VulkanPipeline& VulkanPipeline::dynamicState(uint32_t dynamicStateCount, VkDynam
 }
 
 VulkanPipeline& VulkanPipeline::pipelineRendering(uint32_t colorAttachmentCount, VkFormat* pColorAttachmentFormats, VkFormat depthAttachmentFormat, 
-	VkFormat stencilAttachmentFormat, const void* pNext)
+	VkFormat stencilAttachmentFormat, uint32_t viewMask, const void* pNext)
 {
 	VkPipelineRenderingCreateInfo* renderingCreateInfo = new VkPipelineRenderingCreateInfo{};//deleted after pipeline creation
 	renderingCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
@@ -219,6 +219,7 @@ VulkanPipeline& VulkanPipeline::pipelineRendering(uint32_t colorAttachmentCount,
 	renderingCreateInfo->pColorAttachmentFormats = pColorAttachmentFormats;
 	renderingCreateInfo->depthAttachmentFormat = depthAttachmentFormat;
 	renderingCreateInfo->stencilAttachmentFormat = stencilAttachmentFormat;
+	renderingCreateInfo->viewMask = viewMask;
 	renderingCreateInfo->pNext = pNext;
 	m_vkgraphicsPipelineCreateInfo->pNext = renderingCreateInfo;
 	return *this;

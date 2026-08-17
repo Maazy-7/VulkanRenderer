@@ -39,7 +39,7 @@ public:
 		float minDepthBounds, float maxDepthBounds, VkBool32 stencilTestEnable, const void* pNext = nullptr);
 	[[nodiscard]] VulkanPipeline& dynamicState(uint32_t dynamicStateCount, VkDynamicState* pDynamicStates, const void* pNext = nullptr);
 	[[nodiscard]] VulkanPipeline& pipelineRendering(uint32_t colorAttachmentCount, VkFormat* pColorAttachmentFormats, VkFormat depthAttachmentFormat,
-		VkFormat stencilAttachmentFormat, const void* pNext = nullptr);	
+		VkFormat stencilAttachmentFormat, uint32_t viewMask = 0, const void* pNext = nullptr);
 	
 	void createPipelineLayout(uint32_t setLayoutCount, VkDescriptorSetLayout* pSetLayouts, uint32_t pushConstantRangeCount, 
 		VkPushConstantRange* pPushConstantRanges, const void* pNext = nullptr);
