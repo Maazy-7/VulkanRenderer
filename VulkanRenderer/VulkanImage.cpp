@@ -192,8 +192,8 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 	}
 }
 
-VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, VkImage vkImage, VkImageView vkImageView, VkFormat format, VkSampler vkSampler)
-	:m_vulkanDevice(vulkanDevice), m_vkImage(vkImage), m_vkImageView(vkImageView), m_vkSampler(vkSampler)
+VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, VkImage vkImage, VkImageViewCreateInfo* vkImageViewCreateInfo, VkFormat format, VkSampler vkSampler)
+	:m_vulkanDevice(vulkanDevice), m_vkImage(vkImage), m_vkSampler(vkSampler)
 {
 	m_vkFormat = format;
 
@@ -211,6 +211,11 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, VkImage vkImage, VkImageVie
 	}
 
 	vkBindImageMemory(m_vulkanDevice.getDevice(), m_vkImage, m_vkDeviceMemory, 0);
+
+	if (vkCreateImageView(vulkanDevice.getDevice(), vkImageViewCreateInfo, nullptr, &m_vkImageView) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create vulkan image view");
+	}
 
 	if (vkSampler == VK_NULL_HANDLE) { /*for now do nothing*/ }
 	else 
