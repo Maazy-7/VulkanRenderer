@@ -23,6 +23,7 @@ public:
 
 private:
 	Light& m_light;
+	VulkanDevice& m_vulkanDevice;
 	uint32_t m_shadowWidth;
 	uint32_t m_shadowHeight;
 	float m_nearPlane;

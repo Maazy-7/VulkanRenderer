@@ -1,7 +1,7 @@
 #include "ShadowCaster.h"
 
 ShadowCaster::ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t shadowWidth, uint32_t shadowHeight, float nearPlane, float farPlane)
-	:m_light(light), m_shadowWidth(shadowWidth), m_shadowHeight(shadowHeight), m_nearPlane(nearPlane), m_farPlane(farPlane)
+	:m_light(light), m_vulkanDevice(vulkanDevice), m_shadowWidth(shadowWidth), m_shadowHeight(shadowHeight), m_nearPlane(nearPlane), m_farPlane(farPlane)
 {
 	//sampler for shadow
 	VkSamplerCreateInfo shadowSamplerCreateInfo{};
@@ -18,7 +18,7 @@ ShadowCaster::ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t sh
 	shadowSamplerCreateInfo.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 
 	VkSampler sampler;
-	if (vkCreateSampler(vulkanDevice.getDevice(), &shadowSamplerCreateInfo, nullptr, &sampler) != VK_SUCCESS)
+	if (vkCreateSampler(m_vulkanDevice.getDevice(), &shadowSamplerCreateInfo, nullptr, &sampler) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create vulkan Sampler");
 	}
@@ -51,7 +51,7 @@ ShadowCaster::ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t sh
 		imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
 		VkImage vkImage;
-		if (vkCreateImage(vulkanDevice.getDevice(), &imageCreateInfo, nullptr, &vkImage) != VK_SUCCESS) 
+		if (vkCreateImage(m_vulkanDevice.getDevice(), &imageCreateInfo, nullptr, &vkImage) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create vulkan image");
 		}
@@ -67,20 +67,14 @@ ShadowCaster::ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t sh
 		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 		imageViewCreateInfo.subresourceRange.layerCount = 6;
 
-		VkImageView vkImageView;
-		if (vkCreateImageView(vulkanDevice.getDevice(), &imageViewCreateInfo, nullptr, &vkImageView) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create vulkan image view");
-		}
+		m_shadowMap.emplace(vulkanDevice, vkImage, &imageViewCreateInfo, VK_FORMAT_D32_SFLOAT, sampler);
 
 		//creating image view for rendering to cubemap
 		imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;//second view type used for rendering to cubemap
-		if (vkCreateImageView(vulkanDevice.getDevice(), &imageViewCreateInfo, nullptr, &m_cubemapLayerRenderImageView) != VK_SUCCESS)
+		if (vkCreateImageView(m_vulkanDevice.getDevice(), &imageViewCreateInfo, nullptr, &m_cubemapLayerRenderImageView) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create vulkan image view");
 		}
-		
-		m_shadowMap.emplace(vulkanDevice, vkImage, vkImageView, VK_FORMAT_D32_SFLOAT, sampler);
 
 		//6 faces of cube 6 light space matrices
 		glm::mat4 proj = glm::perspective(glm::radians(90.f), static_cast<float>(shadowWidth)/shadowHeight, m_nearPlane, m_farPlane);
@@ -97,7 +91,7 @@ ShadowCaster::ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t sh
 
 ShadowCaster::~ShadowCaster()
 {
-
+	vkDestroyImageView(m_vulkanDevice.getDevice(), m_cubemapLayerRenderImageView, nullptr);
 }
 
 uint32_t ShadowCaster::getShadowWidth() const
