@@ -78,7 +78,7 @@ ShadowCaster::ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t sh
 
 		//6 faces of cube 6 light space matrices
 		glm::mat4 proj = glm::perspective(glm::radians(90.f), static_cast<float>(shadowWidth)/shadowHeight, m_nearPlane, m_farPlane);
-		proj[1][1] *= -1;
+		//proj[1][1] *= -1;
 		m_lightSpaceMatrix.reserve(6);
 		m_lightSpaceMatrix.emplace_back(proj * glm::lookAt(m_light.getPos(), m_light.getPos() + glm::vec3(1.f, 0.f, 0.f), glm::vec3(0.f, -1.f, 0.f)));//+X
 		m_lightSpaceMatrix.emplace_back(proj * glm::lookAt(m_light.getPos(), m_light.getPos() + glm::vec3(-1.f, 0.f, 0.f), glm::vec3(0.f, -1.f, 0.f)));//-X
@@ -107,4 +107,26 @@ uint32_t ShadowCaster::getShadowHeight() const
 const VulkanImage& ShadowCaster::getShadowMap() const
 {
 	return *m_shadowMap;
+}
+
+void ShadowCaster::updateLightSpaceMatrix() //called before getting light space matrix to update matrix to match light's position
+{
+	if (m_light.getLightType() == LightType::Directional) 
+	{
+		glm::mat4 lightSpaceMat = glm::ortho(-15.f, 15.f, -15.f, 15.f, 0.1f, 25.f);
+		lightSpaceMat[1][1] *= -1;
+		lightSpaceMat *= glm::lookAt(glm::vec3(m_light.getPos()), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_lightSpaceMatrix[0] = lightSpaceMat;
+	}
+	else if (m_light.getLightType() == LightType::Point) 
+	{
+		glm::mat4 proj = glm::perspective(glm::radians(90.f), static_cast<float>(m_shadowWidth) / m_shadowHeight, m_nearPlane, m_farPlane);
+		//proj[1][1] *= -1;
+		m_lightSpaceMatrix[0] = proj * glm::lookAt(m_light.getPos(), m_light.getPos() + glm::vec3(1.f, 0.f, 0.f), glm::vec3(0.f, -1.f, 0.f));//+X
+		m_lightSpaceMatrix[1] = proj * glm::lookAt(m_light.getPos(), m_light.getPos() + glm::vec3(-1.f, 0.f, 0.f), glm::vec3(0.f, -1.f, 0.f));//-X
+		m_lightSpaceMatrix[2] = proj * glm::lookAt(m_light.getPos(), m_light.getPos() + glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 0.f, 1.f));//+Y
+		m_lightSpaceMatrix[3] = proj * glm::lookAt(m_light.getPos(), m_light.getPos() + glm::vec3(0.f, -1.f, 0.f), glm::vec3(0.f, 0.f, -1.f));//-Y
+		m_lightSpaceMatrix[4] = proj * glm::lookAt(m_light.getPos(), m_light.getPos() + glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, -1.f, 0.f));//+Z
+		m_lightSpaceMatrix[5] = proj * glm::lookAt(m_light.getPos(), m_light.getPos() + glm::vec3(0.f, 0.f, -1.f), glm::vec3(0.f, -1.f, 0.f));//-Z
+	}
 }

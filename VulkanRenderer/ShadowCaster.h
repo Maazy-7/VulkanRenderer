@@ -22,6 +22,8 @@ public:
 	const VulkanImage& getShadowMap() const;
 
 private:
+	void updateLightSpaceMatrix();
+
 	Light& m_light;
 	VulkanDevice& m_vulkanDevice;
 	uint32_t m_shadowWidth;
