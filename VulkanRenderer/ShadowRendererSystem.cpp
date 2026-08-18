@@ -171,7 +171,7 @@ void ShadowRendererSystem::renderShadowPass(VkCommandBuffer commandBuffer)
 			vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 			m_cubeMapShadowRenderingPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
-
+			shadowCaster.updateLightSpaceMatrix();//updating lightspace matrix data
 			m_cubemapMatrixBuffer->writeToBuffer(0, sizeof(glm::mat4) * 6, shadowCaster.m_lightSpaceMatrix.data());
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_cubeMapShadowRenderingPipeline->getPipelineLayout(), 0, 1,
 				&m_shadowMatrixDescriptorSet, 0, nullptr);

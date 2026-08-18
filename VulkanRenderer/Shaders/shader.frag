@@ -1,7 +1,7 @@
 #version 450
 
 layout (set = 1, binding = 0) uniform sampler2D texSampler;
-layout (set = 1, binding = 1) uniform sampler2DShadow shadowMap;
+layout (set = 1, binding = 1) uniform samplerCubeShadow shadowMap;
 
 layout (location = 0) in vec3 fragNormal;
 layout (location = 1) in vec2 fragTexCoord;
@@ -28,8 +28,18 @@ float calculateShadow(vec4 lightSpaceFragPos, vec3 lightDirection, vec3 normal)
 	//shadow bias
 	float bias = max(0.05 * (1.0 - dot(fragNormal, lightDirection)), 0.005);
 	//hardware accelerated shadow map comparison and pcf
-	float visibility = texture(shadowMap, vec3(projCoords.xy, projCoords.z - bias));
+	float visibility = 1.0;//texture(shadowMap, vec3(projCoords.xy, projCoords.z - bias));
 	return visibility;
+}
+
+float calculateCubemapShadow(vec3 fragPosition) 
+{
+	vec3 len = fragPos - lightPos.xyz;
+	vec3 dir = normalize(-len);
+	float ref = length(len)/25.0;
+	float bias = max(0.05* (1.0 - dot(fragNormal, dir)), 0.005);
+	return texture(shadowMap, vec4(normalize(len), ref - bias));
+
 }
 
 void main() 
@@ -53,7 +63,7 @@ void main()
 	float spec = pow(max(dot(norm, halfwayDir), 0.0), 32);
 	vec3 specular = spec * lightColor;
 
-	float shadow = calculateShadow(fragPosLightSpace, lightDir, norm);
+	float shadow = calculateCubemapShadow(fragPos);
 
 	FragColor = vec4(ambient + shadow*(diffuse + specular), 1.0);
 }

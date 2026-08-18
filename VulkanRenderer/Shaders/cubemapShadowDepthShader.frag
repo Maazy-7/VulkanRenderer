@@ -2,7 +2,7 @@
 
 layout (push_constant) uniform PushConstant 
 {
-	vec4 lightPosAndFarPlane;
+	layout (offset = 64) vec4 lightPosAndFarPlane;
 } pushConstant;
 
 layout (location = 0) in vec4 FragPos;

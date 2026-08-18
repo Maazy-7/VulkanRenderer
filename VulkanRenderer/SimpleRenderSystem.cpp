@@ -137,7 +137,7 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 
 	m_singleColorObjectPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 	
-	ubo.model = glm::translate(glm::mat4(1.f), glm::vec3(10.f, 15.f, -10.f)) * glm::scale(glm::mat4(1.f), glm::vec3(0.1f));
+	ubo.model = glm::translate(glm::mat4(1.f), (*m_lights)[0].getPos()) * glm::scale(glm::mat4(1.f), glm::vec3(0.1f));
 	vkCmdPushConstants(commandBuffer, m_singleColorObjectPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ubo.model);
 	glm::vec4 lightColor = glm::vec4(1.f);
 	vkCmdPushConstants(commandBuffer, m_singleColorObjectPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &lightColor);

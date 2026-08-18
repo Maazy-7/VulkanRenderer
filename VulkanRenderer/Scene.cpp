@@ -3,7 +3,7 @@
 Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	:m_vulkanRenderingBackend(vulkanRenderingBackend),
 	m_vulkanDevice(vulkanRenderingBackend->getVulkanDevice()),
-	m_camera(std::make_unique<Camera>(glm::vec3(0.f, 0.f, 0.2f), vulkanRenderingBackend->getSwapChainAspect(), 0.1f, 100.f))
+	m_camera(std::make_unique<Camera>(glm::vec3(0.f, 2.f, -1.f), vulkanRenderingBackend->getSwapChainAspect(), 0.1f, 100.f))
 {
 	//m_vulkanRenderingBackend->attachCamera(m_camera.get());
 	m_vulkanRenderingBackend->setGameObjectList(&m_gameObjects);
@@ -13,14 +13,14 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 
 	Model& cube = m_models[0];
 
-	Light& light1 = m_lights.emplace_back(glm::vec3(10.f, 15.f, -10.f), glm::vec4(0.3f, 0.3f, 0.3f, 0.f), cube, LightType::Directional);
+	Light& light1 = m_lights.emplace_back(glm::vec3(0.f, 2.f, -1.f), glm::vec4(0.3f, 0.3f, 0.3f, 0.f), cube, LightType::Point);
 	m_vulkanRenderingBackend->createShadowCaster(light1, 2048, 2048);
 	m_vulkanRenderingBackend->attachCamera(m_camera.get());
 	glm::vec4 red = glm::vec4(0.65f, 0.05f, 0.05f, 1.f);
 	glm::vec4 green = glm::vec4(0.12f, 0.45f, 0.15f, 1.f);
 	glm::vec4 white = glm::vec4(0.73f);
 	//cube
-	m_gameObjects.emplace_back(glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.5f), cube).setColor(white);
+	m_gameObjects.emplace_back(glm::vec3(0.f,-0.2f,0.f), glm::vec3(0.f), glm::vec3(0.5f), cube).setColor(white);
 	//bottom wall
 	m_gameObjects.emplace_back(glm::vec3(0.f, -1.f, 0.f), glm::vec3(0.f), glm::vec3(3.f, 0.15f, 3.f), cube).setColor(white);
 	//back wall
@@ -40,6 +40,14 @@ Scene::~Scene()
 void Scene::update(float dt)
 {
 	m_camera->update(dt, m_vulkanRenderingBackend->getSwapChainAspect());
+
+	Light& l1 = m_lights[0];
+	glm::vec3 newPos = glm::vec3(0.f, 3.f, 0.f);
+	static float d;
+	d += dt;
+	newPos.x = std::cos(d);
+	newPos.z = std::sin(d);
+	l1.setPos(newPos);
 }
 
 const std::vector<gameObject>& Scene::getGameObjects() const
