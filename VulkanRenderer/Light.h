@@ -23,6 +23,8 @@ public:
 	glm::vec4 getColor() const;
 	LightType getLightType() const;
 
+	void setPos(glm::vec3 pos);
+
 private:
 	glm::vec3 m_pos;
 	glm::vec4 m_color;//xyz color and w intensity

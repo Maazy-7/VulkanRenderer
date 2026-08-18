@@ -20,6 +20,11 @@ Light::~Light()
 glm::vec3 Light::getPos() const { return m_pos; }
 glm::vec4 Light::getColor() const { return m_color; }
 
+void Light::setPos(glm::vec3 pos) 
+{
+	m_pos = pos;
+}
+
 LightType Light::getLightType() const
 {
 	return m_lightType;
