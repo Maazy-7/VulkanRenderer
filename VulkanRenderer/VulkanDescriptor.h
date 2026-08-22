@@ -53,8 +53,8 @@ public:
     VulkanDescriptorWriter(VulkanDescriptorPool& vulkanDescriptorPool, VulkanDescriptorSetLayout& vulkanDescriptorSetLayout);
     ~VulkanDescriptorWriter();
 
-    VulkanDescriptorWriter& writeBuffer(VkDescriptorBufferInfo* bufferInfo, uint32_t binding);
-    VulkanDescriptorWriter& writeImage(VkDescriptorImageInfo* imageInfo, uint32_t binding);
+    [[nodiscard]] VulkanDescriptorWriter& writeBuffer(VkDescriptorBufferInfo* bufferInfo, uint32_t binding);
+    [[nodiscard]] VulkanDescriptorWriter& writeImage(VkDescriptorImageInfo* imageInfo, uint32_t binding);
 
     bool build(VkDescriptorSet& descriptorSet);
     void overwrite(VkDescriptorSet& descriptorSet);
