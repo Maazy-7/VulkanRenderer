@@ -14,7 +14,8 @@ public:
 	//move constructor
 	ShadowCaster(ShadowCaster&& other) noexcept = default;
 
-	ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t shadowWidth, uint32_t shadowHeight, float nearPlane = 0.1f, float farPlane = 25.f);
+	ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t shadowWidth, uint32_t shadowHeight, size_t shadowCasterIndex, 
+		float nearPlane = 0.1f, float farPlane = 25.f);
 	~ShadowCaster();
 
 	uint32_t getShadowWidth() const;
@@ -22,9 +23,8 @@ public:
 	const VulkanImage& getShadowMap() const;
 
 private:
-	void updateLightSpaceMatrix();
+	void updateLightSpaceMatrix(Light& light);
 
-	Light& m_light;
 	VulkanDevice& m_vulkanDevice;
 	uint32_t m_shadowWidth;
 	uint32_t m_shadowHeight;
@@ -33,6 +33,8 @@ private:
 	std::vector<glm::mat4> m_lightSpaceMatrix;//either a singular matrix or 6 for cubemap shadows
 	std::optional<VulkanImage> m_shadowMap;
 	VkImageView m_cubemapLayerRenderImageView;//image view that hold view type of 2d image array so that it can be accessed within the geometry shader through layers
+	size_t m_shadowCasterIndex;
+	size_t m_lightIndex;
 
 	friend ShadowRendererSystem;
 };
