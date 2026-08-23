@@ -7,6 +7,7 @@
 #include <set>
 
 #include "Window.h"
+#include "util.h"
 
 
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
@@ -42,7 +43,7 @@ public:
 	bool checkValidationLayerSupport() const;
 	std::vector<const char*> getRequiredExtensions() const;
 	QueueFamilyIndices findQueueIndices();
-	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling imgTiling, VkFormatFeatureFlags formatFeatureFlags, 
+	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling imgTiling, VkFormatFeatureFlags2 formatFeatureFlags, 
 		const std::string errorMsg = "failed to find supported format!") const;
 	VkFormat findDepthFormat() const;
 	

@@ -144,19 +144,22 @@ QueueFamilyIndices VulkanDevice::findQueueIndices()
 	return findQueueIndices(m_vkPhysicalDevice);
 }
 
-VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling imgTiling, VkFormatFeatureFlags formatFeatureFlags,
+VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling imgTiling, VkFormatFeatureFlags2 formatFeatureFlags,
 	std::string errorMsg) const
 {
 	for (VkFormat format : candidates) 
 	{
-		VkFormatProperties formatProperties;
-		vkGetPhysicalDeviceFormatProperties(m_vkPhysicalDevice, format, &formatProperties);
+		VkFormatProperties2 formatProperties;
+		formatProperties.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
+		formatProperties.pNext = nullptr;
+		vkGetPhysicalDeviceFormatProperties2(m_vkPhysicalDevice, format, &formatProperties);
 
-		if (imgTiling == VK_IMAGE_TILING_LINEAR && (formatProperties.linearTilingFeatures & formatFeatureFlags) == formatFeatureFlags) 
+		VkFormatFeatureFlags2 flags = formatProperties.formatProperties.optimalTilingFeatures & formatFeatureFlags;
+		if (imgTiling == VK_IMAGE_TILING_LINEAR && (formatProperties.formatProperties.linearTilingFeatures & formatFeatureFlags) == formatFeatureFlags) 
 		{
 			return format;
 		}
-		else if (imgTiling == VK_IMAGE_TILING_OPTIMAL && (formatProperties.optimalTilingFeatures & formatFeatureFlags) == formatFeatureFlags) 
+		else if (imgTiling == VK_IMAGE_TILING_OPTIMAL && flags == formatFeatureFlags) 
 		{
 			return format;
 		}
