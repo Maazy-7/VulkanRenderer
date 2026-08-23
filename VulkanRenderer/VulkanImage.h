@@ -38,5 +38,6 @@ private:
 	VkImageView m_vkImageView;
 	VkSampler m_vkSampler;
 	VkFormat m_vkFormat;
+	bool m_ownsSampler = true;//used to determine if vulkan image object owns the sample it was given
 };
 

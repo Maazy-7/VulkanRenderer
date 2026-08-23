@@ -162,6 +162,7 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, uint32_t width, uint32_t he
 	
 	if (sampler) //existing sampler given
 	{
+		m_ownsSampler = false;
 		m_vkSampler = sampler;
 	}
 	else if (useSampler) //create one if not given
@@ -216,7 +217,7 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, VkImage vkImage, VkImageVie
 	{
 		throw std::runtime_error("failed to create vulkan image view");
 	}
-
+	m_ownsSampler = false;
 	if (vkSampler == VK_NULL_HANDLE) { /*for now do nothing*/ }
 	else 
 	{
@@ -227,7 +228,7 @@ VulkanImage::VulkanImage(VulkanDevice& vulkanDevice, VkImage vkImage, VkImageVie
 
 VulkanImage::~VulkanImage()
 {
-	if (m_vkSampler) { vkDestroySampler(m_vulkanDevice.getDevice(), m_vkSampler, nullptr); }
+	if (m_vkSampler && m_ownsSampler) { vkDestroySampler(m_vulkanDevice.getDevice(), m_vkSampler, nullptr); }
 	vkDestroyImageView(m_vulkanDevice.getDevice(), m_vkImageView, nullptr);
 	vkDestroyImage(m_vulkanDevice.getDevice(), m_vkImage, nullptr);
 	vkFreeMemory(m_vulkanDevice.getDevice(), m_vkDeviceMemory, nullptr);
