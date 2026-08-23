@@ -5,25 +5,7 @@ ShadowCaster::ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t sh
 	:m_vulkanDevice(vulkanDevice), m_shadowWidth(shadowWidth), m_shadowHeight(shadowHeight), m_shadowCasterIndex(shadowCasterIndex), 
 	m_lightIndex(light.getLightIndex()), m_nearPlane(nearPlane), m_farPlane(farPlane)
 {
-	//sampler for shadow
-	VkSamplerCreateInfo shadowSamplerCreateInfo{};
-	shadowSamplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	shadowSamplerCreateInfo.minFilter = VK_FILTER_LINEAR;
-	shadowSamplerCreateInfo.magFilter = VK_FILTER_LINEAR;
-	shadowSamplerCreateInfo.anisotropyEnable = VK_FALSE;
-	shadowSamplerCreateInfo.maxAnisotropy = 1.f;
-	shadowSamplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-	shadowSamplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-	shadowSamplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-	shadowSamplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-	shadowSamplerCreateInfo.compareEnable = VK_TRUE;
-	shadowSamplerCreateInfo.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-
-	VkSampler sampler;
-	if (vkCreateSampler(m_vulkanDevice.getDevice(), &shadowSamplerCreateInfo, nullptr, &sampler) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create vulkan Sampler");
-	}
+	VkSampler sampler = m_vulkanDevice.getShadowMapSampler();
 
 	if (light.getLightType() == LightType::Directional) //directional light -> 2d shadow map
 	{
