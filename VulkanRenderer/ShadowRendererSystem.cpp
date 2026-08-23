@@ -87,7 +87,8 @@ void ShadowRendererSystem::renderShadowPass(VkCommandBuffer commandBuffer)
 {
 	for (ShadowCaster& shadowCaster : m_shadowCasters) 
 	{
-		if (shadowCaster.m_light.getLightType() == LightType::Directional)//rendering to 2d shadow/depth map
+		Light& light = (*m_lights)[shadowCaster.m_lightIndex];
+		if (light.getLightType() == LightType::Directional)//rendering to 2d shadow/depth map
 		{
 			VulkanImage& shadowMap = *shadowCaster.m_shadowMap;
 			shadowMap.transitionImageLayout(VK_FORMAT_D32_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -121,7 +122,8 @@ void ShadowRendererSystem::renderShadowPass(VkCommandBuffer commandBuffer)
 
 			m_shadowMapRenderingPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-			//pushing light space matrix
+			//pushing and updating light space matrix
+			shadowCaster.updateLightSpaceMatrix(light);
 			vkCmdPushConstants(commandBuffer, m_shadowMapRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &shadowCaster.m_lightSpaceMatrix[0]);
 
 			glm::mat4 model;
@@ -137,7 +139,7 @@ void ShadowRendererSystem::renderShadowPass(VkCommandBuffer commandBuffer)
 				VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
 				VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, 1, commandBuffer);
 		}
-		else if (shadowCaster.m_light.getLightType() == LightType::Point)//rendering to cubemap
+		else if (light.getLightType() == LightType::Point)//rendering to cubemap
 		{
 			VulkanImage& shadowMap = *shadowCaster.m_shadowMap;
 			shadowMap.transitionImageLayout(VK_FORMAT_D32_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -171,12 +173,12 @@ void ShadowRendererSystem::renderShadowPass(VkCommandBuffer commandBuffer)
 			vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 			m_cubeMapShadowRenderingPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
-			shadowCaster.updateLightSpaceMatrix();//updating lightspace matrix data
+			shadowCaster.updateLightSpaceMatrix(light);//updating lightspace matrix data
 			m_cubemapMatrixBuffer->writeToBuffer(0, sizeof(glm::mat4) * 6, shadowCaster.m_lightSpaceMatrix.data());
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_cubeMapShadowRenderingPipeline->getPipelineLayout(), 0, 1,
 				&m_shadowMatrixDescriptorSet, 0, nullptr);
 
-			glm::vec4 lightPosAndFarPlane = glm::vec4(shadowCaster.m_light.getPos(), shadowCaster.m_farPlane);
+			glm::vec4 lightPosAndFarPlane = glm::vec4(light.getPos(), shadowCaster.m_farPlane);
 			
 			vkCmdPushConstants(commandBuffer, m_cubeMapShadowRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, 16, &lightPosAndFarPlane);
 
@@ -201,9 +203,14 @@ void ShadowRendererSystem::setGameObjectList(std::vector<gameObject>* gameObject
 	m_gameObjects = gameObjects;
 }
 
+void ShadowRendererSystem::setLightLists(std::vector<Light>* lights)
+{
+	m_lights = lights;
+}
+
 void ShadowRendererSystem::createShadowCaster(Light& light, uint32_t shadowWidth, uint32_t shadowHeight, float nearPlane, float farPlane)
 {
-	m_shadowCasters.emplace_back(m_vulkanDevice, light, shadowWidth, shadowHeight, nearPlane, farPlane);
+	m_shadowCasters.emplace_back(m_vulkanDevice, light, shadowWidth, shadowHeight, m_shadowCasters.size(), nearPlane, farPlane);
 }
 
 const std::vector<ShadowCaster>* ShadowRendererSystem::getShadowCasters() const

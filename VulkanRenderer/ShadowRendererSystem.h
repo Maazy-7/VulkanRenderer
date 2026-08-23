@@ -17,6 +17,7 @@ public:
 
 	void renderShadowPass(VkCommandBuffer commandBuffer);
 	void setGameObjectList(std::vector<gameObject>* gameObjects);
+	void setLightLists(std::vector<Light>* lights);
 	void createShadowCaster(Light& light, uint32_t shadowWidth, uint32_t shadowHeight, float nearPlane = 0.1f, float farPlane = 25.f);
 
 	const std::vector<ShadowCaster>* getShadowCasters() const;
@@ -33,5 +34,6 @@ private:
 	std::vector<ShadowCaster> m_shadowCasters;
 	std::vector<Model>& m_models;
 	std::vector<gameObject>* m_gameObjects = nullptr;
+	std::vector<Light>* m_lights = nullptr;
 };
 
