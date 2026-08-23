@@ -9,6 +9,7 @@ VulkanDevice::VulkanDevice(Window& window)
 	pickPhysicalDevice();
 	createDevice();
 	createCommandPool();
+	createSamplers();
 }
 
 VulkanDevice::~VulkanDevice() 
@@ -24,6 +25,10 @@ VulkanDevice::~VulkanDevice()
 	for (auto& pair : m_shaderCache) 
 	{
 		vkDestroyShaderModule(m_vkDevice, pair.second, nullptr);
+	}
+	for (VkSampler& sampler : m_vkSamplers) 
+	{
+		vkDestroySampler(m_vkDevice, sampler, nullptr);
 	}
 	vkDestroyCommandPool(m_vkDevice, m_vkCommandPool, nullptr);
 	vkDestroyDevice(m_vkDevice, nullptr);
@@ -295,6 +300,49 @@ void VulkanDevice::createCommandPool()
 	
 }
 
+void VulkanDevice::createSamplers()
+{
+	//default texture sampler = index 0, shadow sampler = index 1
+	//default sampler for normal srgb textures
+	VkSamplerCreateInfo samplerCreateInfo{};
+	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
+	samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
+	samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.anisotropyEnable = VK_TRUE;
+	samplerCreateInfo.maxAnisotropy = getPhysicalDeviceProperties().limits.maxSamplerAnisotropy;
+	samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	VkSampler defaultTextureSampler;
+	if (vkCreateSampler(m_vkDevice, &samplerCreateInfo, nullptr, &defaultTextureSampler) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create vulkan Sampler");
+	}
+	m_vkSamplers.push_back(defaultTextureSampler);
+
+	//default sampler for shadow
+	VkSamplerCreateInfo shadowSamplerCreateInfo{};
+	shadowSamplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	shadowSamplerCreateInfo.minFilter = VK_FILTER_LINEAR;
+	shadowSamplerCreateInfo.magFilter = VK_FILTER_LINEAR;
+	shadowSamplerCreateInfo.anisotropyEnable = VK_FALSE;
+	shadowSamplerCreateInfo.maxAnisotropy = 1.f;
+	shadowSamplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	shadowSamplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	shadowSamplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	shadowSamplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+	shadowSamplerCreateInfo.compareEnable = VK_TRUE;
+	shadowSamplerCreateInfo.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+
+	VkSampler shadowMapSampler;
+	if (vkCreateSampler(m_vkDevice, &shadowSamplerCreateInfo, nullptr, &shadowMapSampler) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create vulkan Sampler");
+	}
+	m_vkSamplers.push_back(shadowMapSampler);
+}
+
 SwapChainSupportDetails VulkanDevice::querySwapChainSupportDetails() const
 {
 	SwapChainSupportDetails details;
@@ -403,4 +451,14 @@ bool VulkanDevice::getShader(const std::string& shaderPath, VkShaderModule& shad
 void VulkanDevice::addShader(const std::string& shaderPath, VkShaderModule shader)
 {
 	m_shaderCache[shaderPath] = shader;
+}
+
+VkSampler VulkanDevice::getDefaultTextureSampler() const
+{
+	return m_vkSamplers[0];
+}
+
+VkSampler VulkanDevice::getShadowMapSampler() const
+{
+	return m_vkSamplers[1];
 }

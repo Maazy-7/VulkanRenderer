@@ -62,6 +62,8 @@ public:
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 	bool getShader(const std::string& shaderPath, VkShaderModule& shaderOut);
 	void addShader(const std::string& shaderPath, VkShaderModule shader);
+	VkSampler getDefaultTextureSampler() const;
+	VkSampler getShadowMapSampler() const;
 
 private:
 
@@ -73,6 +75,7 @@ private:
 	void pickPhysicalDevice();
 	void createDevice();
 	void createCommandPool();
+	void createSamplers();
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -92,5 +95,6 @@ private:
 
 	std::vector<const char*> m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 	std::unordered_map<std::string, VkShaderModule> m_shaderCache;
+	std::vector<VkSampler> m_vkSamplers;
 };
 
