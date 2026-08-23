@@ -4,7 +4,7 @@
 #include <stb/stb_image.h>
 
 Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkFormat imgFormat, VkImageTiling imgTiling,
-	VkImageUsageFlags imgUsageFlags, VkMemoryPropertyFlags memoryPropertyFlags)
+	VkImageUsageFlags imgUsageFlags, VkMemoryPropertyFlags memoryPropertyFlags, bool generateMipMaps)
 	:m_vulkanDevice(vulkanDevice)
 {
 	int width, height, channels;
@@ -30,8 +30,14 @@ Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkF
 
 	m_vulkanImage->transitionImageLayout(imgFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	m_vulkanImage->copyBufferToImage(stagingBuffer, width, height);
-	//m_vulkanImage.transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	m_vulkanImage->generateMipMaps(static_cast<uint32_t>(width), static_cast<uint32_t>(height), mipLevels);
+	if (generateMipMaps) 
+	{ 
+		m_vulkanImage->generateMipMaps(static_cast<uint32_t>(width), static_cast<uint32_t>(height), mipLevels); 
+	}
+	else 
+	{
+		m_vulkanImage->transitionImageLayout(imgFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	}
 }
 
 Texture::~Texture()

@@ -10,7 +10,7 @@ public:
 	Texture& operator=(const Texture&) = delete;
 
 	Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkFormat imgFormat, VkImageTiling imgTiling, 
-		VkImageUsageFlags imgUsageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+		VkImageUsageFlags imgUsageFlags, VkMemoryPropertyFlags memoryPropertyFlags, bool generateMipMaps = true);
 
 	~Texture();
 
