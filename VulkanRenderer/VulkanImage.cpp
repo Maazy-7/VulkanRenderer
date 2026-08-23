@@ -384,7 +384,7 @@ void VulkanImage::generateMipMaps(int width, int height, uint32_t mipLevels)
 	//checking if image supports linear blitting
 	m_vulkanDevice.findSupportedFormat({m_vkFormat}, VK_IMAGE_TILING_LINEAR, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT, 
 		"texture image format does not support linear blitting");
-	m_vulkanDevice.findSupportedFormat({m_vkFormat}, VK_IMAGE_TILING_LINEAR, VK_FORMAT_FEATURE_2_BLIT_SRC_BIT | VK_FORMAT_FEATURE_2_BLIT_DST_BIT,
+	m_vulkanDevice.findSupportedFormat({m_vkFormat}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_2_BLIT_SRC_BIT | VK_FORMAT_FEATURE_2_BLIT_DST_BIT,
 		"texture image format does not support image blit 2 src and dst ");
 
 	VkCommandBuffer commandBuffer = m_vulkanDevice.beginSingleTimeCommands();
