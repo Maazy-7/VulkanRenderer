@@ -6,6 +6,7 @@ ShadowCaster::ShadowCaster(VulkanDevice& vulkanDevice, Light& light, uint32_t sh
 	m_lightIndex(light.getLightIndex()), m_nearPlane(nearPlane), m_farPlane(farPlane)
 {
 	VkSampler sampler = m_vulkanDevice.getShadowMapSampler();
+	light.m_shadowCasterIndex = m_shadowCasterIndex;
 
 	if (light.getLightType() == LightType::Directional) //directional light -> 2d shadow map
 	{
