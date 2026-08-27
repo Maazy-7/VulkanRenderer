@@ -25,7 +25,7 @@ public:
 	void scale(glm::vec3 scale);
 
 	void setColor(glm::vec4 color);
-	void render(VkCommandBuffer commandBuffer);
+	void render(VkCommandBuffer commandBuffer) const;
 
 private:
 	glm::vec3 m_pos;

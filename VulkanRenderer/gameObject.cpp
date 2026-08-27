@@ -73,7 +73,7 @@ void gameObject::setColor(glm::vec4 color)
 	m_color = color;
 }
 
-void gameObject::render(VkCommandBuffer commandBuffer)
+void gameObject::render(VkCommandBuffer commandBuffer) const
 {
 	m_model.draw(commandBuffer);
 }
