@@ -36,7 +36,6 @@ Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkF
 	}
 	else 
 	{
-		LOG(m_vulkanImage->getVkImage() << " was here");
 		m_vulkanImage->transitionImageLayout(imgFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 }
