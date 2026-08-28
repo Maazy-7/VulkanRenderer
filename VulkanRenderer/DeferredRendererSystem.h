@@ -4,6 +4,19 @@
 #include "Texture.h"
 #include "Camera.h"
 #include "Light.h"
+#include "ShadowCaster.h"
+#include "gameObject.h"
+
+//temp
+struct QuadVertex
+{
+	glm::vec2 pos;
+	glm::vec2 texCoords;
+
+	static VkVertexInputBindingDescription getBindingDescription();
+	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
+	bool operator==(const Vertex& other) const;
+};
 
 class DeferredRendererSystem
 {
@@ -12,14 +25,17 @@ public:
 	DeferredRendererSystem(const DeferredRendererSystem&) = delete;
 	DeferredRendererSystem& operator=(const DeferredRendererSystem&) = delete;
 
-	DeferredRendererSystem(VulkanDevice& vulkanDevice, const VulkanRenderer& vulkanRenderer, Camera& camera);
+	DeferredRendererSystem(VulkanDevice& vulkanDevice, const VulkanRenderer& vulkanRenderer);
 	~DeferredRendererSystem();
 
 	void createPipelines(VulkanDescriptorSetLayout& descriptorSetLayout);
 
-	void executeGeometryPass();
-	void executeLightingPass();
-	void setLightLists(std::vector<Light>* m_lights);
+	void executeGeometryPass(VkCommandBuffer commandBuffer);
+	void executeLightingPass(VkCommandBuffer commandBuffer);
+	void setGameObjectList(std::vector<gameObject>* gameObjects);
+	void setLightList(std::vector<Light>* lights);
+	void setShadowCasterList(const std::vector<ShadowCaster>* shadowCasters);
+	void attachCamera(const Camera* camera);
 
 	VulkanImage& getDepthBuffer();
 	VulkanImage& getLightingPassOutput();
@@ -38,8 +54,10 @@ private:
 	std::unique_ptr<VulkanImage> m_gNormal;
 	std::unique_ptr<VulkanImage> m_gAlbedoSpec;
 	std::unique_ptr<VulkanImage> m_lightingPassOutput;
-	std::vector<Light>* m_lightsList;
-	Camera& m_camera;
+	const std::vector<gameObject>* m_gameObjectList = nullptr;
+	const std::vector<Light>* m_lightsList = nullptr;
+	const std::vector<ShadowCaster>* m_shadowCasterList = nullptr;
+	const Camera* m_camera;
 	//temp
 	std::unique_ptr<Texture> specularTexture;
 	std::unique_ptr<Texture> diffuseTexture;

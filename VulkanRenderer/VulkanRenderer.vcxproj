@@ -209,6 +209,14 @@
     <None Include="Shaders\cubemapShadowDepthShader.frag.spv" />
     <None Include="Shaders\cubemapShadowDepthShader.vert" />
     <None Include="Shaders\cubemapShadowDepthShader.vert.spv" />
+    <None Include="Shaders\deferredGeometryPass.frag" />
+    <None Include="Shaders\deferredGeometryPass.frag.spv" />
+    <None Include="Shaders\deferredGeometryPass.vert" />
+    <None Include="Shaders\deferredGeometryPass.vert.spv" />
+    <None Include="Shaders\deferredLightingPass.frag" />
+    <None Include="Shaders\deferredLightingPass.frag.spv" />
+    <None Include="Shaders\deferredLightingPass.vert" />
+    <None Include="Shaders\deferredLightingPass.vert.spv" />
     <None Include="Shaders\shader.frag" />
     <None Include="Shaders\shader.frag.spv" />
     <None Include="Shaders\shader.vert" />

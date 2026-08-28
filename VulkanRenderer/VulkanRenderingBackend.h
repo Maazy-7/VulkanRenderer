@@ -5,6 +5,7 @@
 #include "VulkanRenderer.h"
 #include "SimpleRenderSystem.h"
 #include "ShadowRendererSystem.h"
+#include "DeferredRendererSystem.h"
 #include "gameObject.h"
 
 class VulkanRenderingBackend
@@ -42,6 +43,7 @@ private:
 
 	std::unique_ptr<ShadowRendererSystem> m_shadowRendererSystem;
 	std::unique_ptr<SimpleRenderSystem> m_simpleRenderSystem;
+	std::unique_ptr<DeferredRendererSystem> m_deferredRendererSystem;
 
 	const Camera* m_camera = nullptr;
 	std::vector<gameObject>* m_gameObjects = nullptr;

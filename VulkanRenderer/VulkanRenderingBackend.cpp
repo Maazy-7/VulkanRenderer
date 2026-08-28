@@ -3,11 +3,15 @@
 VulkanRenderingBackend::VulkanRenderingBackend(Window& window)
 	: m_window(window), m_vulkanDevice(window), m_vulkanRenderer(window, m_vulkanDevice)
 {
+	//1 uniform frame buffer per frame in flight (2) and 2 textures, one for albedo other is shadow map
 	std::unordered_map<VkDescriptorType, uint32_t> descriptorTypes = { {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2} };
 	m_vulkanDescriptorPool = std::make_unique<VulkanDescriptorPool>(m_vulkanDevice, descriptorTypes);
 	m_simpleRenderSystem = std::make_unique<SimpleRenderSystem>(m_vulkanDevice, m_vulkanRenderer, *m_vulkanDescriptorPool.get(), nullptr);
+	m_deferredRendererSystem = std::make_unique<DeferredRendererSystem>(m_vulkanDevice, m_vulkanRenderer);
 	m_shadowRendererSystem = std::make_unique<ShadowRendererSystem>(m_vulkanDevice, m_simpleRenderSystem->getModels());
 	m_simpleRenderSystem->setShadowCasterList(m_shadowRendererSystem->getShadowCasters());
+	m_deferredRendererSystem->setShadowCasterList(m_shadowRendererSystem->getShadowCasters());
+	
 }
 
 VulkanRenderingBackend::~VulkanRenderingBackend()
@@ -45,6 +49,7 @@ void VulkanRenderingBackend::render(float dt)
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_simpleRenderSystem->getVulkanPipeline().getPipelineLayout(), 0,
 		1, &m_cameraMatrixDescriptorSets[frameIndex], 0, nullptr);
 
+	m_deferredRendererSystem->executeGeometryPass(commandBuffer);
 	m_vulkanRenderer.beginRendering(commandBuffer);
 	m_simpleRenderSystem->renderGameObjects(commandBuffer, dt);
 	m_vulkanRenderer.endRendering(commandBuffer);
@@ -62,6 +67,7 @@ void VulkanRenderingBackend::setGameObjectList(std::vector<gameObject>* gameObje
 {
 	m_gameObjects = gameObjects;
 	m_simpleRenderSystem->setGameObjectList(gameObjects);
+	m_deferredRendererSystem->setGameObjectList(gameObjects);
 	m_shadowRendererSystem->setGameObjectList(gameObjects);
 }
 
@@ -69,6 +75,8 @@ void VulkanRenderingBackend::setLightsList(std::vector<Light>* lights)
 {
 	m_lights = lights;
 	m_simpleRenderSystem->setLightsList(lights);
+	m_deferredRendererSystem->setLightList(lights);
+	m_shadowRendererSystem->setLightLists(lights);
 }
 
 void VulkanRenderingBackend::createShadowCaster(Light& light, uint32_t shadowWidth, uint32_t shadowHeight, float nearPlane, float farPlane) 
@@ -102,6 +110,7 @@ void VulkanRenderingBackend::createBuffersAndDescriptors()
 	m_globalSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_vulkanDevice, bindings);
 	VulkanDescriptorWriter descriptorWriter(*m_vulkanDescriptorPool.get(), *m_globalSetLayout.get());
 	m_simpleRenderSystem->createPipeline(*m_globalSetLayout.get());
+	m_deferredRendererSystem->createPipelines(*m_globalSetLayout.get());
 
 	m_cameraMatrixDescriptorSets.resize(m_vulkanRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT);
 
