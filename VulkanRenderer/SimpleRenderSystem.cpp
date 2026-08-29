@@ -8,7 +8,7 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 {	
 	m_vkDescriptorSets.resize(1);//descriptor set containing 1 texture
 
-	m_texture = std::make_unique<Texture>(m_vkDevice, "Assets/cubeMetalTexture.png", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+	m_texture = std::make_unique<Texture>(m_vkDevice, "Assets/container2.jpg", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	
 	m_models.emplace_back(m_vkDevice, "Assets/metalCube.obj");
@@ -128,7 +128,7 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, float 
 	for (gameObject& gameObj : *m_gameObjects) 
 	{
 		model = gameObj.getModelMat();
-		color = gameObj.getColor();
+		color = gameObj.getColor(); color.w = 0.f;
 		vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model);
 		vkCmdPushConstants(commandBuffer, m_vkPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &color);
 

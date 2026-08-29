@@ -54,6 +54,7 @@ private:
 	std::unique_ptr<VulkanImage> m_gNormal;
 	std::unique_ptr<VulkanImage> m_gAlbedoSpec;
 	std::unique_ptr<VulkanImage> m_lightingPassOutput;
+	std::unique_ptr<VulkanBuffer> m_screenQuadVertexBuffer;
 	const std::vector<gameObject>* m_gameObjectList = nullptr;
 	const std::vector<Light>* m_lightsList = nullptr;
 	const std::vector<ShadowCaster>* m_shadowCasterList = nullptr;

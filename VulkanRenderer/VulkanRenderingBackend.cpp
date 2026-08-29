@@ -50,6 +50,7 @@ void VulkanRenderingBackend::render(float dt)
 		1, &m_cameraMatrixDescriptorSets[frameIndex], 0, nullptr);
 
 	m_deferredRendererSystem->executeGeometryPass(commandBuffer);
+	m_deferredRendererSystem->executeLightingPass(commandBuffer);
 	m_vulkanRenderer.beginRendering(commandBuffer);
 	m_simpleRenderSystem->renderGameObjects(commandBuffer, dt);
 	m_vulkanRenderer.endRendering(commandBuffer);
@@ -60,6 +61,7 @@ void VulkanRenderingBackend::attachCamera(const Camera* camera)
 {
 	m_camera = camera;
 	m_simpleRenderSystem->attachCamera(camera);
+	m_deferredRendererSystem->attachCamera(camera);
 	createBuffersAndDescriptors();
 }
 
