@@ -60,7 +60,7 @@ void VulkanSwapChain::createSwapChain()
 	swapChainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
 	swapChainCreateInfo.imageExtent = extent;
 	swapChainCreateInfo.imageArrayLayers = 1;
-	swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
 	QueueFamilyIndices indices = m_vkDevice.findQueueIndices();
 	uint32_t qFamIndices[] = { indices.m_graphicsQueue.value(), indices.m_presentQueue.value() };
