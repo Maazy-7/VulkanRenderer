@@ -17,12 +17,13 @@ layout (location = 3) in mat4 InvViewProjMat;
 
 layout (location = 0) out vec4 outFragPos;
 
-vec3 getPositionFromDepthMap(vec2 uv) //Current error fragpos is incorrect it seems
+vec3 getPositionFromDepthMap(vec2 uv)
 {
     float depth = texture(gDepthMap, TexCoords).r;
     vec4 ndcPos = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth, 1.0);
-    vec4 worldPos = InvViewProjMat * ndcPos;
-    return worldPos.xyz / worldPos.w;
+    vec4 worldPosH = InvViewProjMat * ndcPos;
+    vec3 worldPos = worldPosH.xyz / worldPosH.w;
+    return worldPos;
 }
 
 float calculateCubemapShadow(vec3 fragPosition, vec3 fragNormal) 
@@ -40,7 +41,7 @@ void main()
     vec3 lightColor = vec3(0.3);
     vec3 texColor = texture(gAlbedoSpecMap, TexCoords).xyz;
     vec3 texSpecular = vec3(texture(gAlbedoSpecMap, TexCoords).w);
-    vec3 ambient = 0.2 * texColor;
+    vec3 ambient = 0.1 * texColor;
     vec3 FragPos = getPositionFromDepthMap(TexCoords);
 
     vec3 lightDir = normalize(lightPos.xyz - FragPos);
@@ -50,9 +51,9 @@ void main()
 	vec3 viewDir = normalize(viewPos.xyz - FragPos);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
 	float spec = pow(max(dot(norm, halfwayDir), 0.0), 32);
-	vec3 specular = spec * lightColor;
+	vec3 specular = spec * lightColor * texSpecular;
 
     float shadow = calculateCubemapShadow(FragPos, norm);
 
-    outFragPos = vec4(ambient + 1.0 * (diffuse + specular), 1.0); 
+    outFragPos = vec4(ambient + shadow * (diffuse + specular), 1.0); 
 }

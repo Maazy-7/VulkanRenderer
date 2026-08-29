@@ -45,7 +45,8 @@ DeferredRendererSystem::DeferredRendererSystem(VulkanDevice& vulkanDevice, const
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
 	//8MB output buffer for the lighting pass
 	m_lightingPassOutput = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
 
 	//creating screen quad buffer thats used for lighting pass output
 	size_t vertSize = sizeof(QuadVertex) * 4;
@@ -347,7 +348,8 @@ void DeferredRendererSystem::executeLightingPass(VkCommandBuffer commandBuffer)
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_lightingPassPipeline->getPipelineLayout(), 1, 1,
 		m_lightingPassDescriptorSets.data(), 0, nullptr);
 
-	glm::mat4 invViewProjMat = m_camera->getView() * m_camera->getProjection(); invViewProjMat[1][1] *= -1; 
+	glm::mat4 invViewProjMat = m_camera->getProjection(); invViewProjMat[1][1] *= -1;
+	invViewProjMat *= m_camera->getView();
 	invViewProjMat = glm::inverse(invViewProjMat);
 	vkCmdPushConstants(commandBuffer, m_lightingPassPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &invViewProjMat);
 
@@ -356,6 +358,9 @@ void DeferredRendererSystem::executeLightingPass(VkCommandBuffer commandBuffer)
 
 	vkCmdEndRendering(commandBuffer);
 	//TODO handle end of lighting pass ie layout transitions for lighting pass output
+	m_lightingPassOutput->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT, 
+		1, commandBuffer);
 }
 
 void DeferredRendererSystem::setLightList(std::vector<Light>* lights)

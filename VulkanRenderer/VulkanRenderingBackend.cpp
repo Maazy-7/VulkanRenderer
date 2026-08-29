@@ -51,9 +51,91 @@ void VulkanRenderingBackend::render(float dt)
 
 	m_deferredRendererSystem->executeGeometryPass(commandBuffer);
 	m_deferredRendererSystem->executeLightingPass(commandBuffer);
-	m_vulkanRenderer.beginRendering(commandBuffer);
-	m_simpleRenderSystem->renderGameObjects(commandBuffer, dt);
-	m_vulkanRenderer.endRendering(commandBuffer);
+	
+	static bool forwardRenderer;
+
+	if (InputManager::getKey(GLFW_KEY_SPACE)) { forwardRenderer = true; }
+	else { forwardRenderer = false; }
+
+	if (forwardRenderer)
+	{
+		m_vulkanRenderer.beginRendering(commandBuffer);
+		m_simpleRenderSystem->renderGameObjects(commandBuffer, dt);
+		m_vulkanRenderer.endRendering(commandBuffer);
+	}
+	else
+	{
+
+		//transitioning swapchain image for being blitted to
+		VkImageMemoryBarrier2 imgBarrier = {};
+		imgBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+		imgBarrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+		imgBarrier.srcAccessMask = VK_ACCESS_2_NONE;
+		imgBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+		imgBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+		imgBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imgBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		imgBarrier.image = m_vulkanRenderer.getSwapChain().getSwapChainImage(m_vulkanRenderer.m_currentImageIndex);
+		imgBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imgBarrier.subresourceRange.baseMipLevel = 0;
+		imgBarrier.subresourceRange.levelCount = 1;
+		imgBarrier.subresourceRange.baseArrayLayer = 0;
+		imgBarrier.subresourceRange.layerCount = 1;
+
+		VkDependencyInfo dependencyInfo = {};
+		dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+		dependencyInfo.imageMemoryBarrierCount = 1;
+		dependencyInfo.pImageMemoryBarriers = &imgBarrier;
+
+		vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
+		int width = m_vulkanRenderer.getSwapChain().getSwapChainWidth();
+		int height = m_vulkanRenderer.getSwapChain().getSwapChainHeight();
+
+		VkImageBlit2 region = {};
+		region.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
+		region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		region.srcSubresource.layerCount = 1;
+		region.srcOffsets[1] = { width, height, 1 };
+
+		region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		region.dstSubresource.layerCount = 1;
+		region.dstOffsets[1] = { width, height, 1 };
+
+		VkBlitImageInfo2 blitImgInfo{};
+		blitImgInfo.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2;
+		blitImgInfo.srcImage = m_deferredRendererSystem->getLightingPassOutput().getVkImage();
+		blitImgInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		blitImgInfo.dstImage = m_vulkanRenderer.getSwapChain().getSwapChainImage(m_vulkanRenderer.m_currentImageIndex);
+		blitImgInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		blitImgInfo.regionCount = 1;
+		blitImgInfo.pRegions = &region;
+
+		vkCmdBlitImage2(commandBuffer, &blitImgInfo);
+
+		//transition image layout for presenation
+		VkImageMemoryBarrier2 presentBarrier = {};
+		presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+		imgBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+		imgBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+		presentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
+		presentBarrier.dstAccessMask = 0;
+		presentBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		presentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		presentBarrier.image = m_vulkanRenderer.getSwapChain().getSwapChainImage(m_vulkanRenderer.m_currentImageIndex);
+		presentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		presentBarrier.subresourceRange.baseMipLevel = 0;
+		presentBarrier.subresourceRange.levelCount = 1;
+		presentBarrier.subresourceRange.baseArrayLayer = 0;
+		presentBarrier.subresourceRange.layerCount = 1;
+
+		VkDependencyInfo presentDependencyInfo{};
+		presentDependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+		presentDependencyInfo.imageMemoryBarrierCount = 1;
+		presentDependencyInfo.pImageMemoryBarriers = &presentBarrier;
+
+		vkCmdPipelineBarrier2(commandBuffer, &presentDependencyInfo);
+	}
+
 	m_vulkanRenderer.endFrame();
 }
 
