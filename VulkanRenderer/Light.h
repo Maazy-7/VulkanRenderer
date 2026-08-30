@@ -27,6 +27,8 @@ public:
 	bool hasShadowCaster(size_t& shadowCasterIndexOut) const;
 	size_t getLightIndex() const;
 
+	void draw(VkCommandBuffer commandBuffer) const;
+
 	void setPos(glm::vec3 pos);
 
 private:

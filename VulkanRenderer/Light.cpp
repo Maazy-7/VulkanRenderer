@@ -40,3 +40,8 @@ size_t Light::getLightIndex() const
 {
 	return m_lightIndex;
 }
+
+void Light::draw(VkCommandBuffer commandBuffer) const
+{
+	m_model.draw(commandBuffer);
+}
