@@ -50,8 +50,8 @@ void main()
 
 	vec3 viewDir = normalize(viewPos.xyz - FragPos);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(norm, halfwayDir), 0.0), 32);
-	vec3 specular = spec * lightColor * texSpecular;
+	float spec = pow(max(dot(norm, halfwayDir), 0.0), 64);
+	vec3 specular = spec * 1.0 * texSpecular;
 
     float shadow = calculateCubemapShadow(FragPos, norm);
 
