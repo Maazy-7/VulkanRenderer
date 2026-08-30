@@ -11,7 +11,7 @@ VulkanRenderingBackend::VulkanRenderingBackend(Window& window)
 	m_shadowRendererSystem = std::make_unique<ShadowRendererSystem>(m_vulkanDevice, m_simpleRenderSystem->getModels());
 	m_simpleRenderSystem->setShadowCasterList(m_shadowRendererSystem->getShadowCasters());
 	m_deferredRendererSystem->setShadowCasterList(m_shadowRendererSystem->getShadowCasters());
-	
+	stbi_set_flip_vertically_on_load(1);
 }
 
 VulkanRenderingBackend::~VulkanRenderingBackend()

@@ -75,7 +75,7 @@ DeferredRendererSystem::DeferredRendererSystem(VulkanDevice& vulkanDevice, const
 	m_vulkanDescriptorPool = std::make_unique<VulkanDescriptorPool>(m_vulkanDevice, descriptorTypes);
 
 	//temp
-	specularTexture = std::make_unique<Texture>(m_vulkanDevice, "Assets/container2Specular2.jpg", VK_FORMAT_R8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
+	specularTexture = std::make_unique<Texture>(m_vulkanDevice, "Assets/container2Specular.jpeg", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
 	diffuseTexture = std::make_unique<Texture>(m_vulkanDevice, "Assets/container2.jpg", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);

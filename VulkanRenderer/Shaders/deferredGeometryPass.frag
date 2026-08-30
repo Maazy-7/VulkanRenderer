@@ -14,5 +14,5 @@ void main()
 	//glDepth = fragPos, depth written automatically
 	gNormal = vec4(normalize(fragNormal), 1.0);
 	gAlbedoSpec.xyz = texture(diffuseTexture, fragTexCoord).xyz;
-	gAlbedoSpec.w = texture(specularTexture, fragTexCoord).w;
+	gAlbedoSpec.w = texture(specularTexture, fragTexCoord).r;
 }
