@@ -51,6 +51,7 @@ void VulkanRenderingBackend::render(float dt)
 
 	m_deferredRendererSystem->executeGeometryPass(commandBuffer);
 	m_deferredRendererSystem->executeLightingPass(commandBuffer);
+	m_deferredRendererSystem->renderLights(commandBuffer);
 	
 	static bool forwardRenderer;
 

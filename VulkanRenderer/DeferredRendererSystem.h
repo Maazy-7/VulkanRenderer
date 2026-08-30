@@ -32,6 +32,7 @@ public:
 
 	void executeGeometryPass(VkCommandBuffer commandBuffer);
 	void executeLightingPass(VkCommandBuffer commandBuffer);
+	void renderLights(VkCommandBuffer commandBuffer);
 	void setGameObjectList(std::vector<gameObject>* gameObjects);
 	void setLightList(std::vector<Light>* lights);
 	void setShadowCasterList(const std::vector<ShadowCaster>* shadowCasters);
@@ -45,6 +46,7 @@ private:
 	const VulkanRenderer& m_vulkanRenderer;
 	std::unique_ptr<VulkanPipeline> m_geometryPassPipeline;
 	std::unique_ptr<VulkanPipeline> m_lightingPassPipeline;
+	std::unique_ptr<VulkanPipeline> m_lightObjRenderingPipeline;
 	std::unique_ptr<VulkanDescriptorPool> m_vulkanDescriptorPool;
 	std::vector<VkDescriptorSet> m_geometryPassDescriptorSets;
 	std::vector<VkDescriptorSet> m_lightingPassDescriptorSets;
