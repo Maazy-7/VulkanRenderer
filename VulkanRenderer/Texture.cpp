@@ -10,14 +10,17 @@ Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkF
 
 	int width, height, channels;
 	stbi_uc* pixels;
+	std::vector<stbi_uc> defaultColor = { 255, 0, 255 };
 	VkDeviceSize imageSize;
 	if (imgFormat == VK_FORMAT_R8G8B8A8_SRGB) 
 	{
 		pixels = stbi_load(texturePath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 		if (!pixels)
 		{
-			//need to set default image/color
-			std::cout << "failed to load image file\n";
+			std::cout << "failed to load image file" << texturePath << "\n";
+			width = 1; height = 1; channels = 4;
+			pixels = defaultColor.data();
+			generateMipMaps = false;
 		}
 		imageSize = static_cast<uint64_t>(width * height * 4);
 	}
@@ -26,11 +29,14 @@ Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkF
 		pixels = stbi_load(texturePath.c_str(), &width, &height, &channels, STBI_rgb);
 		if (!pixels)
 		{
-			//need to set default image/color
-			std::cout << "failed to load image file\n";
+			std::cout << "failed to load image file" << texturePath << "\n";
+			width = 1; height = 1; channels = 3;
+			pixels = defaultColor.data();
+			generateMipMaps = false;
 		}
 		imageSize = static_cast<uint64_t>(width * height * channels);
 	}
+	
 	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 	mipLevels = generateMipMaps ? mipLevels : 1;
 	//should have ability to give reference to an already exsiting staging buffer, ie one belonging to a render pass
@@ -38,7 +44,7 @@ Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkF
 		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	stagingBuffer.map(0, imageSize);
 	stagingBuffer.writeToBuffer(0, imageSize, pixels);
-	stbi_image_free(pixels);
+	if (!pixels) { stbi_image_free(pixels); }//only freeing if image data was actually loaded
 
 	m_vulkanImage = std::make_unique<VulkanImage>(m_vulkanDevice, static_cast<uint32_t>(width), static_cast<uint32_t>(height), imgFormat, imgTiling,
 		imgUsageFlags, memoryPropertyFlags, mipLevels);
