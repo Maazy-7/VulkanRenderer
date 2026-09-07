@@ -41,12 +41,12 @@ VulkanPipeline::~VulkanPipeline()
 {
 	if (!m_vkPipelineLayout) 
 	{
-		throw std::runtime_error("vulkan pipeline layout object was never created");
+		LOG("vulkan pipeline layout object was never created, pipeline: " << m_vkPipeline);
 	}
 	vkDestroyPipelineLayout(m_vkDevice.getDevice(), m_vkPipelineLayout, nullptr);
 	if (!m_vkPipeline)
 	{
-		throw std::runtime_error("vulkan pipeline object was never created");
+		LOG("vulkan pipeline object was never created, pipeline: " << m_vkPipeline);
 	}
 	vkDestroyPipeline(m_vkDevice.getDevice(), m_vkPipeline, nullptr);
 }
