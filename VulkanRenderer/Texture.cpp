@@ -45,8 +45,8 @@ Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkF
 	stagingBuffer.map(0, imageSize);
 	stagingBuffer.writeToBuffer(0, imageSize, pixels);
 	if (!pixels) { stbi_image_free(pixels); }//only freeing if image data was actually loaded
-
-	m_vulkanImage = std::make_unique<VulkanImage>(m_vulkanDevice, static_cast<uint32_t>(width), static_cast<uint32_t>(height), imgFormat, imgTiling,
+	imgUsageFlags = generateMipMaps ? imgUsageFlags | VK_IMAGE_USAGE_TRANSFER_SRC_BIT : imgUsageFlags;//giving extra flag as src bit in case of mipmap generation
+	m_vulkanImage.emplace(m_vulkanDevice, static_cast<uint32_t>(width), static_cast<uint32_t>(height), imgFormat, imgTiling,
 		imgUsageFlags, memoryPropertyFlags, mipLevels);
 
 	m_vulkanImage->transitionImageLayout(imgFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -59,6 +59,14 @@ Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkF
 	{
 		m_vulkanImage->transitionImageLayout(imgFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
+}
+
+Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkFormat imgFormat, bool generateMipMaps)
+	:Texture(vulkanDevice, texturePath, imgFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, generateMipMaps)
+{
+	//default texture constructor, makes optimal tiling, 8 bit sRGBA format, image usage for sampling and transfer destination, also src transfer if
+	// generateMipMaps is true
 }
 
 Texture::~Texture()

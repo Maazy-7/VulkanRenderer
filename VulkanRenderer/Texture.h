@@ -9,8 +9,12 @@ public:
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
 
+	//move constructor
+	Texture(Texture&&) noexcept = default;
+
 	Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkFormat imgFormat, VkImageTiling imgTiling, 
 		VkImageUsageFlags imgUsageFlags, VkMemoryPropertyFlags memoryPropertyFlags, bool generateMipMaps = true);
+	Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkFormat imgFormat = VK_FORMAT_R8G8B8A8_SRGB, bool generateMipMaps = true);
 
 	~Texture();
 
@@ -20,6 +24,6 @@ public:
 
 private:
 	VulkanDevice& m_vulkanDevice;
-	std::unique_ptr<VulkanImage> m_vulkanImage;
+	std::optional<VulkanImage> m_vulkanImage;
 };
 
