@@ -12,6 +12,18 @@ VulkanDevice::VulkanDevice(Window& window)
 	createSamplers();
 }
 
+VulkanDevice::VulkanDevice(Window& window, bool useIgpu)
+	:m_window(window), m_useIgpu(useIgpu)
+{
+	createVkInstance();
+	setupDebugMessenger();
+	createSurface();
+	pickPhysicalDevice();
+	createDevice();
+	createCommandPool();
+	createSamplers();
+}
+
 VulkanDevice::~VulkanDevice() 
 {
 	if (enableValidationLayers) 
@@ -214,6 +226,17 @@ void VulkanDevice::pickPhysicalDevice()
 		vkGetPhysicalDeviceProperties(dev, &devProperties);
 		//best case: to select suitable device that is also the discrete gpu
 		bool suitableGPU = findQueueIndices(dev).isComplete();
+		
+		if (m_useIgpu && suitableGPU) 
+		{
+			if (devProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) 
+			{
+				m_vkPhysicalDevice = dev;
+				m_vkPhysicalDeviceProperties = devProperties;
+				break;
+			}
+			continue;
+		}
 		if (suitableGPU && devProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) 
 		{
 			m_vkPhysicalDevice = dev;
@@ -228,6 +251,7 @@ void VulkanDevice::pickPhysicalDevice()
 			m_vkPhysicalDeviceProperties = devProperties;
 		}
 	}
+	LOG("GPU: " << devProperties.deviceName);
 	if (!m_vkPhysicalDevice) { throw std::runtime_error("Failed to find suitable GPU"); }
 }
 
@@ -248,14 +272,27 @@ void VulkanDevice::createDevice()
 		qCreateInfo.push_back(qCrInfo);
 	}
 
+	//enabling descriptor indexing
+	VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{};
+	descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+	descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
+	descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+	descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+	descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	descriptorIndexingFeatures.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+	descriptorIndexingFeatures.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
+	descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
+	descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+	descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+
 	//enabling anisotropic filtering
 	VkPhysicalDeviceFeatures physicalDeviceFeatures{};
-	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE; 
+	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
 
 	VkPhysicalDeviceFeatures2 physicalDeviceFeatures2{};
 	physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	physicalDeviceFeatures2.features = physicalDeviceFeatures;
-	physicalDeviceFeatures2.pNext = VK_NULL_HANDLE;
+	physicalDeviceFeatures2.pNext = &descriptorIndexingFeatures;
 	
 	//enabling dynamic rendering and synchronization2
 	VkPhysicalDeviceVulkan13Features vkDevice13Features = {};

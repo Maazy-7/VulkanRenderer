@@ -37,6 +37,7 @@ public:
 	VulkanDevice& operator=(VulkanDevice& vkDevice) = delete;
 
 	VulkanDevice(Window& window);
+	VulkanDevice(Window& window, bool useIgpu);
 	~VulkanDevice();
 
 	SwapChainSupportDetails querySwapChainSupportDetails() const;
@@ -96,5 +97,8 @@ private:
 	std::vector<const char*> m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 	std::unordered_map<std::string, VkShaderModule> m_shaderCache;
 	std::vector<VkSampler> m_vkSamplers;
+
+	//quick switch used to determine wether to use igpu or not
+	bool m_useIgpu = false;
 };
 
