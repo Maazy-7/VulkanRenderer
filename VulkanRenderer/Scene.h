@@ -33,7 +33,7 @@ private:
 
 	std::vector<gameObject> m_gameObjects;
 	std::vector<Light> m_lights;
-	std::vector<Model> m_models;
+	std::vector<Model>* m_models = nullptr;
 	std::vector<Texture>* m_textures = nullptr;//owned by VulkanRenderingBackend but can be modified from scene
 	std::unordered_map<std::string, size_t> m_textureMapIndexer;//map used to index texture list using texture name
 	std::unique_ptr<Camera> m_camera;

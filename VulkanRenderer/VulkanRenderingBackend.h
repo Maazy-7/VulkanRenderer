@@ -29,6 +29,7 @@ public:
 	float getSwapChainAspect() const;
 	VulkanDevice& getVulkanDevice();
 	std::vector<Texture>* getTextureList();
+	std::vector<Model>* getModelList();
 
 private:
 
@@ -50,6 +51,7 @@ private:
 	std::unique_ptr<DeferredRendererSystem> m_deferredRendererSystem;
 
 	std::vector<Texture> m_textures;//owned by class, but modifiable by scene
+	std::vector<Model> m_models;//owned by class, but modifiable by scene
 	const Camera* m_camera = nullptr;
 	std::vector<gameObject>* m_gameObjects = nullptr;
 	std::vector<Light>* m_lights = nullptr;

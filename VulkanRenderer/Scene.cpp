@@ -4,14 +4,15 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	:m_vulkanRenderingBackend(vulkanRenderingBackend),
 	m_vulkanDevice(vulkanRenderingBackend->getVulkanDevice()),
 	m_camera(std::make_unique<Camera>(glm::vec3(0.f, 2.f, -1.f), vulkanRenderingBackend->getSwapChainAspect(), 0.1f, 100.f)),
-	m_textures(vulkanRenderingBackend->getTextureList())
+	m_textures(vulkanRenderingBackend->getTextureList()),
+	m_models(vulkanRenderingBackend->getModelList())
 {
 	//m_vulkanRenderingBackend->attachCamera(m_camera.get());
 	m_vulkanRenderingBackend->setGameObjectList(&m_gameObjects);
 	m_vulkanRenderingBackend->setLightsList(&m_lights);
-	m_models.reserve(2);
-	Model& cube = m_models.emplace_back(m_vulkanDevice, "Assets/woodenContainer.obj");
-	Model& sphere = m_models.emplace_back(m_vulkanDevice, "Assets/sphere.obj");
+	m_models->reserve(2);
+	Model& cube = m_models->emplace_back(m_vulkanDevice, "Assets/woodenContainer.obj");
+	Model& sphere = m_models->emplace_back(m_vulkanDevice, "Assets/sphere.obj");
 
 	addTexture("NO_LOCATION", "DEFAULT_ERROR_TEXTURE");
 	size_t container2Diffuse = addTexture("Assets/container2.jpg", "container2Diffuse");

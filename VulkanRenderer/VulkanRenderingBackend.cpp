@@ -124,6 +124,11 @@ std::vector<Texture>* VulkanRenderingBackend::getTextureList()
 	return &m_textures;
 }
 
+std::vector<Model>* VulkanRenderingBackend::getModelList()
+{
+	return &m_models;
+}
+
 void VulkanRenderingBackend::createBuffersAndDescriptors()
 {
 	//allocating uniform buffers
