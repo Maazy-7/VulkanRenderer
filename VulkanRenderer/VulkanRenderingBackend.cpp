@@ -6,6 +6,10 @@ VulkanRenderingBackend::VulkanRenderingBackend(Window& window)
 	//1 uniform frame buffer per frame in flight (2) and 2 textures, one for albedo other is shadow map
 	std::unordered_map<VkDescriptorType, uint32_t> descriptorTypes = { {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2} };
 	m_vulkanDescriptorPool = std::make_unique<VulkanDescriptorPool>(m_vulkanDevice, descriptorTypes);
+	descriptorTypes.clear();
+	//1 binding which is a descriptor array of textures (1024 textures for now)
+	descriptorTypes = { {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxTextures} };
+	m_globalTextureListDescriptorPool = std::make_unique<VulkanDescriptorPool>(m_vulkanDevice, descriptorTypes, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 	m_simpleRenderSystem = std::make_unique<SimpleRenderSystem>(m_vulkanDevice, m_vulkanRenderer, *m_vulkanDescriptorPool.get(), nullptr);
 	m_deferredRendererSystem = std::make_unique<DeferredRendererSystem>(m_vulkanDevice, m_vulkanRenderer);
 	m_shadowRendererSystem = std::make_unique<ShadowRendererSystem>(m_vulkanDevice, m_simpleRenderSystem->getModels());
@@ -46,12 +50,8 @@ void VulkanRenderingBackend::render(float dt)
 	view_proj.proj[1][1] *= -1; frameUbo.projMat = view_proj.proj; frameUbo.viewMat = view_proj.view;
 
 	m_cameraMatrixBuffers[frameIndex].writeToBuffer(0, sizeof(FrameUbo), &frameUbo);
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_simpleRenderSystem->getVulkanPipeline().getPipelineLayout(), 0,
-		1, &m_cameraMatrixDescriptorSets[frameIndex], 0, nullptr);
-
-	m_deferredRendererSystem->executeGeometryPass(commandBuffer);
-	m_deferredRendererSystem->executeLightingPass(commandBuffer);
-	m_deferredRendererSystem->renderLights(commandBuffer);
+	
+	VkDescriptorSet cameraMatrixDescriptorSet = m_cameraMatrixDescriptorSets[frameIndex];
 	
 	static bool forwardRenderer;
 
@@ -60,12 +60,20 @@ void VulkanRenderingBackend::render(float dt)
 
 	if (forwardRenderer)
 	{
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_simpleRenderSystem->getVulkanPipeline().getPipelineLayout(), 0,
+			1, &cameraMatrixDescriptorSet, 0, nullptr);
 		m_vulkanRenderer.beginRendering(commandBuffer);
 		m_simpleRenderSystem->renderGameObjects(commandBuffer, dt);
 		m_vulkanRenderer.endRendering(commandBuffer);
 	}
 	else
 	{
+		VkDescriptorSet descriptorSets[2] = { cameraMatrixDescriptorSet, m_globalTextureDescriptorSet };
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_deferredRendererSystem->getGeometryPassPipeline().getPipelineLayout(),
+			0, 2, descriptorSets, 0, nullptr);
+		m_deferredRendererSystem->executeGeometryPass(commandBuffer);
+		m_deferredRendererSystem->executeLightingPass(commandBuffer);
+		m_deferredRendererSystem->renderLights(commandBuffer);
 		m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_deferredRendererSystem->getLightingPassOutput());
 	}
 
@@ -111,6 +119,11 @@ VulkanDevice& VulkanRenderingBackend::getVulkanDevice()
 	return m_vulkanDevice;
 }
 
+std::vector<Texture>* VulkanRenderingBackend::getTextureList()
+{
+	return &m_textures;
+}
+
 void VulkanRenderingBackend::createBuffersAndDescriptors()
 {
 	//allocating uniform buffers
@@ -125,9 +138,8 @@ void VulkanRenderingBackend::createBuffersAndDescriptors()
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
 	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1);
 	m_globalSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_vulkanDevice, bindings);
-	VulkanDescriptorWriter descriptorWriter(*m_vulkanDescriptorPool.get(), *m_globalSetLayout.get());
-	m_simpleRenderSystem->createPipeline(*m_globalSetLayout.get());
-	m_deferredRendererSystem->createPipelines(*m_globalSetLayout.get());
+	VulkanDescriptorWriter descriptorWriter(*m_vulkanDescriptorPool, *m_globalSetLayout);
+	m_simpleRenderSystem->createPipeline(*m_globalSetLayout);
 
 	m_cameraMatrixDescriptorSets.resize(m_vulkanRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT);
 
@@ -140,4 +152,44 @@ void VulkanRenderingBackend::createBuffersAndDescriptors()
 
 		descriptorWriter.writeBuffer(&descriptorBufferInfo, 0).build(m_cameraMatrixDescriptorSets[i]);
 	}
+
+	bindings.clear();
+	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, maxTextures);
+	VkDescriptorBindingFlags descBindingFlag = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | 
+		VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | 
+		VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+		VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+	VkDescriptorSetLayoutBindingFlagsCreateInfo layoutBindingFlagsCreateInfo{};
+	layoutBindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+	layoutBindingFlagsCreateInfo.bindingCount = 1;
+	layoutBindingFlagsCreateInfo.pBindingFlags = &descBindingFlag;
+	m_globalTextureListDescriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_vulkanDevice, bindings, 
+		VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &layoutBindingFlagsCreateInfo);
+	VkDescriptorSetVariableDescriptorCountAllocateInfo variableDescriptorCountAllocInfo{};
+	variableDescriptorCountAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
+	variableDescriptorCountAllocInfo.descriptorSetCount = 1;
+	variableDescriptorCountAllocInfo.pDescriptorCounts = &maxTextures;
+	m_globalTextureListDescriptorPool->allocateDescriptorSet(*m_globalTextureListDescriptorSetLayout, m_globalTextureDescriptorSet,
+		&variableDescriptorCountAllocInfo);
+	m_deferredRendererSystem->createPipelines(*m_globalSetLayout, *m_globalTextureListDescriptorSetLayout);
+	
+	//allocate inital textures - need to make a better system to load and unload textures dynamically
+	std::vector<VkDescriptorImageInfo> descriptorImageInfos;
+	for (Texture& tex : m_textures) 
+	{
+		VkDescriptorImageInfo descriptorImageInfo{};
+		descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		descriptorImageInfo.imageView = tex.getVkImageView();
+		descriptorImageInfo.sampler = tex.getVkSampler();
+		descriptorImageInfos.push_back(descriptorImageInfo);
+	}
+	VkWriteDescriptorSet globalTextureDescriptorSetWrite{};
+	globalTextureDescriptorSetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	globalTextureDescriptorSetWrite.dstBinding = 0;
+	globalTextureDescriptorSetWrite.dstArrayElement = 0;
+	globalTextureDescriptorSetWrite.dstSet = m_globalTextureDescriptorSet;
+	globalTextureDescriptorSetWrite.pImageInfo = descriptorImageInfos.data();
+	globalTextureDescriptorSetWrite.descriptorCount = static_cast<uint32_t>(descriptorImageInfos.size());
+	globalTextureDescriptorSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	vkUpdateDescriptorSets(m_vulkanDevice.getDevice(), 1, &globalTextureDescriptorSetWrite, 0, nullptr);
 }

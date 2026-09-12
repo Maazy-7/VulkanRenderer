@@ -86,7 +86,7 @@ DeferredRendererSystem::~DeferredRendererSystem()
 
 }
 
-void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descriptorSetLayout)
+void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descriptorSetLayout, VulkanDescriptorSetLayout& globalTextureDescriptorSetLayout)
 {
 	//creating geometry pass pipeline
 	//variables and structs for the geometry pass pipeline
@@ -115,8 +115,8 @@ void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descript
 	VkPushConstantRange geometryPassPushConstants2{};//extra push constant to match other pipeline layout
 	geometryPassPushConstants2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	geometryPassPushConstants2.offset = 64;
-	geometryPassPushConstants2.size = 16;
-	VkPushConstantRange pushConstants[2] = {geometryPassPushConstants, geometryPassPushConstants2};
+	geometryPassPushConstants2.size = 16;//will add more later but for now just a singular index for the texture descriptor list
+	VkPushConstantRange pushConstants[2] = { geometryPassPushConstants, geometryPassPushConstants2 };
 
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
 	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
@@ -139,7 +139,7 @@ void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descript
 		descriptorWriter.writeImage(&descriptorImgInfo1, 0).writeImage(&descriptorImgInfo2, 1).build(m_geometryPassDescriptorSets[i]);
 	}
 
-	VkDescriptorSetLayout geometryPassSetLayouts[2] = { descriptorSetLayout.getDescriptorSetLayout(), m_geometryPassSetLayout->getDescriptorSetLayout() };
+	VkDescriptorSetLayout geometryPassSetLayouts[2] = { descriptorSetLayout.getDescriptorSetLayout(), globalTextureDescriptorSetLayout.getDescriptorSetLayout() };
 	m_geometryPassPipeline->createPipelineLayout(2, geometryPassSetLayouts, 2, pushConstants);
 
 	m_geometryPassPipeline->vertexInputState(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), attributeDescriptions.data())
@@ -300,14 +300,15 @@ void DeferredRendererSystem::executeGeometryPass(VkCommandBuffer commandBuffer)
 
 	m_geometryPassPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_geometryPassPipeline->getPipelineLayout(), 1, 1,
-		m_geometryPassDescriptorSets.data(), 0, nullptr);
-
 	glm::mat4 model;
+	diffuseSpecMapMaterial material;
 	for (const gameObject& gameObj : *m_gameObjectList) 
 	{
 		model = gameObj.getModelMat();
+		material = gameObj.getMaterial();
+		glm::ivec4 indices(material.getTextureIndices(), 1, 1);
 		vkCmdPushConstants(commandBuffer, m_geometryPassPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model);
+		vkCmdPushConstants(commandBuffer, m_geometryPassPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::ivec4), &indices);
 		gameObj.render(commandBuffer);
 	}
 	vkCmdEndRendering(commandBuffer);
@@ -472,10 +473,15 @@ void DeferredRendererSystem::attachCamera(const Camera* camera)
 
 VulkanImage& DeferredRendererSystem::getDepthBuffer()
 {
-	return *m_gDepth.get();
+	return *m_gDepth;
 }
 
 VulkanImage& DeferredRendererSystem::getLightingPassOutput()
 {
-	return *m_lightingPassOutput.get();
+	return *m_lightingPassOutput;
+}
+
+VulkanPipeline& DeferredRendererSystem::getGeometryPassPipeline()
+{
+	return *m_geometryPassPipeline;
 }

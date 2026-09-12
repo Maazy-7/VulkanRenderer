@@ -28,6 +28,7 @@ public:
 
 	float getSwapChainAspect() const;
 	VulkanDevice& getVulkanDevice();
+	std::vector<Texture>* getTextureList();
 
 private:
 
@@ -38,16 +39,22 @@ private:
 	VulkanRenderer m_vulkanRenderer;
 	std::unique_ptr<VulkanDescriptorPool> m_vulkanDescriptorPool;
 	std::unique_ptr<VulkanDescriptorSetLayout> m_globalSetLayout;
+	std::unique_ptr<VulkanDescriptorPool> m_globalTextureListDescriptorPool;
+	std::unique_ptr<VulkanDescriptorSetLayout> m_globalTextureListDescriptorSetLayout;
 	std::vector<VulkanBuffer> m_cameraMatrixBuffers;
 	std::vector<VkDescriptorSet> m_cameraMatrixDescriptorSets;
+	VkDescriptorSet m_globalTextureDescriptorSet;
 
 	std::unique_ptr<ShadowRendererSystem> m_shadowRendererSystem;
 	std::unique_ptr<SimpleRenderSystem> m_simpleRenderSystem;
 	std::unique_ptr<DeferredRendererSystem> m_deferredRendererSystem;
 
+	std::vector<Texture> m_textures;//owned by class, but modifiable by scene
 	const Camera* m_camera = nullptr;
 	std::vector<gameObject>* m_gameObjects = nullptr;
 	std::vector<Light>* m_lights = nullptr;
+
+	uint32_t maxTextures = 1024;
 };
 
 struct FrameUbo

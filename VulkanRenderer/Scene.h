@@ -25,13 +25,17 @@ public:
 	const Camera& getCamera() const;
 
 private:
+
+	size_t addTexture(const std::string& path, std::string name);
+
 	VulkanRenderingBackend* m_vulkanRenderingBackend;
 	VulkanDevice& m_vulkanDevice;
 
 	std::vector<gameObject> m_gameObjects;
 	std::vector<Light> m_lights;
 	std::vector<Model> m_models;
-	std::vector<Texture> m_textures;
+	std::vector<Texture>* m_textures = nullptr;//owned by VulkanRenderingBackend but can be modified from scene
+	std::unordered_map<std::string, size_t> m_textureMapIndexer;//map used to index texture list using texture name
 	std::unique_ptr<Camera> m_camera;
 };
 

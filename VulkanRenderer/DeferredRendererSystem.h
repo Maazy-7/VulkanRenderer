@@ -28,7 +28,7 @@ public:
 	DeferredRendererSystem(VulkanDevice& vulkanDevice, const VulkanRenderer& vulkanRenderer);
 	~DeferredRendererSystem();
 
-	void createPipelines(VulkanDescriptorSetLayout& descriptorSetLayout);
+	void createPipelines(VulkanDescriptorSetLayout& descriptorSetLayout, VulkanDescriptorSetLayout& globalTextureDescriptorSetLayout);
 
 	void executeGeometryPass(VkCommandBuffer commandBuffer);
 	void executeLightingPass(VkCommandBuffer commandBuffer);
@@ -40,6 +40,7 @@ public:
 
 	VulkanImage& getDepthBuffer();
 	VulkanImage& getLightingPassOutput();
+	VulkanPipeline& getGeometryPassPipeline();
 
 private:
 	VulkanDevice& m_vulkanDevice;
