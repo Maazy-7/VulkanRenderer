@@ -3,6 +3,14 @@
 #include "Model.h"
 #include <glm/gtx/euler_angles.hpp>
 
+struct diffuseSpecMapMaterial //a simple container for holding texture indices for a diffuse map and specular map
+{
+	size_t m_diffuseTextureIndex = 0;
+	size_t m_specularTextureIndex = 0;
+
+	glm::ivec2 getTextureIndices() const;
+};
+
 //temp gameobject class
 class gameObject
 {
@@ -15,6 +23,9 @@ public:
 
 	glm::mat4 getModelMat() const;
 	glm::vec4 getColor() const;
+	diffuseSpecMapMaterial getMaterial() const;
+
+	void setMaterial(diffuseSpecMapMaterial& material);
 
 	void setPos(glm::vec3 pos);
 	void setOrientation(glm::vec3 orientation);
@@ -34,4 +45,5 @@ private:
 	Model& m_model;
 	//temp
 	glm::vec4 m_color;
+	diffuseSpecMapMaterial m_material;
 };

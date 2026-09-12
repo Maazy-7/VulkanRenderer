@@ -33,6 +33,16 @@ glm::vec4 gameObject::getColor() const
 	return m_color;
 }
 
+diffuseSpecMapMaterial gameObject::getMaterial() const
+{
+	return m_material;
+}
+
+void gameObject::setMaterial(diffuseSpecMapMaterial& material)
+{
+	m_material = material;
+}
+
 void gameObject::setPos(glm::vec3 pos)
 {
 	m_pos = pos;
@@ -76,4 +86,9 @@ void gameObject::setColor(glm::vec4 color)
 void gameObject::render(VkCommandBuffer commandBuffer) const
 {
 	m_model.draw(commandBuffer);
+}
+
+glm::ivec2 diffuseSpecMapMaterial::getTextureIndices() const
+{
+	return glm::ivec2(m_diffuseTextureIndex, m_specularTextureIndex);
 }
