@@ -11,7 +11,8 @@ public:
     VulkanDescriptorSetLayout(const VulkanDescriptorSetLayout&) = delete;
     VulkanDescriptorSetLayout& operator=(const VulkanDescriptorSetLayout&) = delete;
 
-    VulkanDescriptorSetLayout(VulkanDevice& device, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings);
+    VulkanDescriptorSetLayout(VulkanDevice& device, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings, 
+        VkDescriptorSetLayoutCreateFlags flags = 0, VkDescriptorSetLayoutBindingFlagsCreateInfo* bindingFlagCreateInfo = VK_NULL_HANDLE);
     ~VulkanDescriptorSetLayout();
 
     static void addBinding(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding>& bindings, uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags shaderStageFlags, uint32_t descriptorCount);
@@ -33,10 +34,12 @@ public:
     VulkanDescriptorPool(const VulkanDescriptorPool&) = delete;
     VulkanDescriptorPool& operator=(const VulkanDescriptorPool&) = delete;
 
-    VulkanDescriptorPool(VulkanDevice& device, std::unordered_map<VkDescriptorType, uint32_t> descriptorCountAndType);
+    VulkanDescriptorPool(VulkanDevice& device, std::unordered_map<VkDescriptorType, uint32_t> descriptorCountAndType,
+        VkDescriptorPoolCreateFlags descriptorPoolCreateFlags = 0);
     ~VulkanDescriptorPool();
 
-    bool allocateDescriptorSet(const VulkanDescriptorSetLayout& descriptorLayout, VkDescriptorSet& descriptorSet);
+    bool allocateDescriptorSet(const VulkanDescriptorSetLayout& descriptorLayout, VkDescriptorSet& descriptorSet,
+        VkDescriptorSetVariableDescriptorCountAllocateInfo* variableDescCountAllocInfo = VK_NULL_HANDLE);
 
 private:
 

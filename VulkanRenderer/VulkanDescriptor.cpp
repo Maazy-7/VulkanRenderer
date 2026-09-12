@@ -1,6 +1,7 @@
 #include "VulkanDescriptor.h"
 
-VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VulkanDevice& device, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings)
+VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VulkanDevice& device, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings,
+	VkDescriptorSetLayoutCreateFlags flags, VkDescriptorSetLayoutBindingFlagsCreateInfo* bindingFlagCreateInfo)
 	:m_vkDevice(device), m_bindings(bindings)
 {
 	std::vector<VkDescriptorSetLayoutBinding> descSetLayoutBindings;
@@ -9,11 +10,14 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VulkanDevice& device, std::
 	{
 		descSetLayoutBindings.push_back(binding.second);
 	}
-	
+
+	VkDescriptorBindingFlags f{};
 	VkDescriptorSetLayoutCreateInfo descSetLayoutCreateInfo{};
 	descSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	descSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(descSetLayoutBindings.size());
 	descSetLayoutCreateInfo.pBindings = descSetLayoutBindings.data();
+	descSetLayoutCreateInfo.flags = flags;
+	descSetLayoutCreateInfo.pNext = bindingFlagCreateInfo;
 	if (vkCreateDescriptorSetLayout(m_vkDevice.getDevice(), &descSetLayoutCreateInfo, nullptr, &m_vkDescriptorSetLayout) != VK_SUCCESS) 
 	{
 		throw std::runtime_error("failed to create Vulkan Descriptor set layout");
@@ -40,7 +44,7 @@ const VkDescriptorSetLayout& VulkanDescriptorSetLayout::getDescriptorSetLayout()
 	return m_vkDescriptorSetLayout;
 }
 
-VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, std::unordered_map<VkDescriptorType, uint32_t> descriptorTypeAndCount)
+VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, std::unordered_map<VkDescriptorType, uint32_t> descriptorTypeAndCount, VkDescriptorPoolCreateFlags descriptorPoolCreateFlags)
 	:m_vkDevice(device)
 {
 	std::vector<VkDescriptorPoolSize> poolSizes;
@@ -59,6 +63,7 @@ VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, std::unordered_
 	descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	descriptorPoolCreateInfo.pPoolSizes = poolSizes.data();
 	descriptorPoolCreateInfo.maxSets = maxSets;
+	descriptorPoolCreateInfo.flags = descriptorPoolCreateFlags;
 	
 	if (vkCreateDescriptorPool(m_vkDevice.getDevice(), &descriptorPoolCreateInfo, nullptr, &m_vkDescriptorPool) != VK_SUCCESS) 
 	{
@@ -71,13 +76,15 @@ VulkanDescriptorPool::~VulkanDescriptorPool()
 	vkDestroyDescriptorPool(m_vkDevice.getDevice(), m_vkDescriptorPool, nullptr);
 }
 
-bool VulkanDescriptorPool::allocateDescriptorSet(const VulkanDescriptorSetLayout& descriptorLayout, VkDescriptorSet& descriptorSet) 
+bool VulkanDescriptorPool::allocateDescriptorSet(const VulkanDescriptorSetLayout& descriptorLayout, VkDescriptorSet& descriptorSet,
+	VkDescriptorSetVariableDescriptorCountAllocateInfo* variableDescCountAllocInfo)
 {
 	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo{};
 	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	descriptorSetAllocateInfo.descriptorPool = m_vkDescriptorPool;
 	descriptorSetAllocateInfo.descriptorSetCount = 1;
 	descriptorSetAllocateInfo.pSetLayouts = &descriptorLayout.getDescriptorSetLayout();
+	descriptorSetAllocateInfo.pNext = variableDescCountAllocInfo;
 
 	if (vkAllocateDescriptorSets(m_vkDevice.getDevice(), &descriptorSetAllocateInfo, &descriptorSet) != VK_SUCCESS) 
 	{
