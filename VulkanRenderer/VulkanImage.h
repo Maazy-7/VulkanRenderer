@@ -23,7 +23,9 @@ public:
 
 	void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1);
 	void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags2 srcAccess, VkAccessFlags2 dstAccess,
-		VkPipelineStageFlags2 srcStage, VkPipelineStageFlags2 dstStage, uint32_t layourCount, VkCommandBuffer mainCommandBuffer = VK_NULL_HANDLE);
+		VkPipelineStageFlags2 srcStage, VkPipelineStageFlags2 dstStage, uint32_t layerCount, VkCommandBuffer mainCommandBuffer = VK_NULL_HANDLE);
+	void transitionImageLayout(VkFormat format, VkImageLayout newLayout, VkAccessFlags dstAccess, VkPipelineStageFlags2 dstStage, uint32_t layerCount,
+		VkCommandBuffer mainCommandBuffer = VK_NULL_HANDLE);
 	void copyBufferToImage(VulkanBuffer& srcBuffer, uint32_t width, uint32_t height);
 	void generateMipMaps(int width, int height, uint32_t mipLevels);
 
@@ -39,5 +41,9 @@ private:
 	VkSampler m_vkSampler;
 	VkFormat m_vkFormat;
 	bool m_ownsSampler = true;//used to determine if vulkan image object owns the sample it was given
+	//image transition info stored to ensure the correct old layout/access/pipeline stage flags are used
+	VkImageLayout m_currentImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	VkAccessFlags2 m_currentAccessFlag = VK_ACCESS_2_NONE;
+	VkPipelineStageFlags2 m_currentPipelineStageFlags = VK_PIPELINE_STAGE_2_NONE;
 };
 

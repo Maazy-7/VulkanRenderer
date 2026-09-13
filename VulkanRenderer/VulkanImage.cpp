@@ -310,6 +310,16 @@ void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout
 	//can use either single time command buffer or main command buffer
 	VkCommandBuffer commandBuffer = mainCommandBuffer == VK_NULL_HANDLE ? m_vulkanDevice.beginSingleTimeCommands() : mainCommandBuffer;
 
+	if (oldLayout != m_currentImageLayout) { LOG("old image layout does not match current image layout"); }
+	if (srcAccess != m_currentAccessFlag) { LOG("src access flag does not match current access flag"); }
+	if (srcStage != m_currentPipelineStageFlags) { LOG("old pipeline stage flags does not match current pipeline stage flags"); }
+
+	//might need to call a runtime error if transition errors are catostrophic
+
+	m_currentImageLayout = newLayout;
+	m_currentAccessFlag = dstAccess;
+	m_currentPipelineStageFlags = dstStage;
+
 	VkImageMemoryBarrier2 imgMemoryBarrier2{};
 	imgMemoryBarrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
 	imgMemoryBarrier2.oldLayout = oldLayout;
@@ -348,6 +358,13 @@ void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout
 	{
 		m_vulkanDevice.endSingleTimeCommands(commandBuffer);
 	}
+}
+
+void VulkanImage::transitionImageLayout(VkFormat format, VkImageLayout newLayout, VkAccessFlags dstAccess, VkPipelineStageFlags2 dstStage, 
+	uint32_t layerCount, VkCommandBuffer mainCommandBuffer)
+{
+	transitionImageLayout(format, m_currentImageLayout, newLayout, m_currentAccessFlag, dstAccess, m_currentPipelineStageFlags, dstStage, layerCount,
+		mainCommandBuffer);
 }
 
 void VulkanImage::copyBufferToImage(VulkanBuffer& srcBuffer, uint32_t width, uint32_t height)
