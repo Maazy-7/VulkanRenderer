@@ -37,6 +37,7 @@ public:
 	void setLightList(std::vector<Light>* lights);
 	void setShadowCasterList(const std::vector<ShadowCaster>* shadowCasters);
 	void attachCamera(const Camera* camera);
+	void recreateDeferredRendererResources(); //recreates the geometry pass and lighting pass render targets and their descriptors
 
 	VulkanImage& getDepthBuffer();
 	VulkanImage& getLightingPassOutput();

@@ -471,6 +471,64 @@ void DeferredRendererSystem::attachCamera(const Camera* camera)
 	m_camera = camera;
 }
 
+void DeferredRendererSystem::recreateDeferredRendererResources()
+{
+	uint32_t width = m_vulkanRenderer.getSwapChain().getSwapChainWidth();
+	uint32_t height = m_vulkanRenderer.getSwapChain().getSwapChainHeight();
+	VkSampler gbufferTexturesSampler = m_vulkanDevice.getDefaultTextureSampler();
+
+	//8MB depth buffer - vertex position will be derived from depth buffer
+	m_gDepth = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, true, gbufferTexturesSampler);
+	//31.6MB normal buffer
+	m_gNormal = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
+	//8MB albedo and specular buffer, xyz stores diffuse color whereas w stores specualr intensity
+	m_gAlbedoSpec = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
+	//8MB output buffer for the lighting pass
+	m_lightingPassOutput = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
+
+	//recreate descriptor sets for the resources that were created
+	VulkanDescriptorWriter descriptorWriter2(*m_vulkanDescriptorPool.get(), *m_lightingPassSetLayout.get());
+	for (size_t i = 0; i < m_lightingPassDescriptorSets.size(); i++)
+	{
+		VkDescriptorImageInfo depthImageInfo{};
+		depthImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		depthImageInfo.imageView = m_gDepth->getVkImageView();
+		depthImageInfo.sampler = m_gDepth->getVkSampler();
+
+		VkDescriptorImageInfo normalImageInfo{};
+		normalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		normalImageInfo.imageView = m_gNormal->getVkImageView();
+		normalImageInfo.sampler = m_gNormal->getVkSampler();
+
+		VkDescriptorImageInfo albedoSpecImageInfo{};
+		albedoSpecImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		albedoSpecImageInfo.imageView = m_gAlbedoSpec->getVkImageView();
+		albedoSpecImageInfo.sampler = m_gAlbedoSpec->getVkSampler();
+
+		//technically don't need shadow map resources to be recreated - should make recreation be only part of vector
+		VkDescriptorImageInfo shadowMapImageInfo{};
+		shadowMapImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		//for now we will allocate only 1 shadow map
+		size_t shadowCasterIndex; (*m_lightsList)[0].hasShadowCaster(shadowCasterIndex);
+		const ShadowCaster& shadowCaster = (*m_shadowCasterList)[shadowCasterIndex];
+		shadowMapImageInfo.imageView = shadowCaster.getShadowMap().getVkImageView();
+		shadowMapImageInfo.sampler = shadowCaster.getShadowMap().getVkSampler();
+
+		//overwriting existing descrptor set
+		descriptorWriter2.writeImage(&depthImageInfo, 0)
+			.writeImage(&normalImageInfo, 1)
+			.writeImage(&albedoSpecImageInfo, 2)
+			.writeImage(&shadowMapImageInfo, 3).overwrite(m_lightingPassDescriptorSets[0]);
+	}
+}
+
 VulkanImage& DeferredRendererSystem::getDepthBuffer()
 {
 	return *m_gDepth;
