@@ -46,6 +46,12 @@ void VulkanRenderer::recreateSwapChain()
 		std::shared_ptr<VulkanSwapChain> old_swapChain = std::move(m_vkSwapChain);
 		m_vkSwapChain = std::make_unique<VulkanSwapChain>(m_vkDevice, old_swapChain);
 	}
+
+	if (m_swapchainRecreateCallback) 
+	{
+		m_swapchainRecreateCallback();
+	}
+	else { throw std::runtime_error("no swapchain recreation callback function was set"); }
 }
 
 VkCommandBuffer VulkanRenderer::getCurrentCommandBuffer() const
@@ -290,4 +296,9 @@ void VulkanRenderer::blitVkImageToSwapChain(VkCommandBuffer commandBuffer, const
 	presentDependencyInfo.pImageMemoryBarriers = &presentBarrier;
 
 	vkCmdPipelineBarrier2(commandBuffer, &presentDependencyInfo);
+}
+
+void VulkanRenderer::setSwapchainRecreateCallback(std::function<void()> swapchainRecreateFunction)
+{
+	m_swapchainRecreateCallback = std::move(swapchainRecreateFunction);
 }

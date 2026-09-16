@@ -15,6 +15,11 @@ VulkanRenderingBackend::VulkanRenderingBackend(Window& window)
 	m_shadowRendererSystem = std::make_unique<ShadowRendererSystem>(m_vulkanDevice, m_simpleRenderSystem->getModels());
 	m_simpleRenderSystem->setShadowCasterList(m_shadowRendererSystem->getShadowCasters());
 	m_deferredRendererSystem->setShadowCasterList(m_shadowRendererSystem->getShadowCasters());
+	m_vulkanRenderer.setSwapchainRecreateCallback(
+		[this]() 
+		{
+			recreateRenderSystemResources();
+		});
 	stbi_set_flip_vertically_on_load(1);
 }
 
@@ -28,6 +33,10 @@ void VulkanRenderingBackend::render(float dt)
 	//renderer update
 	VkCommandBuffer commandBuffer = m_vulkanRenderer.beginFrame();
 
+	if (commandBuffer == VK_NULL_HANDLE) 
+	{
+		return;
+	}
 
 	/*static float acc = 0.f;
 	acc += dt;
@@ -107,6 +116,11 @@ void VulkanRenderingBackend::setLightsList(std::vector<Light>* lights)
 void VulkanRenderingBackend::createShadowCaster(Light& light, uint32_t shadowWidth, uint32_t shadowHeight, float nearPlane, float farPlane) 
 {
 	m_shadowRendererSystem->createShadowCaster(light, shadowWidth, shadowHeight, nearPlane, farPlane);
+}
+
+void VulkanRenderingBackend::recreateRenderSystemResources()
+{
+	m_deferredRendererSystem->recreateDeferredRendererResources();
 }
 
 float VulkanRenderingBackend::getSwapChainAspect() const 

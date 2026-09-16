@@ -24,7 +24,7 @@ public:
 	void setGameObjectList(std::vector<gameObject>* gameObjects);
 	void setLightsList(std::vector<Light>* lights);
 	void createShadowCaster(Light& light, uint32_t shadowWidth, uint32_t shadowHeight, float nearPlane = 0.1f, float farPlane = 25.f);
-
+	void recreateRenderSystemResources();
 
 	float getSwapChainAspect() const;
 	VulkanDevice& getVulkanDevice();

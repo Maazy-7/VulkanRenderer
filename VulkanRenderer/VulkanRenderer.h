@@ -27,6 +27,7 @@ public:
 	void beginRendering(VkCommandBuffer commandBuffer);
 	void endRendering(VkCommandBuffer commandBuffer);
 	void blitVkImageToSwapChain(VkCommandBuffer commandBuffer, const VulkanImage& srcImage);
+	void setSwapchainRecreateCallback(std::function<void()> swapchainRecreateFunction);
 
 private:
 
@@ -38,6 +39,7 @@ private:
 	std::unique_ptr<VulkanSwapChain> m_vkSwapChain;
 	std::vector<VkCommandBuffer> m_vkCommandBuffers;
 	uint32_t m_currentImageIndex = 0;
+	std::function<void()> m_swapchainRecreateCallback;
 	
 	int m_currentFrameIndex = 0;
 	bool m_isFrameStarted = false;
