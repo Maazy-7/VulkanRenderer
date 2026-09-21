@@ -306,6 +306,51 @@ void VulkanDevice::createDevice()
 	physicalDeviceMultiviewFeatures.multiview = VK_TRUE;
 	physicalDeviceMultiviewFeatures.pNext = &vkDevice13Features;
 
+	//checking and enabling ray tracing features
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtPipelineProperties{};
+	rtPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+
+	VkPhysicalDeviceProperties2 physcialDeviceProperties2{};
+	physcialDeviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	physcialDeviceProperties2.pNext = &rtPipelineProperties;
+
+	vkGetPhysicalDeviceProperties2(m_vkPhysicalDevice, &physcialDeviceProperties2);
+
+	VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeatures{};
+	rtPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+
+	VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
+	accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+	accelerationStructureFeatures.pNext = &rtPipelineFeatures;
+
+	VkPhysicalDeviceFeatures2 physicalDeviceFeatures2_forRayTracing{};//seperate struct made for physical device features 2 for checking ray tracing capability
+	physicalDeviceFeatures2_forRayTracing.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	physicalDeviceFeatures2_forRayTracing.pNext = &accelerationStructureFeatures;
+
+	vkGetPhysicalDeviceFeatures2(m_vkPhysicalDevice, &physicalDeviceFeatures2_forRayTracing);
+
+	//enable ray tracing if supported and link chains to ones use in device create info
+	if (rtPipelineFeatures.rayTracingPipeline == VK_TRUE || accelerationStructureFeatures.accelerationStructure == VK_TRUE)
+	{
+		m_deviceExtensions.emplace_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+		m_deviceExtensions.emplace_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+		m_deviceExtensions.emplace_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+		m_deviceExtensions.emplace_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+
+		VkPhysicalDeviceRayTracingPipelineFeaturesKHR enabledRayTracingPipelineFeatures{};
+		enabledRayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+		enabledRayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
+		
+		VkPhysicalDeviceAccelerationStructureFeaturesKHR enabledAccelerationStructureFeatures{};
+		enabledAccelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+		enabledAccelerationStructureFeatures.accelerationStructure = VK_TRUE;
+		enabledAccelerationStructureFeatures.pNext = &enabledRayTracingPipelineFeatures;
+
+		//changing pNext chain to include ray tracing, multiview -> accel structs -> rt pipeline -> vulkan_1_3 features -> ...
+		physicalDeviceMultiviewFeatures.pNext = &enabledAccelerationStructureFeatures;
+		enabledRayTracingPipelineFeatures.pNext = &vkDevice13Features;
+	}
+
 	VkDeviceCreateInfo devCreateInfo = {};
 	devCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	devCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(qCreateInfo.size());
