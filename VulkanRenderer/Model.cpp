@@ -74,6 +74,11 @@ void Model::draw(VkCommandBuffer commandBuffer)
 	}
 }
 
+const Mesh& Model::getMesh(size_t meshNumber) const
+{
+	return m_meshes[meshNumber];
+}
+
 void Model::createDefaultCubeModel(VulkanDevice& vulkanDevice, const std::string filepath)
 {
 	DEFAULT_MODEL_CUBE = Model(vulkanDevice, filepath);

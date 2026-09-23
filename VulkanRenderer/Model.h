@@ -19,6 +19,7 @@ public:
 	~Model();
 
 	void draw(VkCommandBuffer commandBuffer);
+	const Mesh& getMesh(size_t meshNumber = 0) const;
 
 	static void createDefaultCubeModel(VulkanDevice& vulkanDevice, const std::string filepath);
 	static Model& getDefaultCubeModel();
