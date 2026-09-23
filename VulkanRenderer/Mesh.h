@@ -32,6 +32,8 @@ public:
 	~Mesh();
 
 	void draw(VkCommandBuffer commandBuffer) const;
+	const VulkanBuffer& getMeshVertexBuffer() const;
+	const VulkanBuffer& getMeshIndexBuffer() const;
 
 private:
 	//void calculateAABB();

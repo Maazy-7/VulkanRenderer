@@ -81,3 +81,13 @@ void Mesh::draw(VkCommandBuffer commandBufer) const
 	m_indexBuffer->bindIndexBuffer(commandBufer);
 	vkCmdDrawIndexed(commandBufer, m_indexBuffer->getBufferElementCount(), 1, 0, 0, 0);
 }
+
+const VulkanBuffer& Mesh::getMeshVertexBuffer() const
+{
+	return *m_vertexBuffer;
+}
+
+const VulkanBuffer& Mesh::getMeshIndexBuffer() const
+{
+	return *m_indexBuffer;
+}
