@@ -26,6 +26,7 @@ public:
 	void unMap();
 	uint32_t getBufferElementCount() const;
 	VkBuffer getBuffer() const;
+	VkDeviceAddress getBufferDeviceAddress() const;
 	VulkanDevice& getVulkanDevice() const;
 
 	static void copyBuffer(VulkanBuffer& srcBuffer, VulkanBuffer& dstBuffer, VkDeviceSize size);

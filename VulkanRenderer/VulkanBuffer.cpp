@@ -76,6 +76,14 @@ VkBuffer VulkanBuffer::getBuffer() const
 	return m_vkBuffer;
 }
 
+VkDeviceAddress VulkanBuffer::getBufferDeviceAddress() const
+{
+	VkBufferDeviceAddressInfo bufferAddressDeviceInfo{};
+	bufferAddressDeviceInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+	bufferAddressDeviceInfo.buffer = m_vkBuffer;
+	return vkGetBufferDeviceAddress(m_vkDevice.getDevice(), &bufferAddressDeviceInfo);
+}
+
 VulkanDevice& VulkanBuffer::getVulkanDevice() const 
 {
 	return m_vkDevice;
