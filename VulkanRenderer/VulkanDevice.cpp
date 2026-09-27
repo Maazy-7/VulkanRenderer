@@ -272,18 +272,26 @@ void VulkanDevice::createDevice()
 		qCreateInfo.push_back(qCrInfo);
 	}
 
-	//enabling descriptor indexing
-	VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{};
-	descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-	descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
-	descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
-	descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
-	descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-	descriptorIndexingFeatures.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
-	descriptorIndexingFeatures.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
-	descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
-	descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
-	descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+	//enabling buffer device address and descriptor indexing
+	VkPhysicalDeviceVulkan12Features vkDevice12Features{};
+	vkDevice12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	vkDevice12Features.bufferDeviceAddress = VK_TRUE;
+	vkDevice12Features.runtimeDescriptorArray = VK_TRUE;
+	vkDevice12Features.descriptorBindingVariableDescriptorCount = VK_TRUE;
+	vkDevice12Features.descriptorBindingPartiallyBound = VK_TRUE;
+	vkDevice12Features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	vkDevice12Features.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+	vkDevice12Features.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
+	vkDevice12Features.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
+	vkDevice12Features.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+	vkDevice12Features.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+
+	//enabling dynamic rendering and synchronization2
+	VkPhysicalDeviceVulkan13Features vkDevice13Features = {};
+	vkDevice13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	vkDevice13Features.dynamicRendering = VK_TRUE;
+	vkDevice13Features.synchronization2 = VK_TRUE;
+	vkDevice13Features.pNext = &vkDevice12Features;
 
 	//enabling anisotropic filtering
 	VkPhysicalDeviceFeatures physicalDeviceFeatures{};
@@ -292,27 +300,26 @@ void VulkanDevice::createDevice()
 	VkPhysicalDeviceFeatures2 physicalDeviceFeatures2{};
 	physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	physicalDeviceFeatures2.features = physicalDeviceFeatures;
-	physicalDeviceFeatures2.pNext = &descriptorIndexingFeatures;
-	
-	//enabling dynamic rendering and synchronization2
-	VkPhysicalDeviceVulkan13Features vkDevice13Features = {};
-	vkDevice13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-	vkDevice13Features.dynamicRendering = VK_TRUE;
-	vkDevice13Features.synchronization2 = VK_TRUE;
-	vkDevice13Features.pNext = &physicalDeviceFeatures2;
+	physicalDeviceFeatures2.pNext = &vkDevice13Features;
 
 	VkPhysicalDeviceMultiviewFeatures physicalDeviceMultiviewFeatures{};
 	physicalDeviceMultiviewFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES;
 	physicalDeviceMultiviewFeatures.multiview = VK_TRUE;
-	physicalDeviceMultiviewFeatures.pNext = &vkDevice13Features;
+	physicalDeviceMultiviewFeatures.pNext = &physicalDeviceFeatures2;
 
 	//checking and enabling ray tracing features
+	VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
+	accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+
 	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtPipelineProperties{};
 	rtPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+	rtPipelineProperties.pNext = &accelerationStructureProperties;
 
 	VkPhysicalDeviceProperties2 physcialDeviceProperties2{};
 	physcialDeviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 	physcialDeviceProperties2.pNext = &rtPipelineProperties;
+	m_vkPhysicalDeviceRTPiplineProperties = rtPipelineProperties;
+	m_vkPhysicalDeviceAccelerationProperties = accelerationStructureProperties;
 
 	vkGetPhysicalDeviceProperties2(m_vkPhysicalDevice, &physcialDeviceProperties2);
 
@@ -348,8 +355,10 @@ void VulkanDevice::createDevice()
 
 		//changing pNext chain to include ray tracing, multiview -> accel structs -> rt pipeline -> vulkan_1_3 features -> ...
 		physicalDeviceMultiviewFeatures.pNext = &enabledAccelerationStructureFeatures;
-		enabledRayTracingPipelineFeatures.pNext = &vkDevice13Features;
+		enabledRayTracingPipelineFeatures.pNext = &physicalDeviceFeatures2;
 	}
+	//current chain
+	//createinfo -> multiview -> (if ray tracing then rt structs) -> physical device features 2 -> vkdevice 13 features -> vkdevice 12 features
 
 	VkDeviceCreateInfo devCreateInfo = {};
 	devCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -461,6 +470,8 @@ VkQueue VulkanDevice::getGraphicsQueue() const { return m_graphicsQueue; }
 VkQueue VulkanDevice::getPresentQueue() const { return m_presentQueue; }
 VkCommandPool VulkanDevice::getCommandPool() const { return m_vkCommandPool; }
 VkPhysicalDeviceProperties VulkanDevice::getPhysicalDeviceProperties() const { return m_vkPhysicalDeviceProperties; }
+VkPhysicalDeviceRayTracingPipelinePropertiesKHR VulkanDevice::getPhysicalDeviceRTPipelineProperties() const { return m_vkPhysicalDeviceRTPiplineProperties; }
+VkPhysicalDeviceAccelerationStructurePropertiesKHR VulkanDevice::getPhysicalDeviceAccelerationStructureProperties() const { return m_vkPhysicalDeviceAccelerationProperties; }
 void VulkanDevice::getWindowFrameBufferSize(int* width, int* height) const { glfwGetFramebufferSize(m_window.getWindow(), width, height); }
 
 uint32_t VulkanDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) 

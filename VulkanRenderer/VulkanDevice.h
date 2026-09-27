@@ -57,6 +57,8 @@ public:
 	VkQueue getPresentQueue() const;
 	VkCommandPool getCommandPool() const;
 	VkPhysicalDeviceProperties getPhysicalDeviceProperties() const;
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR getPhysicalDeviceRTPipelineProperties() const;
+	VkPhysicalDeviceAccelerationStructurePropertiesKHR getPhysicalDeviceAccelerationStructureProperties() const;
 	void getWindowFrameBufferSize(int* width, int* height) const;
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	[[nodiscard]] VkCommandBuffer beginSingleTimeCommands();
@@ -88,6 +90,8 @@ private:
 	VkPhysicalDevice m_vkPhysicalDevice = VK_NULL_HANDLE;
 	VkDevice m_vkDevice;
 	VkPhysicalDeviceProperties m_vkPhysicalDeviceProperties;
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR m_vkPhysicalDeviceRTPiplineProperties;
+	VkPhysicalDeviceAccelerationStructurePropertiesKHR m_vkPhysicalDeviceAccelerationProperties;
 	Window& m_window;
 	VkSurfaceKHR m_vkSurfaceKHR;
 	VkQueue m_graphicsQueue;
