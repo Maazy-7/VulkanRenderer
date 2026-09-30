@@ -24,7 +24,7 @@ public:
 	void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1);
 	void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags2 srcAccess, VkAccessFlags2 dstAccess,
 		VkPipelineStageFlags2 srcStage, VkPipelineStageFlags2 dstStage, uint32_t layerCount, VkCommandBuffer mainCommandBuffer = VK_NULL_HANDLE);
-	void transitionImageLayout(VkFormat format, VkImageLayout newLayout, VkAccessFlags dstAccess, VkPipelineStageFlags2 dstStage, uint32_t layerCount,
+	void transitionImageLayout(VkFormat format, VkImageLayout newLayout, VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage, uint32_t layerCount,
 		VkCommandBuffer mainCommandBuffer = VK_NULL_HANDLE);
 	void copyBufferToImage(VulkanBuffer& srcBuffer, uint32_t width, uint32_t height);
 	void generateMipMaps(int width, int height, uint32_t mipLevels);
