@@ -7,13 +7,13 @@ gameObject::gameObject()
 }
 
 gameObject::gameObject(glm::vec3 pos, Model& model)
-	:m_pos(pos), m_model(model), m_scale(glm::vec3(1.f)), m_orientation(glm::vec3(0.f))
+	:m_pos(pos), m_model(model), m_scale(glm::vec3(1.f)), m_orientation(glm::vec3(0.f)), m_modelID(model.getModelID())
 {
 
 }
 
 gameObject::gameObject(glm::vec3 pos, glm::vec3 orientation, glm::vec3 scale, Model& model)
-	:m_pos(pos), m_orientation(orientation), m_scale(scale), m_model(model)
+	:m_pos(pos), m_orientation(orientation), m_scale(scale), m_model(model), m_modelID(model.getModelID())
 {
 
 }

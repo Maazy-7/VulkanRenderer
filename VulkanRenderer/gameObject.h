@@ -42,7 +42,8 @@ private:
 	glm::vec3 m_pos;
 	glm::vec3 m_orientation;
 	glm::vec3 m_scale;
-	Model& m_model;
+	Model& m_model;//fine for now but soon should just store pointer to list and index with model ID
+	size_t m_modelID = SIZE_MAX;
 	//temp
 	glm::vec4 m_color;
 	diffuseSpecMapMaterial m_material;
