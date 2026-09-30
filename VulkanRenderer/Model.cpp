@@ -6,7 +6,8 @@
 
 std::optional<Model> Model::DEFAULT_MODEL_CUBE;
 
-Model::Model(VulkanDevice& vulkanDevice, const std::string filepath)
+Model::Model(VulkanDevice& vulkanDevice, const std::string filepath, size_t modelID)
+	:m_modelID(modelID)
 {
 	loadModel(vulkanDevice, filepath);
 }
@@ -79,9 +80,14 @@ const Mesh& Model::getMesh(size_t meshNumber) const
 	return m_meshes[meshNumber];
 }
 
+size_t Model::getModelID() const
+{
+	return m_modelID;
+}
+
 void Model::createDefaultCubeModel(VulkanDevice& vulkanDevice, const std::string filepath)
 {
-	DEFAULT_MODEL_CUBE = Model(vulkanDevice, filepath);
+	DEFAULT_MODEL_CUBE = Model(vulkanDevice, filepath, SIZE_MAX);//need to add this and other default models to the main model list
 }
 
 Model& Model::getDefaultCubeModel()
