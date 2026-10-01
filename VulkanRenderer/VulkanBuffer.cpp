@@ -40,7 +40,10 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDeviceSize elementCount, VkDe
 
 	if ((usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) == VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) 
 	{
-		VkMemoryAllocateFlags memoryAllocateFlags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+		VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo{};
+		memoryAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+		memoryAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+		memoryAllocateInfo.pNext = &memoryAllocateFlagsInfo;
 	}
 
 	if (vkAllocateMemory(m_vkDevice.getDevice(), &memoryAllocateInfo, nullptr, &m_vkDeviceMemory) != VK_SUCCESS) 
