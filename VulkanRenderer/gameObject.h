@@ -24,6 +24,7 @@ public:
 	glm::mat4 getModelMat() const;
 	glm::vec4 getColor() const;
 	diffuseSpecMapMaterial getMaterial() const;
+	size_t getModelID() const;
 
 	void setMaterial(diffuseSpecMapMaterial& material);
 

@@ -38,6 +38,11 @@ diffuseSpecMapMaterial gameObject::getMaterial() const
 	return m_material;
 }
 
+size_t gameObject::getModelID() const 
+{
+	return m_modelID;
+}
+
 void gameObject::setMaterial(diffuseSpecMapMaterial& material)
 {
 	m_material = material;
