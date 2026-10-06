@@ -60,12 +60,26 @@ void VulkanDevice::createVkInstance()
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_3;
 
+	/*VkLayerSettingEXT gpuAvSetting = {};
+	gpuAvSetting.pLayerName = "VK_LAYER_KHRONOS_validation";
+	gpuAvSetting.pSettingName = "gpuav_enable";
+	gpuAvSetting.type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+	gpuAvSetting.valueCount = 1;
+	VkBool32 enableGpuAv = VK_TRUE;
+	gpuAvSetting.pValues = &enableGpuAv;
+
+	VkLayerSettingsCreateInfoEXT layerSettingsCreateInfo = {};
+	layerSettingsCreateInfo.sType = VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT;
+	layerSettingsCreateInfo.settingCount = 1;
+	layerSettingsCreateInfo.pSettings = &gpuAvSetting;*/
+	
 	auto exts = getRequiredExtensions();
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
 	createInfo.enabledExtensionCount = (uint32_t)exts.size();
 	createInfo.ppEnabledExtensionNames = exts.data();
+	//createInfo.pNext = &layerSettingsCreateInfo;
 	
 	if (enableValidationLayers) 
 	{
@@ -318,10 +332,11 @@ void VulkanDevice::createDevice()
 	VkPhysicalDeviceProperties2 physcialDeviceProperties2{};
 	physcialDeviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 	physcialDeviceProperties2.pNext = &rtPipelineProperties;
-	m_vkPhysicalDeviceRTPiplineProperties = rtPipelineProperties;
-	m_vkPhysicalDeviceAccelerationProperties = accelerationStructureProperties;
 
 	vkGetPhysicalDeviceProperties2(m_vkPhysicalDevice, &physcialDeviceProperties2);
+
+	m_vkPhysicalDeviceRTPiplineProperties = rtPipelineProperties;
+	m_vkPhysicalDeviceAccelerationProperties = accelerationStructureProperties;
 
 	VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeatures{};
 	rtPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
