@@ -96,6 +96,7 @@ VulkanTLAS::VulkanTLAS(VulkanDevice& vulkanDevice, uint32_t& maxTLASInstances, s
 	m_vkGetAccelerationStructureBuildSizesKHR(vulkanDevice.getDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &tlasGeometryBuildInfo, 
 		&maxTLASInstances, &tlasBuildSizesInfo);
 
+	//double buffering data since data is read per frame - each frame gets its own tlas
 	m_vkTlas.resize(swapchainFramesInFlight);
 	m_vulkanTLASBuffers.reserve(swapchainFramesInFlight);
 	m_TLASInstanceBuffers.reserve(swapchainFramesInFlight);

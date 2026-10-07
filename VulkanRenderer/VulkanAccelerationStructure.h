@@ -24,7 +24,7 @@ public:
 	VkDeviceAddress getBLASDeviceAddress() const;
 
 private:
-	VkAccelerationStructureKHR m_vkBlas;
+	VkAccelerationStructureKHR m_vkBlas = VK_NULL_HANDLE;
 	VkAccelerationStructureGeometryKHR m_blasGeometry{};
 	VkAccelerationStructureBuildGeometryInfoKHR m_blasGeometryInfo{};
 	VkAccelerationStructureBuildSizesInfoKHR m_blasBuildSizesInfo{};
@@ -32,7 +32,7 @@ private:
 	VkDeviceSize m_bufferOffset = -1;//offset = previous blas offset + previous blas size
 	VkDeviceSize m_scratchBufferOffset = -1;//same formula as m_bufferOffset
 	VulkanBuffer* m_blasBuffer = nullptr;//pointer to buffer that will hold all blas
-	size_t m_modelID;
+	size_t m_modelID = SIZE_MAX;
 
 	static PFN_vkGetAccelerationStructureBuildSizesKHR m_vkGetAccelerationStructureBuildSizesKHR;
 	static PFN_vkCreateAccelerationStructureKHR m_vkCreateAccelerationStructureKHR;
