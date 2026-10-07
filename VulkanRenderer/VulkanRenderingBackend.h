@@ -6,6 +6,7 @@
 #include "SimpleRenderSystem.h"
 #include "ShadowRendererSystem.h"
 #include "DeferredRendererSystem.h"
+#include "RayTracedRendererSystem.h"
 #include "gameObject.h"
 
 class VulkanRenderingBackend
@@ -23,8 +24,10 @@ public:
 	void attachCamera(const Camera* camera);
 	void setGameObjectList(std::vector<gameObject>* gameObjects);
 	void setLightsList(std::vector<Light>* lights);
+	void setModelList();//TODO implement this function and make render systems use it
 	void createShadowCaster(Light& light, uint32_t shadowWidth, uint32_t shadowHeight, float nearPlane = 0.1f, float farPlane = 25.f);
 	void recreateRenderSystemResources();
+	void updateModelList();//for now used by the ray tracer to create blas for any newly loaded models
 
 	float getSwapChainAspect() const;
 	VulkanDevice& getVulkanDevice();
@@ -49,6 +52,7 @@ private:
 	std::unique_ptr<ShadowRendererSystem> m_shadowRendererSystem;
 	std::unique_ptr<SimpleRenderSystem> m_simpleRenderSystem;
 	std::unique_ptr<DeferredRendererSystem> m_deferredRendererSystem;
+	std::unique_ptr<RayTracedRendererSystem> m_raytracerRendererSystem;
 
 	std::vector<Texture> m_textures;//owned by class, but modifiable by scene
 	std::vector<Model> m_models;//owned by class, but modifiable by scene

@@ -13,6 +13,7 @@ VulkanRenderingBackend::VulkanRenderingBackend(Window& window)
 	m_simpleRenderSystem = std::make_unique<SimpleRenderSystem>(m_vulkanDevice, m_vulkanRenderer, *m_vulkanDescriptorPool.get(), nullptr);
 	m_deferredRendererSystem = std::make_unique<DeferredRendererSystem>(m_vulkanDevice, m_vulkanRenderer);
 	m_shadowRendererSystem = std::make_unique<ShadowRendererSystem>(m_vulkanDevice, m_simpleRenderSystem->getModels());
+	m_raytracerRendererSystem = std::make_unique<RayTracedRendererSystem>(m_vulkanDevice, m_vulkanRenderer);
 	m_simpleRenderSystem->setShadowCasterList(m_shadowRendererSystem->getShadowCasters());
 	m_deferredRendererSystem->setShadowCasterList(m_shadowRendererSystem->getShadowCasters());
 	m_vulkanRenderer.setSwapchainRecreateCallback(
@@ -86,6 +87,8 @@ void VulkanRenderingBackend::render(float dt)
 		m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_deferredRendererSystem->getLightingPassOutput());
 	}
 
+	m_raytracerRendererSystem->buildTopLevelAccelerationStructure(commandBuffer, frameIndex);
+
 	m_vulkanRenderer.endFrame();
 }
 
@@ -94,6 +97,7 @@ void VulkanRenderingBackend::attachCamera(const Camera* camera)
 	m_camera = camera;
 	m_simpleRenderSystem->attachCamera(camera);
 	m_deferredRendererSystem->attachCamera(camera);
+	m_raytracerRendererSystem->attachCamera(camera);
 	createBuffersAndDescriptors();
 }
 
@@ -103,6 +107,7 @@ void VulkanRenderingBackend::setGameObjectList(std::vector<gameObject>* gameObje
 	m_simpleRenderSystem->setGameObjectList(gameObjects);
 	m_deferredRendererSystem->setGameObjectList(gameObjects);
 	m_shadowRendererSystem->setGameObjectList(gameObjects);
+	m_raytracerRendererSystem->setGameObjectList(gameObjects);
 }
 
 void VulkanRenderingBackend::setLightsList(std::vector<Light>* lights)
@@ -121,6 +126,14 @@ void VulkanRenderingBackend::createShadowCaster(Light& light, uint32_t shadowWid
 void VulkanRenderingBackend::recreateRenderSystemResources()
 {
 	m_deferredRendererSystem->recreateDeferredRendererResources();
+}
+
+void VulkanRenderingBackend::updateModelList()
+{
+	m_raytracerRendererSystem->setModelList(&m_models);
+	VkCommandBuffer commandBuffer = m_vulkanDevice.beginSingleTimeCommands();//should implement dedicated queue and command buffer for loading in model/textures and building blas
+	m_raytracerRendererSystem->buildBottomLevelAccelerationStructures(commandBuffer);
+	m_vulkanDevice.endSingleTimeCommands(commandBuffer);
 }
 
 float VulkanRenderingBackend::getSwapChainAspect() const 
