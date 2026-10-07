@@ -11,7 +11,7 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 	m_texture = std::make_unique<Texture>(m_vkDevice, "Assets/container2.jpg", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	
-	m_models.emplace_back(m_vkDevice, "Assets/metalCube.obj");
+	m_models.emplace_back(m_vkDevice, "Assets/metalCube.obj", 0);
 }
 
 void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescriptorSetLayout) 
