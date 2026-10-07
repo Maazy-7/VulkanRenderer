@@ -11,10 +11,8 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	m_vulkanRenderingBackend->setGameObjectList(&m_gameObjects);
 	m_vulkanRenderingBackend->setLightsList(&m_lights);
 	m_models->reserve(2);
-	Model& cube = m_models->emplace_back(m_vulkanDevice, "Assets/woodenContainer.obj", m_models->size());
-	Model& sphere = m_models->emplace_back(m_vulkanDevice, "Assets/sphere.obj", m_models->size());
-
-	m_vulkanRenderingBackend->updateModelList();
+	Model& cube = m_models->emplace_back(m_vulkanDevice, "Assets/woodenContainer.obj");
+	Model& sphere = m_models->emplace_back(m_vulkanDevice, "Assets/sphere.obj");
 
 	addTexture("NO_LOCATION", "DEFAULT_ERROR_TEXTURE");
 	size_t container2Diffuse = addTexture("Assets/container2.jpg", "container2Diffuse");
