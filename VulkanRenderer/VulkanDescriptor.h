@@ -58,6 +58,7 @@ public:
 
     [[nodiscard]] VulkanDescriptorWriter& writeBuffer(VkDescriptorBufferInfo* bufferInfo, uint32_t binding);
     [[nodiscard]] VulkanDescriptorWriter& writeImage(VkDescriptorImageInfo* imageInfo, uint32_t binding);
+    [[nodiscard]] VulkanDescriptorWriter& writeAccelerationStructure(VkWriteDescriptorSetAccelerationStructureKHR* accelerationStructureInfo, uint32_t binding);
 
     bool build(VkDescriptorSet& descriptorSet);
     void overwrite(VkDescriptorSet& descriptorSet);

@@ -131,6 +131,19 @@ VulkanDescriptorWriter& VulkanDescriptorWriter::writeImage(VkDescriptorImageInfo
 	return *this;
 }
 
+VulkanDescriptorWriter& VulkanDescriptorWriter::writeAccelerationStructure(VkWriteDescriptorSetAccelerationStructureKHR* accelerationStructureInfo, uint32_t binding)
+{
+	VkWriteDescriptorSet writeDescriptorSet{};
+	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet.dstBinding = binding;
+	writeDescriptorSet.dstArrayElement = 0;
+	writeDescriptorSet.pNext = accelerationStructureInfo;
+	writeDescriptorSet.descriptorType = m_vulkanDescriptorSetLayout.m_bindings[binding].descriptorType;
+	writeDescriptorSet.descriptorCount = 1;
+	m_descriptorWrites.push_back(writeDescriptorSet);
+	return *this;
+}
+
 bool VulkanDescriptorWriter::build(VkDescriptorSet& descriptorSet) 
 {
 	if (m_vulkanDescriptorPool.allocateDescriptorSet(m_vulkanDescriptorSetLayout, descriptorSet)) 
