@@ -104,7 +104,8 @@ void VulkanBuffer::map(VkDeviceSize offset, VkDeviceSize size)
 
 void VulkanBuffer::writeToBuffer(VkDeviceSize offset, VkDeviceSize size, const void* src) 
 {
-	memcpy(m_mapped, src, size);//need to implement buffer write with offset
+	uint8_t* dst = static_cast<uint8_t*>(m_mapped);
+	memcpy(dst + offset, src, size);
 }
 
 void VulkanBuffer::unMap() 
