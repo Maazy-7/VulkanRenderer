@@ -28,6 +28,19 @@ struct QueueFamilyIndices
 	bool isComplete() const { return m_graphicsQueue.has_value() && m_presentQueue.has_value(); }
 };
 
+namespace RayTracingFunctions
+{
+	//ray tracing functions
+	extern PFN_vkCreateAccelerationStructureKHR m_vkCreateAccelerationStructureKHR;
+	extern PFN_vkDestroyAccelerationStructureKHR m_vkDestroyAccelerationStructureKHR;
+	extern PFN_vkGetAccelerationStructureBuildSizesKHR m_vkGetAccelerationStructureBuildSizesKHR;
+	extern PFN_vkGetAccelerationStructureDeviceAddressKHR m_vkGetAccelerationStructureDeviceAddressKHR;
+	extern PFN_vkCmdBuildAccelerationStructuresKHR m_vkCmdBuildAccelerationStructuresKHR;
+	extern PFN_vkCreateRayTracingPipelinesKHR m_vkCreateRayTracingPipelinesKHR;
+	extern PFN_vkGetRayTracingShaderGroupHandlesKHR m_vkGetRayTracingShaderGroupHandlesKHR;
+	extern PFN_vkCmdTraceRaysKHR m_vkCmdTraceRaysKHR;
+}
+
 class VulkanDevice
 {
 public:
@@ -79,6 +92,7 @@ private:
 	void createDevice();
 	void createCommandPool();
 	void createSamplers();
+	void loadRayTracingFunctions();
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,

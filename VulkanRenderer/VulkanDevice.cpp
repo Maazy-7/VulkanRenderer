@@ -1,5 +1,14 @@
 #include "VulkanDevice.h"
 
+PFN_vkCreateAccelerationStructureKHR RayTracingFunctions::m_vkCreateAccelerationStructureKHR = nullptr;
+PFN_vkDestroyAccelerationStructureKHR RayTracingFunctions::m_vkDestroyAccelerationStructureKHR = nullptr;
+PFN_vkGetAccelerationStructureBuildSizesKHR RayTracingFunctions::m_vkGetAccelerationStructureBuildSizesKHR = nullptr;
+PFN_vkGetAccelerationStructureDeviceAddressKHR RayTracingFunctions::m_vkGetAccelerationStructureDeviceAddressKHR = nullptr;
+PFN_vkCmdBuildAccelerationStructuresKHR RayTracingFunctions::m_vkCmdBuildAccelerationStructuresKHR = nullptr;
+PFN_vkCreateRayTracingPipelinesKHR RayTracingFunctions::m_vkCreateRayTracingPipelinesKHR = nullptr;
+PFN_vkGetRayTracingShaderGroupHandlesKHR RayTracingFunctions::m_vkGetRayTracingShaderGroupHandlesKHR = nullptr;
+PFN_vkCmdTraceRaysKHR RayTracingFunctions::m_vkCmdTraceRaysKHR = nullptr;
+
 VulkanDevice::VulkanDevice(Window& window) 
 	:m_window(window)
 {
@@ -10,6 +19,7 @@ VulkanDevice::VulkanDevice(Window& window)
 	createDevice();
 	createCommandPool();
 	createSamplers();
+	loadRayTracingFunctions();
 }
 
 VulkanDevice::VulkanDevice(Window& window, bool useIgpu)
@@ -22,6 +32,7 @@ VulkanDevice::VulkanDevice(Window& window, bool useIgpu)
 	createDevice();
 	createCommandPool();
 	createSamplers();
+	loadRayTracingFunctions();
 }
 
 VulkanDevice::~VulkanDevice() 
@@ -447,6 +458,18 @@ void VulkanDevice::createSamplers()
 		throw std::runtime_error("failed to create vulkan Sampler");
 	}
 	m_vkSamplers.push_back(shadowMapSampler);
+}
+
+void VulkanDevice::loadRayTracingFunctions()
+{
+	RayTracingFunctions::m_vkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vkGetDeviceProcAddr(m_vkDevice, "vkCreateAccelerationStructureKHR");
+	RayTracingFunctions::m_vkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vkGetDeviceProcAddr(m_vkDevice, "vkDestroyAccelerationStructureKHR");
+	RayTracingFunctions::m_vkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetDeviceProcAddr(m_vkDevice, "vkGetAccelerationStructureBuildSizesKHR");
+	RayTracingFunctions::m_vkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetDeviceProcAddr(m_vkDevice, "vkGetAccelerationStructureDeviceAddressKHR");
+	RayTracingFunctions::m_vkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetDeviceProcAddr(m_vkDevice, "vkCmdBuildAccelerationStructuresKHR");
+	RayTracingFunctions::m_vkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vkGetDeviceProcAddr(m_vkDevice, "vkCreateRayTracingPipelinesKHR");
+	RayTracingFunctions::m_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(m_vkDevice, "vkGetRayTracingShaderGroupHandlesKHR");
+	RayTracingFunctions::m_vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(m_vkDevice, "vkCmdTraceRaysKHR");
 }
 
 SwapChainSupportDetails VulkanDevice::querySwapChainSupportDetails() const
