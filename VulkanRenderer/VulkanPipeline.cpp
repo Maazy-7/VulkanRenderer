@@ -1,7 +1,7 @@
 #include "VulkanPipeline.h"
 
 VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths)
-	:m_vkDevice(device), m_vkPipeline(VK_NULL_HANDLE), m_vkPipelineLayout(VK_NULL_HANDLE)
+	:m_vkDevice(device)
 {
 	m_vkgraphicsPipelineCreateInfo = new VkGraphicsPipelineCreateInfo{};
 	m_vkgraphicsPipelineCreateInfo->sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -35,6 +35,70 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkSha
 		}
 	}
 	m_vkgraphicsPipelineCreateInfo->pStages = m_shaderStages->data();
+}
+
+VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths,
+	std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups, uint32_t setLayoutCount, VkDescriptorSetLayout* pSetLayouts,
+	uint32_t pushConstantRangeCount, VkPushConstantRange* pPushConstantRanges)
+	: m_vkDevice(device)
+{
+	//loading shader modules
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+	for (auto& path : shaderPaths)
+	{
+		//path.first = shader type, path.second = shader path
+		VkShaderModule shaderModule;
+		if (m_vkDevice.getShader(path.second, shaderModule))
+		{
+			VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
+			shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			shaderStageCreateInfo.stage = path.first;
+			shaderStageCreateInfo.module = shaderModule;
+			shaderStageCreateInfo.pName = "main";
+			shaderStages.push_back(shaderStageCreateInfo);
+		}
+		else
+		{
+			auto shaderCode = readFromFile(path.second);
+			shaderModule = createShaderModule(shaderCode);
+			m_vkDevice.addShader(path.second, shaderModule);
+
+			VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
+			shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			shaderStageCreateInfo.stage = path.first;
+			shaderStageCreateInfo.module = shaderModule;
+			shaderStageCreateInfo.pName = "main";
+			shaderStages.push_back(shaderStageCreateInfo);
+		}
+	}
+
+	//creating pipeline layout
+	VkPipelineLayoutCreateInfo rtPipelineLayoutCreateInfo{};
+	rtPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CREATE_INFO_KHR;
+	rtPipelineLayoutCreateInfo.setLayoutCount = setLayoutCount;
+	rtPipelineLayoutCreateInfo.pSetLayouts = pSetLayouts;
+	rtPipelineLayoutCreateInfo.pushConstantRangeCount = pushConstantRangeCount;
+	rtPipelineLayoutCreateInfo.pPushConstantRanges = pPushConstantRanges;
+
+	if (vkCreatePipelineLayout(m_vkDevice.getDevice(), &rtPipelineLayoutCreateInfo, nullptr, &m_vkPipelineLayout) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create Vulkan pipeline layout");
+	}
+
+	//creating ray tracing pipeline
+	VkRayTracingPipelineCreateInfoKHR rtPipelineCreateInfo{};
+	rtPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+	rtPipelineCreateInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+	rtPipelineCreateInfo.pStages = shaderStages.data();
+	rtPipelineCreateInfo.groupCount = static_cast<uint32_t>(shaderGroups.size());
+	rtPipelineCreateInfo.pGroups = shaderGroups.data();
+	rtPipelineCreateInfo.layout = m_vkPipelineLayout;
+	rtPipelineCreateInfo.maxPipelineRayRecursionDepth = 2;//should implement ability to modify this member and others in the rt pipeline create info
+
+	if (RayTracingFunctions::m_vkCreateRayTracingPipelinesKHR(m_vkDevice.getDevice(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &rtPipelineCreateInfo, nullptr, &m_vkPipeline) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create Vulkan ray tracing pipeline");
+	}
 }
 
 VulkanPipeline::~VulkanPipeline() 
@@ -237,7 +301,7 @@ void VulkanPipeline::createPipelineLayout(uint32_t setLayoutCount, VkDescriptorS
 	pipelineLayoutCreateInfo.pNext = pNext;
 	if (vkCreatePipelineLayout(m_vkDevice.getDevice(), &pipelineLayoutCreateInfo, nullptr, &m_vkPipelineLayout) != VK_SUCCESS)
 	{
-		throw std::runtime_error("Failed to create pipeline layout");
+		throw std::runtime_error("Failed to create Vulkan pipeline layout");
 	}
 }
 

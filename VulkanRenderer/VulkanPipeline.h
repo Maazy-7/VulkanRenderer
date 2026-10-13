@@ -17,6 +17,9 @@ public:
 	VulkanPipeline& operator=(const VulkanPipeline&) = delete;
 
 	VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths);
+	VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths, 
+		std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups, uint32_t setLayoutCount, VkDescriptorSetLayout* pSetLayouts, 
+		uint32_t pushConstantRangeCount, VkPushConstantRange* pPushConstantRanges);//creates ray tracing pipeline
 	~VulkanPipeline();
 
 	VkPipelineLayout getPipelineLayout() const;
@@ -51,9 +54,9 @@ private:
 	std::vector<char> readFromFile(const std::string& filename);
 
 	VulkanDevice& m_vkDevice;
-	VkPipeline m_vkPipeline;
-	VkGraphicsPipelineCreateInfo* m_vkgraphicsPipelineCreateInfo;//create info struct and all the other structs it links to deleted after pipeline creation
-	VkPipelineLayout m_vkPipelineLayout;
-	std::vector<VkPipelineShaderStageCreateInfo>* m_shaderStages;
+	VkPipeline m_vkPipeline = VK_NULL_HANDLE;
+	VkGraphicsPipelineCreateInfo* m_vkgraphicsPipelineCreateInfo = nullptr;//create info struct and all the other structs it links to deleted after pipeline creation
+	VkPipelineLayout m_vkPipelineLayout = VK_NULL_HANDLE;
+	std::vector<VkPipelineShaderStageCreateInfo>* m_shaderStages = nullptr;
 };
 
