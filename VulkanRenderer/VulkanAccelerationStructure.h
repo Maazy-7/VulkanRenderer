@@ -34,11 +34,6 @@ private:
 	VulkanBuffer* m_blasBuffer = nullptr;//pointer to buffer that will hold all blas
 	size_t m_modelID = SIZE_MAX;
 
-	static PFN_vkGetAccelerationStructureBuildSizesKHR m_vkGetAccelerationStructureBuildSizesKHR;
-	static PFN_vkCreateAccelerationStructureKHR m_vkCreateAccelerationStructureKHR;
-	static PFN_vkGetAccelerationStructureDeviceAddressKHR m_vkGetAccelerationStructureDeviceAddressKHR;
-	static PFN_vkDestroyAccelerationStructureKHR m_vkDestroyAccelerationStructureKHR;
-
 	friend RayTracedRendererSystem;
 };
 
@@ -58,10 +53,6 @@ private:
 	std::vector<VulkanBuffer> m_vulkanTLASBuffers;//having 1 buffer per frame in flight as data will change per frame
 	std::vector<VulkanBuffer> m_TLASInstanceBuffers;//having 1 buffer per frame in flight as data will change per frame
 	std::optional<VulkanBuffer> m_vulkanTLASScratchBuildBuffer;
-
-	static PFN_vkGetAccelerationStructureBuildSizesKHR m_vkGetAccelerationStructureBuildSizesKHR;
-	static PFN_vkCreateAccelerationStructureKHR m_vkCreateAccelerationStructureKHR;
-	static PFN_vkDestroyAccelerationStructureKHR m_vkDestroyAccelerationStructureKHR;
 
 	friend RayTracedRendererSystem;
 };

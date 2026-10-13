@@ -1,14 +1,5 @@
 #include "VulkanAccelerationStructure.h"
 
-PFN_vkCreateAccelerationStructureKHR VulkanBLAS::m_vkCreateAccelerationStructureKHR = nullptr;
-PFN_vkGetAccelerationStructureBuildSizesKHR VulkanBLAS::m_vkGetAccelerationStructureBuildSizesKHR = nullptr;
-PFN_vkGetAccelerationStructureDeviceAddressKHR VulkanBLAS::m_vkGetAccelerationStructureDeviceAddressKHR = nullptr;
-PFN_vkDestroyAccelerationStructureKHR VulkanBLAS::m_vkDestroyAccelerationStructureKHR = nullptr;
-
-PFN_vkCreateAccelerationStructureKHR VulkanTLAS::m_vkCreateAccelerationStructureKHR = nullptr;
-PFN_vkGetAccelerationStructureBuildSizesKHR VulkanTLAS::m_vkGetAccelerationStructureBuildSizesKHR = nullptr;
-PFN_vkDestroyAccelerationStructureKHR VulkanTLAS::m_vkDestroyAccelerationStructureKHR = nullptr;
-
 VulkanBLAS::VulkanBLAS(const Model& model, VkGeometryFlagsKHR geometryFlags, VkBuildAccelerationStructureFlagsKHR buildGeometryInfo)
 {
 	VulkanDevice& device = model.getMesh().getMeshVertexBuffer().getVulkanDevice();
@@ -34,7 +25,7 @@ VulkanBLAS::VulkanBLAS(const Model& model, VkGeometryFlagsKHR geometryFlags, VkB
 	uint32_t maxPrimitiveCount = model.getMesh().getMeshIndexBuffer().getBufferElementCount() / 3;//<- assuming triangle list is used, if strips then this becomes indices - 2
 
 	m_blasBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-	m_vkGetAccelerationStructureBuildSizesKHR(device.getDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &m_blasGeometryInfo,
+	RayTracingFunctions::m_vkGetAccelerationStructureBuildSizesKHR(device.getDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &m_blasGeometryInfo,
 		&maxPrimitiveCount, &m_blasBuildSizesInfo);
 
 	m_blasBuildRangeInfo.primitiveCount = maxPrimitiveCount;
@@ -45,7 +36,7 @@ VulkanBLAS::VulkanBLAS(const Model& model, VkGeometryFlagsKHR geometryFlags, VkB
 
 VulkanBLAS::~VulkanBLAS()
 {
-	m_vkDestroyAccelerationStructureKHR(m_blasBuffer->getVulkanDevice().getDevice(), m_vkBlas, nullptr);
+	RayTracingFunctions::m_vkDestroyAccelerationStructureKHR(m_blasBuffer->getVulkanDevice().getDevice(), m_vkBlas, nullptr);
 }
 
 void VulkanBLAS::createBLAS(VulkanBuffer& blasBuffer, VulkanBuffer& blasScratchBuildBuffer)
@@ -59,7 +50,7 @@ void VulkanBLAS::createBLAS(VulkanBuffer& blasBuffer, VulkanBuffer& blasScratchB
 	accelStructCreateInfo.size = m_blasBuildSizesInfo.accelerationStructureSize;
 	accelStructCreateInfo.offset = m_bufferOffset;
 
-	m_vkCreateAccelerationStructureKHR(m_blasBuffer->getVulkanDevice().getDevice(), &accelStructCreateInfo, nullptr, &m_vkBlas);
+	RayTracingFunctions::m_vkCreateAccelerationStructureKHR(m_blasBuffer->getVulkanDevice().getDevice(), &accelStructCreateInfo, nullptr, &m_vkBlas);
 
 	m_blasGeometryInfo.pGeometries = &m_blasGeometry;//reseting pointer as blas stored in vector will get moved
 	m_blasGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
@@ -72,7 +63,7 @@ VkDeviceAddress VulkanBLAS::getBLASDeviceAddress() const
 	VkAccelerationStructureDeviceAddressInfoKHR blasDeviceAddressInfo{};
 	blasDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
 	blasDeviceAddressInfo.accelerationStructure = m_vkBlas;
-	return m_vkGetAccelerationStructureDeviceAddressKHR(m_blasBuffer->getVulkanDevice().getDevice(), &blasDeviceAddressInfo);
+	return RayTracingFunctions::m_vkGetAccelerationStructureDeviceAddressKHR(m_blasBuffer->getVulkanDevice().getDevice(), &blasDeviceAddressInfo);
 }
 
 VulkanTLAS::VulkanTLAS(VulkanDevice& vulkanDevice, uint32_t& maxTLASInstances, size_t swapchainFramesInFlight,
@@ -93,7 +84,7 @@ VulkanTLAS::VulkanTLAS(VulkanDevice& vulkanDevice, uint32_t& maxTLASInstances, s
 
 	VkAccelerationStructureBuildSizesInfoKHR tlasBuildSizesInfo{};
 	tlasBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-	m_vkGetAccelerationStructureBuildSizesKHR(vulkanDevice.getDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &tlasGeometryBuildInfo, 
+	RayTracingFunctions::m_vkGetAccelerationStructureBuildSizesKHR(vulkanDevice.getDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &tlasGeometryBuildInfo,
 		&maxTLASInstances, &tlasBuildSizesInfo);
 
 	//double buffering data since data is read per frame - each frame gets its own tlas
@@ -126,7 +117,7 @@ VulkanTLAS::VulkanTLAS(VulkanDevice& vulkanDevice, uint32_t& maxTLASInstances, s
 		tlasCreateInfo.size = tlasBuildSizesInfo.accelerationStructureSize;
 		tlasCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 
-		m_vkCreateAccelerationStructureKHR(vulkanDevice.getDevice(), &tlasCreateInfo, nullptr, &m_vkTlas[i]);
+		RayTracingFunctions::m_vkCreateAccelerationStructureKHR(vulkanDevice.getDevice(), &tlasCreateInfo, nullptr, &m_vkTlas[i]);
 	}
 }
 
@@ -134,6 +125,6 @@ VulkanTLAS::~VulkanTLAS()
 {
 	for (VkAccelerationStructureKHR& tlas : m_vkTlas) 
 	{
-		m_vkDestroyAccelerationStructureKHR(m_vulkanTLASScratchBuildBuffer->getVulkanDevice().getDevice(), tlas, nullptr);
+		RayTracingFunctions::m_vkDestroyAccelerationStructureKHR(m_vulkanTLASScratchBuildBuffer->getVulkanDevice().getDevice(), tlas, nullptr);
 	}
 }
