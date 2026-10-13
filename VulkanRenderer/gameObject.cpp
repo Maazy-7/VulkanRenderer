@@ -33,7 +33,7 @@ glm::vec4 gameObject::getColor() const
 	return m_color;
 }
 
-diffuseSpecMapMaterial gameObject::getMaterial() const
+metallicRoughnessMaterial gameObject::getMaterial() const
 {
 	return m_material;
 }
@@ -43,7 +43,7 @@ size_t gameObject::getModelID() const
 	return m_modelID;
 }
 
-void gameObject::setMaterial(diffuseSpecMapMaterial& material)
+void gameObject::setMaterial(metallicRoughnessMaterial& material)
 {
 	m_material = material;
 }
@@ -96,4 +96,9 @@ void gameObject::render(VkCommandBuffer commandBuffer) const
 glm::ivec2 diffuseSpecMapMaterial::getTextureIndices() const
 {
 	return glm::ivec2(m_diffuseTextureIndex, m_specularTextureIndex);
+}
+
+glm::ivec3 metallicRoughnessMaterial::getTextureIndices() const
+{
+	return glm::ivec3(m_diffuseTextureIndex, m_metallicTextureIndex, m_roughnessTextureIndex);
 }

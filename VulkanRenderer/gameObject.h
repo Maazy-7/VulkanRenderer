@@ -7,8 +7,17 @@ struct diffuseSpecMapMaterial //a simple container for holding texture indices f
 {
 	size_t m_diffuseTextureIndex = 0;
 	size_t m_specularTextureIndex = 0;
-
+	
 	glm::ivec2 getTextureIndices() const;
+};
+
+struct metallicRoughnessMaterial //material that holds indices for a diffuse,metallic and roughness map
+{
+	size_t m_diffuseTextureIndex = 0;
+	size_t m_metallicTextureIndex = 0;
+	size_t m_roughnessTextureIndex = 0;
+
+	glm::ivec3 getTextureIndices() const;
 };
 
 //temp gameobject class
@@ -23,10 +32,10 @@ public:
 
 	glm::mat4 getModelMat() const;
 	glm::vec4 getColor() const;
-	diffuseSpecMapMaterial getMaterial() const;
+	metallicRoughnessMaterial getMaterial() const;
 	size_t getModelID() const;
 
-	void setMaterial(diffuseSpecMapMaterial& material);
+	void setMaterial(metallicRoughnessMaterial& material);
 
 	void setPos(glm::vec3 pos);
 	void setOrientation(glm::vec3 orientation);
@@ -47,5 +56,5 @@ private:
 	size_t m_modelID = SIZE_MAX;
 	//temp
 	glm::vec4 m_color;
-	diffuseSpecMapMaterial m_material;
+	metallicRoughnessMaterial m_material;
 };
