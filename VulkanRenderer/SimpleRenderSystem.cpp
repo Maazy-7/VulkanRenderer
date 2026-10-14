@@ -16,14 +16,6 @@ SimpleRenderSystem::SimpleRenderSystem(VulkanDevice& device, const VulkanRendere
 
 void SimpleRenderSystem::createPipeline(VulkanDescriptorSetLayout& vulkanDescriptorSetLayout) 
 {
-
-	/*glm::vec4 LightPos = glm::vec4(2.f, 2.f, -1.5f, 0.f);
-	glm::vec4 ViewPos = glm::vec4(m_camera->getPos(), 1.f);
-	LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
-	glm::mat4 lightSpaceMat = glm::ortho(-20.f, 20.f, -20.f, 20.f, 0.1f, 25.f);
-	lightSpaceMat[1][1] *= -1;
-	lightSpaceMat *= glm::lookAt(glm::vec3(LightPos), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));*/
-
 	//creating descriptor layout and sets
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
 	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
