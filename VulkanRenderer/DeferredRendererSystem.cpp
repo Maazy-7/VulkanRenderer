@@ -36,12 +36,12 @@ DeferredRendererSystem::DeferredRendererSystem(VulkanDevice& vulkanDevice, const
 	m_gDepth = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, 
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, true, gbufferTexturesSampler);
-	//31.6MB normal buffer
-	m_gNormal = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, 
+	//31.6MB normal and metallic buffer, stores xyz normal and w for the metallic material map
+	m_gNormalMetallic = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, 
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
-	//8MB albedo and specular buffer, xyz stores diffuse color whereas w stores specualr intensity
-	m_gAlbedoSpec = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
+	//8MB albedo and roughness buffer, stores xyz albedo/diffuse map and w for the roughness material map
+	m_gAlbedoRoughness = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
 	//8MB output buffer for the lighting pass
 	m_lightingPassOutput = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
@@ -189,13 +189,13 @@ void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descript
 
 		VkDescriptorImageInfo normalImageInfo{};
 		normalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		normalImageInfo.imageView = m_gNormal->getVkImageView();
-		normalImageInfo.sampler = m_gNormal->getVkSampler();
+		normalImageInfo.imageView = m_gNormalMetallic->getVkImageView();
+		normalImageInfo.sampler = m_gNormalMetallic->getVkSampler();
 
 		VkDescriptorImageInfo albedoSpecImageInfo{};
 		albedoSpecImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		albedoSpecImageInfo.imageView = m_gAlbedoSpec->getVkImageView();
-		albedoSpecImageInfo.sampler = m_gAlbedoSpec->getVkSampler();
+		albedoSpecImageInfo.imageView = m_gAlbedoRoughness->getVkImageView();
+		albedoSpecImageInfo.sampler = m_gAlbedoRoughness->getVkSampler();
 
 		VkDescriptorImageInfo shadowMapImageInfo{};
 		shadowMapImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -245,9 +245,9 @@ void DeferredRendererSystem::executeGeometryPass(VkCommandBuffer commandBuffer)
 	//transition gbuffer attachment layout for writing to them
 	m_gDepth->transitionImageLayout(VK_FORMAT_D32_SFLOAT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT, 1, commandBuffer);
-	m_gNormal->transitionImageLayout(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+	m_gNormalMetallic->transitionImageLayout(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 1, commandBuffer);
-	m_gAlbedoSpec->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+	m_gAlbedoRoughness->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 1, commandBuffer);
 
 	//render attachment infos
@@ -261,7 +261,7 @@ void DeferredRendererSystem::executeGeometryPass(VkCommandBuffer commandBuffer)
 
 	VkRenderingAttachmentInfo gNormalAttachmentInfo{};
 	gNormalAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	gNormalAttachmentInfo.imageView = m_gNormal->getVkImageView();
+	gNormalAttachmentInfo.imageView = m_gNormalMetallic->getVkImageView();
 	gNormalAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	gNormalAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	gNormalAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -269,7 +269,7 @@ void DeferredRendererSystem::executeGeometryPass(VkCommandBuffer commandBuffer)
 
 	VkRenderingAttachmentInfo gAlbedoSpecAttachmentInfo{};
 	gAlbedoSpecAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	gAlbedoSpecAttachmentInfo.imageView = m_gAlbedoSpec->getVkImageView();
+	gAlbedoSpecAttachmentInfo.imageView = m_gAlbedoRoughness->getVkImageView();
 	gAlbedoSpecAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	gAlbedoSpecAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	gAlbedoSpecAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -301,12 +301,12 @@ void DeferredRendererSystem::executeGeometryPass(VkCommandBuffer commandBuffer)
 	m_geometryPassPipeline->bindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
 	glm::mat4 model;
-	diffuseSpecMapMaterial material;
+	metallicRoughnessMaterial material;
 	for (const gameObject& gameObj : *m_gameObjectList) 
 	{
 		model = gameObj.getModelMat();
 		material = gameObj.getMaterial();
-		glm::ivec4 indices(material.getTextureIndices(), 1, 1);
+		glm::ivec4 indices(material.getTextureIndices(), 1);
 		vkCmdPushConstants(commandBuffer, m_geometryPassPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model);
 		vkCmdPushConstants(commandBuffer, m_geometryPassPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::ivec4), &indices);
 		gameObj.render(commandBuffer);
@@ -316,9 +316,9 @@ void DeferredRendererSystem::executeGeometryPass(VkCommandBuffer commandBuffer)
 	//transition gbuffer attachment layout for reading from them
 	m_gDepth->transitionImageLayout(VK_FORMAT_D32_SFLOAT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
 		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT, VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, 1, commandBuffer);
-	m_gNormal->transitionImageLayout(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+	m_gNormalMetallic->transitionImageLayout(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 		VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, 1, commandBuffer);
-	m_gAlbedoSpec->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+	m_gAlbedoRoughness->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 		VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, 1, commandBuffer);
 }
 
@@ -482,11 +482,11 @@ void DeferredRendererSystem::recreateDeferredRendererResources()
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, true, gbufferTexturesSampler);
 	//31.6MB normal buffer
-	m_gNormal = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
+	m_gNormalMetallic = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
 	//8MB albedo and specular buffer, xyz stores diffuse color whereas w stores specualr intensity
-	m_gAlbedoSpec = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+	m_gAlbedoRoughness = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
 	//8MB output buffer for the lighting pass
 	m_lightingPassOutput = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
@@ -504,13 +504,13 @@ void DeferredRendererSystem::recreateDeferredRendererResources()
 
 		VkDescriptorImageInfo normalImageInfo{};
 		normalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		normalImageInfo.imageView = m_gNormal->getVkImageView();
-		normalImageInfo.sampler = m_gNormal->getVkSampler();
+		normalImageInfo.imageView = m_gNormalMetallic->getVkImageView();
+		normalImageInfo.sampler = m_gNormalMetallic->getVkSampler();
 
 		VkDescriptorImageInfo albedoSpecImageInfo{};
 		albedoSpecImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		albedoSpecImageInfo.imageView = m_gAlbedoSpec->getVkImageView();
-		albedoSpecImageInfo.sampler = m_gAlbedoSpec->getVkSampler();
+		albedoSpecImageInfo.imageView = m_gAlbedoRoughness->getVkImageView();
+		albedoSpecImageInfo.sampler = m_gAlbedoRoughness->getVkSampler();
 
 		//technically don't need shadow map resources to be recreated - should make recreation be only part of vector
 		VkDescriptorImageInfo shadowMapImageInfo{};

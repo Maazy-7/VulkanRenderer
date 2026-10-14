@@ -6,8 +6,8 @@ layout (push_constant) uniform view
 } ViewPos;
 
 layout (set = 1, binding = 0) uniform sampler2D gDepthMap;
-layout (set = 1, binding = 1) uniform sampler2D gNormalMap;
-layout (set = 1, binding = 2) uniform sampler2D gAlbedoSpecMap;
+layout (set = 1, binding = 1) uniform sampler2D gNormalMetallicMap;
+layout (set = 1, binding = 2) uniform sampler2D gAlbedoRoughnessMap;
 layout (set = 1, binding = 3) uniform samplerCubeShadow shadowCubemap;
 
 layout (location = 0) in vec2 TexCoords;
@@ -16,6 +16,9 @@ layout (location = 2) in vec4 lightPos;
 layout (location = 3) in mat4 InvViewProjMat;
 
 layout (location = 0) out vec4 outFragPos;
+
+const float PI = 3.14159265359;
+const float EPS = 1e-5;
 
 vec3 getPositionFromDepthMap(vec2 uv)
 {
@@ -35,9 +38,89 @@ float calculateCubemapShadow(vec3 fragPosition, vec3 fragNormal)
 	return texture(shadowCubemap, vec4(normalize(len), ref - bias));
 }
 
+vec3 fresnelSchlick(float cosTheta, vec3 F0) 
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5);
+}
+
+float distributionGGX(vec3 N, vec3 H, float roughness) 
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N,H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+
+    float denom = NdotH2 * (a2 - 1.0) + 1.0;
+    denom = PI * denom * denom;
+    return a2 / max(denom, EPS);
+}
+
+float geometrySchlickGGX(float NdotV, float k) 
+{
+    return NdotV / (NdotV * (1.0 - k) + k);
+}
+
+float geometrySmith(vec3 N, vec3 V, vec3 L, float k) 
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    return geometrySchlickGGX(NdotV, k) * geometrySchlickGGX(NdotL, k);
+}
+
 void main() 
 {
-    vec3 norm = normalize(texture(gNormalMap, TexCoords).xyz);
+    vec3 FragPos = getPositionFromDepthMap(TexCoords);
+    vec4 NormalMetallicMap = texture(gNormalMetallicMap, TexCoords).xyzw;
+    vec4 AlbedoRoughnessMap = texture(gAlbedoRoughnessMap, TexCoords).xyzw;
+    vec3 norm = normalize(NormalMetallicMap.xyz);
+    float metallic = NormalMetallicMap.w;
+    vec3 albedo = AlbedoRoughnessMap.xyz;
+    float roughness = AlbedoRoughnessMap.w;
+
+    vec3 viewDir = normalize(viewPos.xyz - FragPos);
+    vec3 lightDir = normalize(lightPos.xyz - FragPos);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    vec3 lightColor = vec3(1.0);
+
+    //Cook Torrance brdf terms
+    float NdotL = max(dot(norm, lightDir), 0.0);
+    float NdotV = max(dot(norm, viewDir), 0.0);
+    float NdotH = max(dot(norm, halfwayDir), 0.0);
+    float VdotH = max(dot(viewDir, halfwayDir), 0.0);
+
+    vec3 F0 = vec3(0.04);//fresnel for dielectrics is usualy 0.04 at normal incidence
+    F0 = mix(F0, albedo, metallic);//metals use the albedo as their fresnel, so default F0 mixed with albedo based of metallicness
+
+    vec3 F = fresnelSchlick(VdotH, F0);
+    float D = distributionGGX(norm, halfwayDir, roughness);
+    float k = roughness + 1.0;
+    k = (k * k) / 8.0;//
+    float G = geometrySmith(norm, viewDir, lightDir, k);
+
+    vec3 numerator = D * G * F;
+    float denominator = 4.0 * max(NdotL * NdotL, EPS);
+    vec3 specular = numerator / denominator;
+
+    //diffuse term
+    vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
+    vec3 diffuse = kD * (albedo / PI);
+
+    float shadow = calculateCubemapShadow(FragPos, norm);
+
+    //final color directly from light
+    vec3 Lo = (diffuse + specular) * lightColor * NdotL * shadow;
+    
+    //indirect lighting/ambient - simple value for now
+    vec3 ambient = vec3(0.1) * albedo * (1.0 - metallic);
+
+    outFragPos = vec4(ambient + Lo, 1.0);
+}
+
+
+
+
+
+/*vec3 norm = normalize(texture(gNormalMap, TexCoords).xyz);
     vec3 lightColor = vec3(0.3);
     vec3 texColor = texture(gAlbedoSpecMap, TexCoords).xyz;
     vec3 texSpecular = vec3(texture(gAlbedoSpecMap, TexCoords).w);
@@ -55,5 +138,4 @@ void main()
 
     float shadow = calculateCubemapShadow(FragPos, norm);
 
-    outFragPos = vec4(ambient + shadow * (diffuse + specular), 1.0); 
-}
+    outFragPos = vec4(ambient + shadow * (diffuse + specular), 1.0);*/

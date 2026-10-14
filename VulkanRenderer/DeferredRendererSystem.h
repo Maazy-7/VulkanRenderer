@@ -55,8 +55,8 @@ private:
 	std::unique_ptr<VulkanDescriptorSetLayout> m_geometryPassSetLayout;
 	std::unique_ptr<VulkanDescriptorSetLayout> m_lightingPassSetLayout;
 	std::unique_ptr<VulkanImage> m_gDepth;
-	std::unique_ptr<VulkanImage> m_gNormal;
-	std::unique_ptr<VulkanImage> m_gAlbedoSpec;
+	std::unique_ptr<VulkanImage> m_gNormalMetallic;
+	std::unique_ptr<VulkanImage> m_gAlbedoRoughness;
 	std::unique_ptr<VulkanImage> m_lightingPassOutput;
 	std::unique_ptr<VulkanBuffer> m_screenQuadVertexBuffer;
 	const std::vector<gameObject>* m_gameObjectList = nullptr;
