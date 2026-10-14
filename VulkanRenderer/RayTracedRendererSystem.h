@@ -49,6 +49,6 @@ private:
 
 	const std::vector<Model>* m_modelList;
 	const std::vector<gameObject>* m_gameObjectList;
-	const Camera* m_camera;
+	const Camera* m_camera = nullptr;
 };
 

@@ -20,7 +20,6 @@ RayTracedRendererSystem::RayTracedRendererSystem(VulkanDevice& vulkanDevice, Vul
 		m_raytracingOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
-
 	//setupShaderBindingTable();
 }
 
