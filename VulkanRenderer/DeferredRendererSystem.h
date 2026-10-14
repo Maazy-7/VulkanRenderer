@@ -63,8 +63,5 @@ private:
 	const std::vector<Light>* m_lightsList = nullptr;
 	const std::vector<ShadowCaster>* m_shadowCasterList = nullptr;
 	const Camera* m_camera;
-	//temp
-	std::unique_ptr<Texture> specularTexture;
-	std::unique_ptr<Texture> diffuseTexture;
 };
 

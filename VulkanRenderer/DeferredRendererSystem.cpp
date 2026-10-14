@@ -73,12 +73,6 @@ DeferredRendererSystem::DeferredRendererSystem(VulkanDevice& vulkanDevice, const
 	//4 combined image samplers - depth buffer, normal buffer, albedo spec buffer and shadow map
 	std::unordered_map<VkDescriptorType, uint32_t> descriptorTypes = { {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6} };
 	m_vulkanDescriptorPool = std::make_unique<VulkanDescriptorPool>(m_vulkanDevice, descriptorTypes);
-
-	//temp
-	specularTexture = std::make_unique<Texture>(m_vulkanDevice, "Assets/container2Specular.jpeg", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
-	diffuseTexture = std::make_unique<Texture>(m_vulkanDevice, "Assets/container2.jpg", VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
 }
 
 DeferredRendererSystem::~DeferredRendererSystem()
@@ -119,7 +113,7 @@ void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descript
 	VkPushConstantRange pushConstants[2] = { geometryPassPushConstants, geometryPassPushConstants2 };
 
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
-	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+	/*VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 	VulkanDescriptorSetLayout::addBinding(bindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 	m_geometryPassDescriptorSets.resize(1);
 	m_geometryPassSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_vulkanDevice, bindings);
@@ -137,7 +131,7 @@ void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descript
 		descriptorImgInfo2.sampler = specularTexture->getVkSampler();
 		
 		descriptorWriter.writeImage(&descriptorImgInfo1, 0).writeImage(&descriptorImgInfo2, 1).build(m_geometryPassDescriptorSets[i]);
-	}
+	}*/
 
 	VkDescriptorSetLayout geometryPassSetLayouts[2] = { descriptorSetLayout.getDescriptorSetLayout(), globalTextureDescriptorSetLayout.getDescriptorSetLayout() };
 	m_geometryPassPipeline->createPipelineLayout(2, geometryPassSetLayouts, 2, pushConstants);
