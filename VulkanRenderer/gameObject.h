@@ -48,6 +48,9 @@ public:
 	void setColor(glm::vec4 color);
 	void render(VkCommandBuffer commandBuffer) const;
 
+	//temp
+	glm::vec4 constantMaterial = glm::vec4(0.f);
+
 private:
 	glm::vec3 m_pos;
 	glm::vec3 m_orientation;

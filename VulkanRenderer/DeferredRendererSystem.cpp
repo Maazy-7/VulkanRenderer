@@ -300,9 +300,14 @@ void DeferredRendererSystem::executeGeometryPass(VkCommandBuffer commandBuffer)
 	{
 		model = gameObj.getModelMat();
 		material = gameObj.getMaterial();
-		glm::ivec4 indices(material.getTextureIndices(), 1);
+		glm::vec4 indices;
+		if (gameObj.constantMaterial.w > 0.f) 
+		{
+			indices = gameObj.constantMaterial;
+		}
+		else { indices = glm::vec4(material.getTextureIndices(), 0); }
 		vkCmdPushConstants(commandBuffer, m_geometryPassPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model);
-		vkCmdPushConstants(commandBuffer, m_geometryPassPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::ivec4), &indices);
+		vkCmdPushConstants(commandBuffer, m_geometryPassPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &indices);
 		gameObj.render(commandBuffer);
 	}
 	vkCmdEndRendering(commandBuffer);
