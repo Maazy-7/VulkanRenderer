@@ -12,6 +12,11 @@ layout (location = 3) in mat4 InvViewProjMat;
 
 layout (location = 0) out vec4 outFragPos;
 
+layout (push_constant) uniform p 
+{
+    layout (offset = 64) vec4 val;
+}boolean;
+
 const float PI = 3.14159265359;
 const float EPS = 1e-5;
 
@@ -107,6 +112,8 @@ void main()
     
     //indirect lighting/ambient - simple value for now
     vec3 ambient = vec3(0.1) * albedo * (1.0 - metallic);
-
-    outFragPos = vec4(ambient + Lo, 1.0);
+    vec3 color = ambient + Lo;
+    color = color / (color + 1.0);
+    color = pow(color, vec3(1.0/2.2));
+    outFragPos = vec4(color, 1.0);
 }
