@@ -70,7 +70,7 @@ void main()
     vec3 norm = normalize(NormalMetallicMap.xyz);
     float metallic = NormalMetallicMap.w;
     vec3 albedo = AlbedoRoughnessMap.xyz;
-    float roughness = AlbedoRoughnessMap.w;
+    float roughness = clamp(AlbedoRoughnessMap.w, 0.04, 1.0);
 
     vec3 viewDir = normalize(viewPos.xyz - FragPos);
     vec3 lightDir = normalize(lightPos.xyz - FragPos);
@@ -93,7 +93,7 @@ void main()
     float G = geometrySmith(norm, viewDir, lightDir, k);
 
     vec3 numerator = D * G * F;
-    float denominator = 4.0 * max(NdotL * NdotL, EPS);
+    float denominator = 4.0 * max(NdotV * NdotL, EPS);
     vec3 specular = numerator / denominator;
 
     //diffuse term
