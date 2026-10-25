@@ -69,6 +69,23 @@ Texture::Texture(VulkanDevice& vulkanDevice, const std::string& texturePath, VkF
 	// generateMipMaps is true
 }
 
+Texture::Texture(VulkanDevice& vulkanDevice, uint8_t r, uint8_t g, uint8_t b, VkFormat imgFormat)//a 1x1 singular color texture, can be used for default material/normal maps
+	:m_vulkanDevice(vulkanDevice)
+{
+	uint8_t width = 1;//1x1 dimensions - 1 singular pixel color
+	uint8_t height = 1;
+	int imageSize = 4;//1 pixel 4 channels
+	uint8_t pixels[4] = {r, g, b, 1};
+	VulkanBuffer stagingBuffer(m_vulkanDevice, 1, imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	stagingBuffer.map(0, imageSize);
+	stagingBuffer.writeToBuffer(0, imageSize, pixels);
+	m_vulkanImage.emplace(m_vulkanDevice, width, height, imgFormat, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	m_vulkanImage->transitionImageLayout(imgFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	m_vulkanImage->copyBufferToImage(stagingBuffer, width, height);
+}
+
 Texture::~Texture()
 {
 
