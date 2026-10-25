@@ -30,13 +30,15 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	size_t blackColor = addTexture("Assets/blackColor.jpg", "blackColor");
 	size_t whiteColor = addTexture("Assets/whiteColor.jpg", "whiteColor");
 
+	size_t whitey = addTexture(186, 186, 186, "white");
+
 	diffuseSpecMapMaterial simpleDiffuseSpecMapMaterial{ container2Diffuse, container2Specular };
 	metallicRoughnessMaterial simplePBRMaterial{ container2Diffuse, container2Metallic, container2Roughness};
 	metallicRoughnessMaterial sphere2PBRMaterial{ sphere2Diffuse, sphere2Metallic, sphere2Roughness};
 	metallicRoughnessMaterial redWallMaterial{ rtRed, blackColor, whiteColor};
 	metallicRoughnessMaterial greenWallMaterial{ rtGreen, blackColor, whiteColor};
-	metallicRoughnessMaterial whiteWallMaterial{ rtWhite, blackColor, whiteColor};
-
+	metallicRoughnessMaterial whiteWallMaterial{ whitey, blackColor, whiteColor};
+	//TODO remove the constant material stuff now that we can add 1x1 textures by color value
 	Light& light1 = m_lights.emplace_back(glm::vec3(0.f, 2.f, 0.f), glm::vec4(1.f), sphere, LightType::Point, m_lights.size());
 	m_vulkanRenderingBackend->createShadowCaster(light1, 1024, 1024);
 	m_vulkanRenderingBackend->attachCamera(m_camera.get());
@@ -93,6 +95,14 @@ const Camera& Scene::getCamera() const
 size_t Scene::addTexture(const std::string& path, std::string name)//adds texture to texture list and adds its index to textureMapIndexer
 {
 	Texture& tex = m_textures->emplace_back(m_vulkanDevice, path);
+	size_t index = m_textures->size() - 1;
+	m_textureMapIndexer[name] = index;
+	return index;
+}
+
+size_t Scene::addTexture(uint8_t r, uint8_t g, uint8_t b, std::string name)
+{
+	Texture& tex = m_textures->emplace_back(m_vulkanDevice, r, g, b);
 	size_t index = m_textures->size() - 1;
 	m_textureMapIndexer[name] = index;
 	return index;

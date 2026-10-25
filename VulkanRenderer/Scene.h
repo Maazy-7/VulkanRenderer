@@ -27,6 +27,7 @@ public:
 private:
 
 	size_t addTexture(const std::string& path, std::string name);
+	size_t addTexture(uint8_t r, uint8_t g, uint8_t b, std::string name);
 
 	VulkanRenderingBackend* m_vulkanRenderingBackend;
 	VulkanDevice& m_vulkanDevice;
@@ -38,4 +39,3 @@ private:
 	std::unordered_map<std::string, size_t> m_textureMapIndexer;//map used to index texture list using texture name
 	std::unique_ptr<Camera> m_camera;
 };
-
