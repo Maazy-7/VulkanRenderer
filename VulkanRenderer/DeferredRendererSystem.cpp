@@ -87,7 +87,7 @@ void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descript
 	std::vector<std::pair<VkShaderStageFlagBits, const std::string>> geometryShaderStages = {
 		{VK_SHADER_STAGE_VERTEX_BIT, "Shaders/deferredGeometryPass.vert.spv"}, {VK_SHADER_STAGE_FRAGMENT_BIT, "Shaders/deferredGeometryPass.frag.spv"} };
 	VkVertexInputBindingDescription bindingDescription = Vertex::getBindingDescription();
-	std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = Vertex::getAttributeDescriptions();
+	std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions = Vertex::getAttributeDescriptions();
 	float blendConstants[4] = { 0.f, 0.f, 0.f, 0.f };
 	VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
 	colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -300,14 +300,10 @@ void DeferredRendererSystem::executeGeometryPass(VkCommandBuffer commandBuffer)
 	{
 		model = gameObj.getModelMat();
 		material = gameObj.getMaterial();
-		glm::vec4 indices;
-		if (gameObj.constantMaterial.w > 0.f) 
-		{
-			indices = gameObj.constantMaterial;
-		}
-		else { indices = glm::vec4(material.getTextureIndices(), 0); }
+		glm::ivec4 indices = material.getTextureIndices();
+		if (indices.w == 0) { indices.w = -1; }
 		vkCmdPushConstants(commandBuffer, m_geometryPassPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model);
-		vkCmdPushConstants(commandBuffer, m_geometryPassPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &indices);
+		vkCmdPushConstants(commandBuffer, m_geometryPassPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::ivec4), &indices);
 		gameObj.render(commandBuffer);
 	}
 	vkCmdEndRendering(commandBuffer);
@@ -434,9 +430,9 @@ void DeferredRendererSystem::renderLights(VkCommandBuffer commandBuffer)
 	for (const Light& light : *m_lightsList) 
 	{
 		model = glm::translate(glm::mat4(1.f), light.getPos()) * glm::scale(glm::mat4(1.f), glm::vec3(0.1f));
-		color = light.getColor();
+		
 		vkCmdPushConstants(commandBuffer, m_lightObjRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model);
-		vkCmdPushConstants(commandBuffer, m_lightObjRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &color);
+		//vkCmdPushConstants(commandBuffer, m_lightObjRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &color);
 		light.draw(commandBuffer);
 	}
 

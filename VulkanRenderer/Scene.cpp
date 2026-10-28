@@ -24,20 +24,19 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	size_t sphere2Diffuse = addTexture("Assets/sphere2Diffuse.jpg", "sphere2Diffuse");
 	size_t sphere2Metallic = addTexture("Assets/sphere2Metallic.jpg", "sphere2Metallic");
 	size_t sphere2Roughness = addTexture("Assets/sphere2Roughness.jpg", "sphere2Roughness");
-	size_t rtRed = addTexture("Assets/rtRed.jpg", "rtRed");
-	size_t rtGreen = addTexture("Assets/rtGreen.jpg", "rtGreen");
-	size_t rtWhite = addTexture("Assets/rtWhite.jpg", "rTWhite");
-	size_t blackColor = addTexture("Assets/blackColor.jpg", "blackColor");
-	size_t whiteColor = addTexture("Assets/whiteColor.jpg", "whiteColor");
-
-	size_t whitey = addTexture(186, 186, 186, "white");
+	size_t sphere2Normal = addTexture("Assets/sphere2Normal.jpg", "sphere2Normal");
+	size_t rtRed = addTexture(166, 13, 13, "rtRed");
+	size_t rtGreen = addTexture(31, 115, 38, "rtGreen");
+	size_t rtWhite = addTexture(186, 186, 186, "rTWhite");
+	size_t blackColor = addTexture(0, 0, 0, "blackColor");
+	size_t whiteColor = addTexture(255, 255, 255, "whiteColor");
 
 	diffuseSpecMapMaterial simpleDiffuseSpecMapMaterial{ container2Diffuse, container2Specular };
 	metallicRoughnessMaterial simplePBRMaterial{ container2Diffuse, container2Metallic, container2Roughness};
-	metallicRoughnessMaterial sphere2PBRMaterial{ sphere2Diffuse, sphere2Metallic, sphere2Roughness};
+	metallicRoughnessMaterial sphere2PBRMaterial{ sphere2Diffuse, sphere2Metallic, sphere2Roughness, sphere2Normal};
 	metallicRoughnessMaterial redWallMaterial{ rtRed, blackColor, whiteColor};
 	metallicRoughnessMaterial greenWallMaterial{ rtGreen, blackColor, whiteColor};
-	metallicRoughnessMaterial whiteWallMaterial{ whitey, blackColor, whiteColor};
+	metallicRoughnessMaterial whiteWallMaterial{ whiteColor, blackColor, whiteColor};
 	//TODO remove the constant material stuff now that we can add 1x1 textures by color value
 	Light& light1 = m_lights.emplace_back(glm::vec3(0.f, 2.f, 0.f), glm::vec4(1.f), sphere, LightType::Point, m_lights.size());
 	m_vulkanRenderingBackend->createShadowCaster(light1, 1024, 1024);
@@ -48,7 +47,7 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	
 	//m_gameObjects.emplace_back(glm::vec3(-1.5f, 0.f, -1.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).constantMaterial = glm::vec4(0.5f, 0.4f, 1.f, 1.f);
 	//m_gameObjects.emplace_back(glm::vec3(1.5f, 0.f, -1.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).constantMaterial = glm::vec4(0.f, 1.f, 1.f, 1.f);
-	m_gameObjects.emplace_back(glm::vec3(1.5f, 0.f, 1.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).constantMaterial = glm::vec4(0.7f, 0.f, 1.f, 1.f);
+	//m_gameObjects.emplace_back(glm::vec3(1.5f, 0.f, 1.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).constantMaterial = glm::vec4(0.7f, 0.f, 1.f, 1.f);
 	//m_gameObjects.emplace_back(glm::vec3(-0.5f, 0.f, 0.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).constantMaterial = glm::vec4(1.f, 1.f, 1.f, 1.f);
 	m_gameObjects.emplace_back(glm::vec3(-1.5f, 0.f, 1.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).setMaterial(sphere2PBRMaterial);
 	
