@@ -12,7 +12,7 @@ ShadowRendererSystem::ShadowRendererSystem(VulkanDevice& vulkanDevice, std::vect
 	std::vector<std::pair<VkShaderStageFlagBits, const std::string>> shaderStages = {
 		{VK_SHADER_STAGE_VERTEX_BIT, "Shaders/shadowMapDepthShader.vert.spv"}, {VK_SHADER_STAGE_FRAGMENT_BIT, "Shaders/shadowMapDepthShader.frag.spv"} };
 	VkVertexInputBindingDescription bindingDescription = Vertex::getBindingDescription();
-	std::array<VkVertexInputAttributeDescription, 3> attributeDescription = Vertex::getAttributeDescriptions();
+	std::array<VkVertexInputAttributeDescription, 4> attributeDescription = Vertex::getAttributeDescriptions();
 	VkDynamicState dynamicStates[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 	VkPushConstantRange pushConstantRange{};
 	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -22,7 +22,7 @@ ShadowRendererSystem::ShadowRendererSystem(VulkanDevice& vulkanDevice, std::vect
 	m_shadowMapRenderingPipeline = std::make_unique<VulkanPipeline>(m_vulkanDevice, shaderStages);
 	m_shadowMapRenderingPipeline->createPipelineLayout(0, nullptr, 1, &pushConstantRange);
 
-	m_shadowMapRenderingPipeline->vertexInputState(1, &bindingDescription, 3, attributeDescription.data())
+	m_shadowMapRenderingPipeline->vertexInputState(1, &bindingDescription, static_cast<uint32_t>(attributeDescription.size()), attributeDescription.data())
 		.inputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE)
 		.viewportState(1, VK_NULL_HANDLE, 1, VK_NULL_HANDLE)
 		.rasterizationState(VK_FALSE, VK_FALSE, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, 0.f, 0.f, 0.f)
@@ -67,7 +67,7 @@ ShadowRendererSystem::ShadowRendererSystem(VulkanDevice& vulkanDevice, std::vect
 	m_cubeMapShadowRenderingPipeline = std::make_unique<VulkanPipeline>(m_vulkanDevice, cubemapShaderStages);
 	VkDescriptorSetLayout* cubemapDescriptorSetLayout = const_cast<VkDescriptorSetLayout*>(&m_cubemapShadowMatrixDescriptorSetLayout->getDescriptorSetLayout());
 	m_cubeMapShadowRenderingPipeline->createPipelineLayout(1, cubemapDescriptorSetLayout, 2, cubemapPipelinePushConstants);
-	m_cubeMapShadowRenderingPipeline->vertexInputState(1, &bindingDescription, 3, attributeDescription.data())
+	m_cubeMapShadowRenderingPipeline->vertexInputState(1, &bindingDescription, static_cast<uint32_t>(attributeDescription.size()), attributeDescription.data())
 		.inputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE)
 		.viewportState(1, VK_NULL_HANDLE, 1, VK_NULL_HANDLE)
 		.rasterizationState(VK_FALSE, VK_FALSE, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, 0.f, 0.f, 0.f)
