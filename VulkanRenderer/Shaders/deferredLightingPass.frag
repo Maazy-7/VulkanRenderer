@@ -1,4 +1,4 @@
-﻿#version 460
+#version 460
 
 layout (set = 1, binding = 0) uniform sampler2D gDepthMap;
 layout (set = 1, binding = 1) uniform sampler2D gNormalMetallicMap;

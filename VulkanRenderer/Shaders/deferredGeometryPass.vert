@@ -1,4 +1,4 @@
-﻿#version 460
+#version 460
 
 layout (push_constant) uniform ModelMatrix
 {

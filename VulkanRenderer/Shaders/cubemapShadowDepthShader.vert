@@ -1,4 +1,4 @@
-﻿#version 460
+#version 460
 #extension GL_EXT_multiview : require
 
 layout (push_constant) uniform ModelMatrix 
