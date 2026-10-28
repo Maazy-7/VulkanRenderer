@@ -98,7 +98,7 @@ glm::ivec2 diffuseSpecMapMaterial::getTextureIndices() const
 	return glm::ivec2(m_diffuseTextureIndex, m_specularTextureIndex);
 }
 
-glm::ivec3 metallicRoughnessMaterial::getTextureIndices() const
+glm::ivec4 metallicRoughnessMaterial::getTextureIndices() const
 {
-	return glm::ivec3(m_diffuseTextureIndex, m_metallicTextureIndex, m_roughnessTextureIndex);
+	return glm::ivec4(m_diffuseTextureIndex, m_metallicTextureIndex, m_roughnessTextureIndex, m_NormalMapTextureIndex);
 }

@@ -16,8 +16,9 @@ struct metallicRoughnessMaterial //material that holds indices for a diffuse,met
 	size_t m_diffuseTextureIndex = 0;
 	size_t m_metallicTextureIndex = 0;
 	size_t m_roughnessTextureIndex = 0;
+	size_t m_NormalMapTextureIndex = 0;
 
-	glm::ivec3 getTextureIndices() const;
+	glm::ivec4 getTextureIndices() const;
 };
 
 //temp gameobject class
@@ -47,9 +48,6 @@ public:
 
 	void setColor(glm::vec4 color);
 	void render(VkCommandBuffer commandBuffer) const;
-
-	//temp
-	glm::vec4 constantMaterial = glm::vec4(0.f);
 
 private:
 	glm::vec3 m_pos;
