@@ -54,6 +54,8 @@ void Model::loadModel(VulkanDevice& vulkanDevice, const std::string filepath)
 				attrib.normals[3 * index.normal_index + 2]
 			};
 
+			vertex.tangent = { 0.f, 0.f, 0.f };
+
 			if (uniqueVertices.count(vertex) == 0) 
 			{
 				uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
@@ -61,6 +63,36 @@ void Model::loadModel(VulkanDevice& vulkanDevice, const std::string filepath)
 			}
 
 			indices.push_back(uniqueVertices[vertex]);
+		}
+		
+		//second pass over created vertices to compute then accumulate tangents for each vertex
+		for (size_t i = 0; i < indices.size(); i+= 3) 
+		{
+
+			uint32_t index0 = indices[i + 0];
+			uint32_t index1 = indices[i + 1];
+			uint32_t index2 = indices[i + 2];
+
+			Vertex& v0 = vertices[index0];
+			Vertex& v1 = vertices[index1];
+			Vertex& v2 = vertices[index2];
+
+			glm::vec3 edge1 = v1.pos - v0.pos;
+			glm::vec3 edge2 = v2.pos - v0.pos;
+
+			glm::vec2 deltaUV1 = v1.texCoord - v0.texCoord;
+			glm::vec2 deltaUV2 = v2.texCoord - v0.texCoord;
+
+			float f = 1.f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+
+			glm::vec3 tangent;
+			tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+			tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+			tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+			v0.tangent = + tangent;
+			v1.tangent = + tangent;
+			v2.tangent = + tangent;
 		}
 
 		m_meshes.emplace_back(vulkanDevice, vertices, indices);
