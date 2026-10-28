@@ -31,6 +31,7 @@ VulkanRenderingBackend::~VulkanRenderingBackend()
 
 void VulkanRenderingBackend::render(float dt)
 {
+
 	//renderer update
 	VkCommandBuffer commandBuffer = m_vulkanRenderer.beginFrame();
 
@@ -70,11 +71,11 @@ void VulkanRenderingBackend::render(float dt)
 
 	if (forwardRenderer)
 	{
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_simpleRenderSystem->getVulkanPipeline().getPipelineLayout(), 0,
-			1, &cameraMatrixDescriptorSet, 0, nullptr);
-		m_vulkanRenderer.beginRendering(commandBuffer);
-		m_simpleRenderSystem->renderGameObjects(commandBuffer, dt);
-		m_vulkanRenderer.endRendering(commandBuffer);
+		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_simpleRenderSystem->getVulkanPipeline().getPipelineLayout(), 0,
+		//	1, &cameraMatrixDescriptorSet, 0, nullptr);
+		//m_vulkanRenderer.beginRendering(commandBuffer);
+		//m_simpleRenderSystem->renderGameObjects(commandBuffer, dt);
+		//m_vulkanRenderer.endRendering(commandBuffer);
 	}
 	else
 	{
@@ -171,7 +172,7 @@ void VulkanRenderingBackend::createBuffersAndDescriptors()
 	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1);
 	m_globalSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_vulkanDevice, bindings);
 	VulkanDescriptorWriter descriptorWriter(*m_vulkanDescriptorPool, *m_globalSetLayout);
-	m_simpleRenderSystem->createPipeline(*m_globalSetLayout);
+	//m_simpleRenderSystem->createPipeline(*m_globalSetLayout);
 
 	m_cameraMatrixDescriptorSets.resize(m_vulkanRenderer.getSwapChain().MAX_FRAMES_IN_FLIGHT);
 
