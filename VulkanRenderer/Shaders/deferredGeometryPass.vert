@@ -27,13 +27,14 @@ layout (location  = 2) out mat3 TBNmatrix;
 void main() 
 {
     gl_Position = ubo.proj * ubo.view * modelMatrix.model * vec4(inPosition, 1.0);
-    fragNormal = transpose(inverse(mat3(modelMatrix.model))) * inNormal;
+    mat3 normalMatrix = transpose(inverse(mat3(modelMatrix.model)));
     fragTexCoord = inTexCoord;
     
     //creating TBN matrix
-    vec3 T = normalize(inTangent);
-    vec3 N = normalize(inNormal);
+    vec3 T = normalize(normalMatrix * inTangent);
+    vec3 N = normalize(normalMatrix * inNormal);
     T = normalize(T - dot(N,T) * N);
     vec3 B = cross(N,T);
     TBNmatrix = mat3(T, B, N);
+    fragNormal = N;
 }
