@@ -74,7 +74,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkSha
 
 	//creating pipeline layout
 	VkPipelineLayoutCreateInfo rtPipelineLayoutCreateInfo{};
-	rtPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CREATE_INFO_KHR;
+	rtPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	rtPipelineLayoutCreateInfo.setLayoutCount = setLayoutCount;
 	rtPipelineLayoutCreateInfo.pSetLayouts = pSetLayouts;
 	rtPipelineLayoutCreateInfo.pushConstantRangeCount = pushConstantRangeCount;
