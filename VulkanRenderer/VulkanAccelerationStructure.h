@@ -5,6 +5,16 @@
 
 class RayTracedRendererSystem;
 
+struct MeshAddress
+{
+	uint64_t vertexAddress;
+	uint64_t indexAddress;
+	uint32_t albedoTextureId;
+	uint32_t normalMapTextureId;
+	uint32_t roughnessTextureId;
+	uint32_t metallicTextureId;
+};
+
 class VulkanBLAS
 {
 public:
@@ -52,6 +62,7 @@ private:
 	std::vector<VkAccelerationStructureKHR> m_vkTlas;//hold the top level acceleration structures
 	std::vector<VulkanBuffer> m_vulkanTLASBuffers;//having 1 buffer per frame in flight as data will change per frame
 	std::vector<VulkanBuffer> m_TLASInstanceBuffers;//having 1 buffer per frame in flight as data will change per frame
+	std::vector<VulkanBuffer> m_meshAddressesBuffers;//having 1 buffer per frame in flight, this buffer stores the mesh and texture data of each gameobject
 	std::optional<VulkanBuffer> m_vulkanTLASScratchBuildBuffer;
 
 	friend RayTracedRendererSystem;

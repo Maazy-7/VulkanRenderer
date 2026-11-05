@@ -91,6 +91,7 @@ VulkanTLAS::VulkanTLAS(VulkanDevice& vulkanDevice, uint32_t& maxTLASInstances, s
 	m_vkTlas.resize(swapchainFramesInFlight);
 	m_vulkanTLASBuffers.reserve(swapchainFramesInFlight);
 	m_TLASInstanceBuffers.reserve(swapchainFramesInFlight);
+	m_meshAddressesBuffers.reserve(swapchainFramesInFlight);
 	m_tlasInstances.resize(swapchainFramesInFlight);
 	
 	//only 1 scratch buffer required as it'll only be used during tlas build and will be free to use the next frame
@@ -109,6 +110,10 @@ VulkanTLAS::VulkanTLAS(VulkanDevice& vulkanDevice, uint32_t& maxTLASInstances, s
 		m_TLASInstanceBuffers.emplace_back(vulkanDevice, static_cast<VkDeviceSize>(maxTLASInstances), maxTLASInstances * sizeof(VkAccelerationStructureInstanceKHR),
 			VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, 
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+		//stores each gameObject's mesh data such as vertex and index buffer addresses and texture indices
+		m_meshAddressesBuffers.emplace_back(vulkanDevice, static_cast<VkDeviceSize>(maxTLASInstances), sizeof(MeshAddress) * maxTLASInstances, 
+			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		//creating the tlas handles
 		VkAccelerationStructureCreateInfoKHR tlasCreateInfo{};
