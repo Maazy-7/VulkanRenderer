@@ -40,21 +40,25 @@ void Model::loadModel(VulkanDevice& vulkanDevice, const std::string filepath)
 			vertex.pos = {
 				attrib.vertices[3 * index.vertex_index + 0],
 				attrib.vertices[3 * index.vertex_index + 1],
-				attrib.vertices[3 * index.vertex_index + 2]
+				attrib.vertices[3 * index.vertex_index + 2],
+				0//padding
 			};
 
 			vertex.texCoord = {
 				attrib.texcoords[2 * index.texcoord_index + 0],
-				1.f - attrib.texcoords[2 * index.texcoord_index + 1]
+				1.f - attrib.texcoords[2 * index.texcoord_index + 1],
+				0,//padding 
+				0//padding
 			};
 
 			vertex.normal = { 
 				attrib.normals[3 * index.normal_index + 0],
 				attrib.normals[3 * index.normal_index + 1],
-				attrib.normals[3 * index.normal_index + 2]
+				attrib.normals[3 * index.normal_index + 2],
+				0//
 			};
 
-			vertex.tangent = { 0.f, 0.f, 0.f };
+			vertex.tangent = { 0.f, 0.f, 0.f, 0.f };
 
 			if (uniqueVertices.count(vertex) == 0) 
 			{
@@ -77,22 +81,22 @@ void Model::loadModel(VulkanDevice& vulkanDevice, const std::string filepath)
 			Vertex& v1 = vertices[index1];
 			Vertex& v2 = vertices[index2];
 
-			glm::vec3 edge1 = v1.pos - v0.pos;
-			glm::vec3 edge2 = v2.pos - v0.pos;
+			glm::vec3 edge1 = glm::vec3(v1.pos - v0.pos);
+			glm::vec3 edge2 = glm::vec3(v2.pos - v0.pos);
 
 			glm::vec2 deltaUV1 = v1.texCoord - v0.texCoord;
 			glm::vec2 deltaUV2 = v2.texCoord - v0.texCoord;
 
 			float f = 1.f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
 
-			glm::vec3 tangent;
+			glm::vec4 tangent{};
 			tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
 			tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
 			tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
 
-			v0.tangent = + tangent;
-			v1.tangent = + tangent;
-			v2.tangent = + tangent;
+			v0.tangent += tangent;
+			v1.tangent += tangent;
+			v2.tangent += tangent;
 		}
 
 		m_meshes.emplace_back(vulkanDevice, vertices, indices);

@@ -14,22 +14,22 @@ std::array<VkVertexInputAttributeDescription, 4> Vertex::getAttributeDescription
 	std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
 	attributeDescriptions[0].binding = 0;
 	attributeDescriptions[0].location = 0;
-	attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 	attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
 	attributeDescriptions[1].binding = 0;
 	attributeDescriptions[1].location = 1;
-	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 	attributeDescriptions[1].offset = offsetof(Vertex, normal);
 
 	attributeDescriptions[2].binding = 0;
 	attributeDescriptions[2].location = 2;
-	attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+	attributeDescriptions[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 	attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
 
 	attributeDescriptions[3].binding = 0;
 	attributeDescriptions[3].location = 3;
-	attributeDescriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 	attributeDescriptions[3].offset = offsetof(Vertex, tangent);
 
 	return attributeDescriptions;
@@ -42,9 +42,9 @@ bool Vertex::operator==(const Vertex& other) const
 
 size_t vertexHasher::operator()(Vertex const& vertex) const
 {
-	return ((std::hash<glm::vec3>()(vertex.pos) ^
-		(std::hash<glm::vec3>()(vertex.normal) << 1)) >> 1) ^
-		(std::hash<glm::vec2>()(vertex.texCoord) << 1);
+	return ((std::hash<glm::vec4>()(vertex.pos) ^
+		(std::hash<glm::vec4>()(vertex.normal) << 1)) >> 1) ^
+		(std::hash<glm::vec4>()(vertex.texCoord) << 1);
 }
 
 Mesh::Mesh(VulkanDevice& vulkanDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t> indices)

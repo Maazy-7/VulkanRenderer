@@ -7,10 +7,10 @@
 
 struct Vertex
 {
-	glm::vec3 pos;
-	glm::vec3 normal;
-	glm::vec2 texCoord;
-	glm::vec3 tangent;
+	glm::vec4 pos;//w component is padding
+	glm::vec4 normal;//w component is padding
+	glm::vec4 texCoord;//z and w components are padding
+	glm::vec4 tangent;//w component is padding
 
 	static VkVertexInputBindingDescription getBindingDescription();
 	static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions();
