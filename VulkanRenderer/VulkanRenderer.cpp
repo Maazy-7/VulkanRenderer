@@ -270,15 +270,15 @@ void VulkanRenderer::blitVkImageToSwapChain(VkCommandBuffer commandBuffer, const
 	blitImgInfo.dstImage = m_vkSwapChain->getSwapChainImage(m_currentImageIndex);
 	blitImgInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	blitImgInfo.regionCount = 1;
-	blitImgInfo.pRegions = &region;
+	blitImgInfo.pRegions = &region; 
 
 	vkCmdBlitImage2(commandBuffer, &blitImgInfo);
 
 	//transition image layout for presenation
 	VkImageMemoryBarrier2 presentBarrier = {};
 	presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-	imgBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-	imgBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+	presentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+	presentBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
 	presentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
 	presentBarrier.dstAccessMask = 0;
 	presentBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
