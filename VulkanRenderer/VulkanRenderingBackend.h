@@ -47,7 +47,7 @@ private:
 	std::unique_ptr<VulkanDescriptorSetLayout> m_globalTextureListDescriptorSetLayout;
 	std::vector<VulkanBuffer> m_cameraMatrixBuffers;
 	std::vector<VkDescriptorSet> m_cameraMatrixDescriptorSets;
-	VkDescriptorSet m_globalTextureDescriptorSet;
+	VkDescriptorSet m_globalTextureListDescriptorSet;
 
 	std::unique_ptr<ShadowRendererSystem> m_shadowRendererSystem;
 	std::unique_ptr<SimpleRenderSystem> m_simpleRenderSystem;
