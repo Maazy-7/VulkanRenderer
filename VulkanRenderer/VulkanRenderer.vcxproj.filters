@@ -194,5 +194,13 @@
     <None Include="Shaders\deferredLightingPass.frag" />
     <None Include="Shaders\deferredLightingPass.frag.spv" />
     <None Include="Shaders\deferredLightingPass.vert.spv" />
+    <None Include="Shaders\rayTracer.rgen" />
+    <None Include="Shaders\rayTracerShadowMiss.rmiss" />
+    <None Include="Shaders\rayTracerReflectionMiss.rmiss" />
+    <None Include="Shaders\rayTracerReflectionClosestHit.rchit" />
+    <None Include="Shaders\rayTracer.rgen.spv" />
+    <None Include="Shaders\rayTracerReflectionClosestHit.rchit.spv" />
+    <None Include="Shaders\rayTracerReflectionMiss.rmiss.spv" />
+    <None Include="Shaders\rayTracerShadowMiss.rmiss.spv" />
   </ItemGroup>
 </Project>

@@ -221,6 +221,14 @@
     <None Include="Shaders\deferredLightingPass.frag.spv" />
     <None Include="Shaders\deferredLightingPass.vert" />
     <None Include="Shaders\deferredLightingPass.vert.spv" />
+    <None Include="Shaders\rayTracer.rgen" />
+    <None Include="Shaders\rayTracer.rgen.spv" />
+    <None Include="Shaders\rayTracerReflectionClosestHit.rchit" />
+    <None Include="Shaders\rayTracerReflectionClosestHit.rchit.spv" />
+    <None Include="Shaders\rayTracerReflectionMiss.rmiss" />
+    <None Include="Shaders\rayTracerReflectionMiss.rmiss.spv" />
+    <None Include="Shaders\rayTracerShadowMiss.rmiss" />
+    <None Include="Shaders\rayTracerShadowMiss.rmiss.spv" />
     <None Include="Shaders\shader.frag" />
     <None Include="Shaders\shader.frag.spv" />
     <None Include="Shaders\shader.vert" />
