@@ -19,10 +19,13 @@ public:
 	void setGameObjectList(const std::vector<gameObject>* gameObjectList);
 	void attachCamera(const Camera* camera);
 
-	void createPipeline();
+	void createPipeline(VulkanDescriptorSetLayout& frameUBOLayout, VulkanDescriptorSetLayout& globalTextureDescriptorLayout, 
+		VulkanImage& gDepth, VulkanImage& gNormalMetallic, VulkanImage& gAlbedoRoughness);
 	void buildBottomLevelAccelerationStructures(VkCommandBuffer commandBuffer);
 	void buildTopLevelAccelerationStructure(VkCommandBuffer commandBuffer, size_t swapchainFrameIndex);
-	void executeRayTracingPass(VkCommandBuffer commandBuffer, size_t swapchainFrameIndex);
+	void executeRayTracingPass(VkCommandBuffer commandBuffer, size_t swapchainFrameIndex, VkDescriptorSet* descriptorSets);
+	void recreateRayTracerSystemResources();//only recreates the output image buffer
+	VulkanImage& getRayTracerOutputImage(size_t frameIndex);
 
 private:
 
@@ -30,7 +33,7 @@ private:
 
 	VulkanDevice& m_vulkanDevice;
 	VulkanRenderer& m_vulkanRenderer;
-	std::unique_ptr<VulkanPipeline> m_raytracingPipeline;//TODO implement ray tracing pipeline within VulkanPipeline
+	std::unique_ptr<VulkanPipeline> m_raytracingPipeline;
 	std::unique_ptr<VulkanDescriptorPool> m_raytracingDescriptorPool;
 	std::unique_ptr<VulkanDescriptorSetLayout> m_raytracingDescriptorSetLayout;
 	std::vector<VkDescriptorSet> m_raytracingDescriptorSet;
@@ -47,8 +50,8 @@ private:
 	VkPhysicalDeviceRayTracingPipelinePropertiesKHR m_vkPhysicalDeviceRTPipelineProperties;
 	VkPhysicalDeviceAccelerationStructurePropertiesKHR m_vkPhysicalDeviceAccelerationProperties;
 
-	const std::vector<Model>* m_modelList;
-	const std::vector<gameObject>* m_gameObjectList;
+	const std::vector<Model>* m_modelList = nullptr;
+	const std::vector<gameObject>* m_gameObjectList = nullptr;
 	const Camera* m_camera = nullptr;
 };
 

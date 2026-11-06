@@ -10,17 +10,16 @@ RayTracedRendererSystem::RayTracedRendererSystem(VulkanDevice& vulkanDevice, Vul
 	m_vulkanTLAS.emplace(m_vulkanDevice, m_maxTLASInstances, m_swapchainFramesInFlight);
 
 	std::unordered_map<VkDescriptorType, uint32_t> descriptorTypes = { {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1}, 
-		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1}, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1} };
+		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3}, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1} };
 	m_raytracingDescriptorPool = std::make_unique<VulkanDescriptorPool>(m_vulkanDevice, descriptorTypes);
 
 	m_raytracingOutputImage.reserve(m_swapchainFramesInFlight);
 	VkExtent2D swapChainExtent = m_vulkanRenderer.getSwapChain().getSwapChainExtent();
-	for (size_t i = 0; i < m_raytracingOutputImage.size(); i++) 
+	for (size_t i = 0; i < m_swapchainFramesInFlight; i++) 
 	{
 		m_raytracingOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
-			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
-	//setupShaderBindingTable();
 }
 
 void RayTracedRendererSystem::setModelList(const std::vector<Model>* modelList)
@@ -38,18 +37,33 @@ void RayTracedRendererSystem::attachCamera(const Camera* camera)
 	m_camera = camera;
 }
 
-void RayTracedRendererSystem::createPipeline()
+void RayTracedRendererSystem::createPipeline(VulkanDescriptorSetLayout& frameUBOLayout, VulkanDescriptorSetLayout& globalTextureDescriptorLayout,
+	VulkanImage& gDepth, VulkanImage& gNormalMetallic, VulkanImage& gAlbedoRoughness)
 {
-	std::vector<std::pair<VkShaderStageFlagBits, const std::string>> rayTracerShaderStages = {};//TODO write ray tracing shaders
+	std::vector<std::pair<VkShaderStageFlagBits, const std::string>> rayTracerShaderStages = {
+		{ VK_SHADER_STAGE_RAYGEN_BIT_KHR, "Shaders/rayTracer.rgen.spv" },
+		{ VK_SHADER_STAGE_MISS_BIT_KHR, "Shaders/rayTracerReflectionMiss.rmiss.spv" },
+		{ VK_SHADER_STAGE_MISS_BIT_KHR, "Shaders/rayTracerShadowMiss.rmiss.spv" },
+		{ VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, "Shaders/rayTracerReflectionClosestHit.rchit.spv" }
+	};
 	
 	//setting up ray tracer's push constants
-	VkPushConstantRange pushConstant{};
+	VkPushConstantRange rayGenPushConstant{};
+	rayGenPushConstant.offset = 0;
+	rayGenPushConstant.size = 80;//64 byte inv proj view matrix, 16 byte background color
+	rayGenPushConstant.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+
+	VkPushConstantRange rayTracingPushConstants[1] = { rayGenPushConstant };
 	
 	//setting up ray tracer's descriptor set layout
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
 	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 1);
-	VulkanDescriptorSetLayout::addBinding(bindings, 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR, 1);
-	//VulkanDescriptorSetLayout::addBinding(bindings, 2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 1);
+	
 	m_raytracingDescriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_vulkanDevice, bindings);
 	m_raytracingDescriptorSet.resize(m_swapchainFramesInFlight);
 	//creating descriptor sets
@@ -57,18 +71,41 @@ void RayTracedRendererSystem::createPipeline()
 	{
 		VulkanDescriptorWriter descriptorWriter(*m_raytracingDescriptorPool, *m_raytracingDescriptorSetLayout);
 
-		VkDescriptorImageInfo outputImageInfo{};
-		outputImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-		outputImageInfo.imageView = m_raytracingOutputImage[i].getVkImageView();
-
+		//tlas descriptor used to access tlas instances within shader
 		VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureInfo{};
 		accelerationStructureInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 		accelerationStructureInfo.accelerationStructureCount = 1;
 		accelerationStructureInfo.pAccelerationStructures = &m_vulkanTLAS->m_vkTlas[i];
 
-		//for camera info might just use push constants if possible
+		//output image shader will write to
+		VkDescriptorImageInfo outputImageInfo{};
+		outputImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		outputImageInfo.imageView = m_raytracingOutputImage[i].getVkImageView();
 
-		descriptorWriter.writeImage(&outputImageInfo, 0).writeAccelerationStructure(&accelerationStructureInfo, 1).build(m_raytracingDescriptorSet[i]);
+		//gbuffer attachments, depth, normal & roughness, albedo & metallic
+		VkDescriptorImageInfo depthImageInfo{};
+		depthImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		depthImageInfo.imageView = gDepth.getVkImageView();
+		depthImageInfo.sampler = gDepth.getVkSampler();
+
+		VkDescriptorImageInfo normalMetallicImageInfo{};
+		normalMetallicImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		normalMetallicImageInfo.imageView = gNormalMetallic.getVkImageView();
+		normalMetallicImageInfo.sampler = gNormalMetallic.getVkSampler();
+
+		VkDescriptorImageInfo albedoRoughnessImageInfo{};
+		albedoRoughnessImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		albedoRoughnessImageInfo.imageView = gAlbedoRoughness.getVkImageView();
+		albedoRoughnessImageInfo.sampler = gAlbedoRoughness.getVkSampler();
+
+		VkDescriptorBufferInfo meshLayoutsShaderStorageBufferInfo{};
+		meshLayoutsShaderStorageBufferInfo.buffer = m_vulkanTLAS->m_meshAddressesBuffers[i].getBuffer();
+		meshLayoutsShaderStorageBufferInfo.offset = 0;
+		meshLayoutsShaderStorageBufferInfo.range = VK_WHOLE_SIZE;//all of mesh address buffer is used for mesh address and data
+
+		descriptorWriter.writeAccelerationStructure(&accelerationStructureInfo, 0).writeImage(&outputImageInfo, 1).
+			writeImage(&depthImageInfo, 3).writeImage(&normalMetallicImageInfo, 4).writeImage(&albedoRoughnessImageInfo, 5).
+			writeBuffer(&meshLayoutsShaderStorageBufferInfo, 6).build(m_raytracingDescriptorSet[i]);
 	}
 
 	std::vector<VkRayTracingShaderGroupCreateInfoKHR> rtShaderGroupCreateInfos;
@@ -81,28 +118,41 @@ void RayTracedRendererSystem::createPipeline()
 	rtGenShaderGroupCreateInfo.intersectionShader = VK_SHADER_UNUSED_KHR;
 	rtShaderGroupCreateInfos.push_back(rtGenShaderGroupCreateInfo);
 
-	VkRayTracingShaderGroupCreateInfoKHR rtMissShaderGroupCreateInfo{};
-	rtMissShaderGroupCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-	rtMissShaderGroupCreateInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-	rtMissShaderGroupCreateInfo.generalShader = 1;
-	rtMissShaderGroupCreateInfo.anyHitShader = VK_SHADER_UNUSED_KHR;
-	rtMissShaderGroupCreateInfo.closestHitShader = VK_SHADER_UNUSED_KHR;
-	rtMissShaderGroupCreateInfo.intersectionShader = VK_SHADER_UNUSED_KHR;
-	rtShaderGroupCreateInfos.push_back(rtMissShaderGroupCreateInfo);
-
+	VkRayTracingShaderGroupCreateInfoKHR rtReflectionMissShaderGroupCreateInfo{};
+	rtReflectionMissShaderGroupCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+	rtReflectionMissShaderGroupCreateInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+	rtReflectionMissShaderGroupCreateInfo.generalShader = 1;
+	rtReflectionMissShaderGroupCreateInfo.anyHitShader = VK_SHADER_UNUSED_KHR;
+	rtReflectionMissShaderGroupCreateInfo.closestHitShader = VK_SHADER_UNUSED_KHR;
+	rtReflectionMissShaderGroupCreateInfo.intersectionShader = VK_SHADER_UNUSED_KHR;
+	rtShaderGroupCreateInfos.push_back(rtReflectionMissShaderGroupCreateInfo);
+	
+	VkRayTracingShaderGroupCreateInfoKHR rtShadowMissShaderGroupCreateInfo{};
+	rtShadowMissShaderGroupCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+	rtShadowMissShaderGroupCreateInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+	rtShadowMissShaderGroupCreateInfo.generalShader = 2;
+	rtShadowMissShaderGroupCreateInfo.anyHitShader = VK_SHADER_UNUSED_KHR;
+	rtShadowMissShaderGroupCreateInfo.closestHitShader = VK_SHADER_UNUSED_KHR;
+	rtShadowMissShaderGroupCreateInfo.intersectionShader = VK_SHADER_UNUSED_KHR;
+	rtShaderGroupCreateInfos.push_back(rtShadowMissShaderGroupCreateInfo);
+	
 	VkRayTracingShaderGroupCreateInfoKHR rtHitShaderGroupCreateInfo{};
 	rtHitShaderGroupCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-	rtHitShaderGroupCreateInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+	rtHitShaderGroupCreateInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
 	rtHitShaderGroupCreateInfo.generalShader = VK_SHADER_UNUSED_KHR;
 	rtHitShaderGroupCreateInfo.anyHitShader = VK_SHADER_UNUSED_KHR;
-	rtHitShaderGroupCreateInfo.closestHitShader = 2;
+	rtHitShaderGroupCreateInfo.closestHitShader = 3;
 	rtHitShaderGroupCreateInfo.intersectionShader = VK_SHADER_UNUSED_KHR;
 	rtShaderGroupCreateInfos.push_back(rtHitShaderGroupCreateInfo);
 
-	VkDescriptorSetLayout raytracingPipelineSetLayouts[] = { m_raytracingDescriptorSetLayout->getDescriptorSetLayout() };
+	constexpr uint32_t setLayoutCount = 3;
+	VkDescriptorSetLayout raytracingPipelineSetLayouts[setLayoutCount] = { 
+		frameUBOLayout.getDescriptorSetLayout(), globalTextureDescriptorLayout.getDescriptorSetLayout(), m_raytracingDescriptorSetLayout->getDescriptorSetLayout()};
 
-	m_raytracingPipeline = std::make_unique<VulkanPipeline>(m_vulkanDevice, rayTracerShaderStages, rtShaderGroupCreateInfos, 1, 
-		raytracingPipelineSetLayouts, 1, &pushConstant);
+	m_raytracingPipeline = std::make_unique<VulkanPipeline>(m_vulkanDevice, rayTracerShaderStages, rtShaderGroupCreateInfos, setLayoutCount, 
+		raytracingPipelineSetLayouts, 1, rayTracingPushConstants);
+
+	setupShaderBindingTable();
 }
 
 void RayTracedRendererSystem::setupShaderBindingTable()
@@ -119,7 +169,7 @@ void RayTracedRendererSystem::setupShaderBindingTable()
 
 	uint32_t sbtEntrySize = align(handleSize, handleAlignment);
 
-	uint32_t groupCount = 5;//1 ray gen, 2 miss - 1 shadow miss 1 reflection miss, 2 closest hit - 1 shadow closest hit 1 reflection closest hit
+	uint32_t groupCount = 4;//1 ray gen, 2 miss - 1 shadow miss 1 reflection miss, 1 closest hit - 1 reflection closest hit, shadow hit is omitted
 	uint32_t dataSize = groupCount * handleSize;
 	std::vector<uint8_t> shaderHandleStorage(dataSize);
 	if (RayTracingFunctions::m_vkGetRayTracingShaderGroupHandlesKHR(m_vulkanDevice.getDevice(), m_raytracingPipeline->getPipeline(),
@@ -131,7 +181,7 @@ void RayTracedRendererSystem::setupShaderBindingTable()
 	//setting sizes for each region within the sbt
 	uint32_t rayGenRegionSize = align(sbtEntrySize * 1, baseAlignment);//1 ray gen 
 	uint32_t missRegionSize = align(sbtEntrySize * 2, baseAlignment);//2 ray miss
-	uint32_t closestHitRegionSize = align(sbtEntrySize * 2, baseAlignment);// 2 ray closest hit
+	uint32_t closestHitRegionSize = align(sbtEntrySize * 1, baseAlignment);// 1 ray closest hit
 
 	//creating the sbt buffer
 	uint32_t sbtBufferSize = rayGenRegionSize + missRegionSize + closestHitRegionSize;
@@ -148,7 +198,6 @@ void RayTracedRendererSystem::setupShaderBindingTable()
 	m_shaderBindingTableBuffer->writeToBuffer(currentOffset + (1 * sbtEntrySize), handleSize, pHandles + (2 * handleSize));
 	currentOffset += missRegionSize;
 	m_shaderBindingTableBuffer->writeToBuffer(currentOffset + (0 * sbtEntrySize), handleSize, pHandles + (3 * handleSize));
-	m_shaderBindingTableBuffer->writeToBuffer(currentOffset + (1 * sbtEntrySize), handleSize, pHandles + (4 * handleSize));
 	m_shaderBindingTableBuffer->unMap();
 	
 	VkDeviceAddress sbtBufferAddress = m_shaderBindingTableBuffer->getBufferDeviceAddress();
@@ -157,7 +206,7 @@ void RayTracedRendererSystem::setupShaderBindingTable()
 
 	VkStridedDeviceAddressRegionKHR rayGenRegion{};
 	rayGenRegion.deviceAddress = sbtBufferAddress;
-	rayGenRegion.stride = sbtEntrySize;
+	rayGenRegion.stride = rayGenRegionSize;
 	rayGenRegion.size = rayGenRegionSize;
 	m_stridedDeviceAddressRegions.push_back(rayGenRegion);
 
@@ -240,12 +289,15 @@ void RayTracedRendererSystem::buildTopLevelAccelerationStructure(VkCommandBuffer
 	VulkanBuffer& tlasBuffer = m_vulkanTLAS->m_vulkanTLASBuffers[swapchainFrameIndex];
 	VulkanBuffer& tlasInstanceBuffer = m_vulkanTLAS->m_TLASInstanceBuffers[swapchainFrameIndex];
 	std::vector<VkAccelerationStructureInstanceKHR>& tlasInstances = m_vulkanTLAS->m_tlasInstances[swapchainFrameIndex];
+	VulkanBuffer& meshAddressBuffer = m_vulkanTLAS->m_meshAddressesBuffers[swapchainFrameIndex];
 	//reseting tlas instances list as it will be built all over again
 	tlasInstances.clear();
 	tlasInstances.reserve(m_gameObjectList->size());
+	std::vector<MeshAddress> meshAddresses; meshAddresses.reserve(m_gameObjectList->size());
 	//gathering and uploading game object data
-	for (const gameObject& obj : *m_gameObjectList) 
+	for (size_t i = 0; i < m_gameObjectList->size(); i++) 
 	{
+		const gameObject& obj = (*m_gameObjectList)[i];
 		VkAccelerationStructureInstanceKHR tlasInstance{};
 		VulkanBLAS& blas = m_vulkanBLASlist[obj.getModelID()];//for now blas and model indices match
 
@@ -256,17 +308,35 @@ void RayTracedRendererSystem::buildTopLevelAccelerationStructure(VkCommandBuffer
 			objModelMat[0][2], objModelMat[1][2], objModelMat[2][2], objModelMat[3][2]
 		};
 
-		tlasInstance.instanceCustomIndex = 0;//should give game object a type of index
+		tlasInstance.instanceCustomIndex = i;//this index will be used to index into the mesh addresses ssbo to access mesh data (used within the reflection closest hit shader)
 		tlasInstance.mask = 0xFF;
 		tlasInstance.instanceShaderBindingTableRecordOffset = 0;
 		tlasInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 		tlasInstance.accelerationStructureReference = blas.getBLASDeviceAddress();
 
 		tlasInstances.push_back(tlasInstance);
+
+		//creating mesh address struct and populating with the gameObject's mesh and texture data
+		metallicRoughnessMaterial objMaterial = obj.getMaterial();
+		MeshAddress meshAddress{
+			blas.m_blasGeometry.geometry.triangles.vertexData.deviceAddress,
+			blas.m_blasGeometry.geometry.triangles.indexData.deviceAddress,
+			static_cast<uint32_t>(objMaterial.m_diffuseTextureIndex),
+			static_cast<uint32_t>(objMaterial.m_NormalMapTextureIndex),
+			static_cast<uint32_t>(objMaterial.m_metallicTextureIndex),
+			static_cast<uint32_t>(objMaterial.m_roughnessTextureIndex)
+		};
+		meshAddresses.push_back(meshAddress);
 	}
+	//loading tlas instance data to gpu buffer
 	tlasInstanceBuffer.map(0, sizeof(VkAccelerationStructureInstanceKHR) * tlasInstances.size());
 	tlasInstanceBuffer.writeToBuffer(0, sizeof(VkAccelerationStructureInstanceKHR) * tlasInstances.size(), tlasInstances.data());
 	tlasInstanceBuffer.unMap();
+
+	//loading mesh address data to gpu buffer
+	meshAddressBuffer.map(0, sizeof(MeshAddress) * meshAddresses.size());
+	meshAddressBuffer.writeToBuffer(0, sizeof(MeshAddress) * meshAddresses.size(), meshAddresses.data());
+	meshAddressBuffer.unMap();
 
 	//building tlas
 	VkAccelerationStructureGeometryKHR tlasGeometry{};
@@ -298,7 +368,7 @@ void RayTracedRendererSystem::buildTopLevelAccelerationStructure(VkCommandBuffer
 	RayTracingFunctions::m_vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &tlasGeometryBuildInfo, &pTlasBuildRangeInfo);
 }
 
-void RayTracedRendererSystem::executeRayTracingPass(VkCommandBuffer commandBuffer, size_t swapchainFrameIndex)
+void RayTracedRendererSystem::executeRayTracingPass(VkCommandBuffer commandBuffer, size_t swapchainFrameIndex, VkDescriptorSet* descriptorSets)
 {
 	//transitioning ray tracer's output image layout for writing to
 	m_raytracingOutputImage[swapchainFrameIndex].transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_2_SHADER_WRITE_BIT, 
@@ -306,13 +376,40 @@ void RayTracedRendererSystem::executeRayTracingPass(VkCommandBuffer commandBuffe
 	
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, m_raytracingPipeline->getPipeline());
 
-	//TODO properly implement descriptor sets ie gbuffer info from deferred renderer, global texture descriptor set
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, m_raytracingPipeline->getPipelineLayout(), 0, 1, 
-		&m_raytracingDescriptorSet[swapchainFrameIndex], 0, nullptr);
+	VkDescriptorSet rayTracerDescriptorSets[3] = { descriptorSets[0], descriptorSets[1], m_raytracingDescriptorSet[swapchainFrameIndex] };
+
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, m_raytracingPipeline->getPipelineLayout(), 0, 3, 
+		rayTracerDescriptorSets, 0, nullptr);
+
+	glm::mat4 invViewProjMat = m_camera->getProjection(); invViewProjMat[1][1] *= -1;
+	invViewProjMat *= m_camera->getView();
+	invViewProjMat = glm::inverse(invViewProjMat);
+	vkCmdPushConstants(commandBuffer, m_raytracingPipeline->getPipelineLayout(), VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR, 0, sizeof(glm::mat4), &invViewProjMat);
+
+	glm::vec4 skyColor = glm::vec4(0.0f, 0.61f, 1.f, 0.f);
+	vkCmdPushConstants(commandBuffer, m_raytracingPipeline->getPipelineLayout(), VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR, 64, sizeof(glm::vec4), &skyColor);
 
 	VkExtent2D swapchainExtent = m_vulkanRenderer.getSwapChain().getSwapChainExtent();
 	
-	//TODO proprerly implement a simple pbr system with mettalic and roughness material proeprties to allow for better lighting with ray tracing
 	RayTracingFunctions::m_vkCmdTraceRaysKHR(commandBuffer, &m_stridedDeviceAddressRegions[0], &m_stridedDeviceAddressRegions[1], 
 		&m_stridedDeviceAddressRegions[2], &m_stridedDeviceAddressRegions[3], swapchainExtent.width, swapchainExtent.height, 1);
+
+	m_raytracingOutputImage[swapchainFrameIndex].transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+		VK_ACCESS_2_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT, 1, commandBuffer);
+}
+
+void RayTracedRendererSystem::recreateRayTracerSystemResources()
+{
+	m_raytracingOutputImage.reserve(m_swapchainFramesInFlight);
+	VkExtent2D swapChainExtent = m_vulkanRenderer.getSwapChain().getSwapChainExtent();
+	for (size_t i = 0; i < m_raytracingOutputImage.size(); i++)
+	{
+		m_raytracingOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	}
+}
+
+VulkanImage& RayTracedRendererSystem::getRayTracerOutputImage(size_t frameIndex)
+{
+	return m_raytracingOutputImage[frameIndex];
 }
