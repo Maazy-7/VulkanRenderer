@@ -40,11 +40,6 @@ void VulkanRenderingBackend::render(float dt)
 		return;
 	}
 
-	/*static float acc = 0.f;
-	acc += dt;
-	float x = 8.f * std::cos(2.f * acc);
-	float y = 8.f * std::sin(2.f * acc);*/
-
 	glm::vec4 LightPos = glm::vec4((*m_lights)[0].getPos(), 0.f);
 	glm::vec4 ViewPos = glm::vec4(m_camera->getPos(), 1.f);
 	LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
@@ -79,17 +74,20 @@ void VulkanRenderingBackend::render(float dt)
 	}
 	else
 	{
-		VkDescriptorSet descriptorSets[2] = { cameraMatrixDescriptorSet, m_globalTextureDescriptorSet };
+		VkDescriptorSet descriptorSets[2] = { cameraMatrixDescriptorSet, m_globalTextureListDescriptorSet };
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_deferredRendererSystem->getGeometryPassPipeline().getPipelineLayout(),
 			0, 2, descriptorSets, 0, nullptr);
 		m_deferredRendererSystem->executeGeometryPass(commandBuffer);
 		m_deferredRendererSystem->executeLightingPass(commandBuffer);
-		m_deferredRendererSystem->renderLights(commandBuffer);
-		m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_deferredRendererSystem->getLightingPassOutput());
+		//m_deferredRendererSystem->renderLights(commandBuffer);
+		//m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_deferredRendererSystem->getLightingPassOutput());
 	}
 
 	m_raytracerRendererSystem->buildTopLevelAccelerationStructure(commandBuffer, frameIndex);
-
+	VkDescriptorSet descriptorSets[2] = { cameraMatrixDescriptorSet, m_globalTextureListDescriptorSet };
+	m_raytracerRendererSystem->executeRayTracingPass(commandBuffer, frameIndex, descriptorSets);
+	m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_raytracerRendererSystem->getRayTracerOutputImage(frameIndex));
+	//TODO: debug ray tracer, shadow rays work but are noisy in middle whereas reflection rays are just not even running/being traced
 	m_vulkanRenderer.endFrame();
 }
 
@@ -127,6 +125,7 @@ void VulkanRenderingBackend::createShadowCaster(Light& light, uint32_t shadowWid
 void VulkanRenderingBackend::recreateRenderSystemResources()
 {
 	m_deferredRendererSystem->recreateDeferredRendererResources();
+	m_raytracerRendererSystem->recreateRayTracerSystemResources();
 }
 
 void VulkanRenderingBackend::updateModelList()
@@ -169,7 +168,8 @@ void VulkanRenderingBackend::createBuffersAndDescriptors()
 	
 	//creating descriptor layout and sets
 	std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
-	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 1);
 	m_globalSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_vulkanDevice, bindings);
 	VulkanDescriptorWriter descriptorWriter(*m_vulkanDescriptorPool, *m_globalSetLayout);
 	//m_simpleRenderSystem->createPipeline(*m_globalSetLayout);
@@ -187,7 +187,8 @@ void VulkanRenderingBackend::createBuffersAndDescriptors()
 	}
 
 	bindings.clear();
-	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, maxTextures);
+	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 
+		VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, maxTextures);
 	VkDescriptorBindingFlags descBindingFlag = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | 
 		VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | 
 		VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
@@ -202,9 +203,11 @@ void VulkanRenderingBackend::createBuffersAndDescriptors()
 	variableDescriptorCountAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
 	variableDescriptorCountAllocInfo.descriptorSetCount = 1;
 	variableDescriptorCountAllocInfo.pDescriptorCounts = &maxTextures;
-	m_globalTextureListDescriptorPool->allocateDescriptorSet(*m_globalTextureListDescriptorSetLayout, m_globalTextureDescriptorSet,
+	m_globalTextureListDescriptorPool->allocateDescriptorSet(*m_globalTextureListDescriptorSetLayout, m_globalTextureListDescriptorSet,
 		&variableDescriptorCountAllocInfo);
 	m_deferredRendererSystem->createPipelines(*m_globalSetLayout, *m_globalTextureListDescriptorSetLayout);
+	m_raytracerRendererSystem->createPipeline(*m_globalSetLayout, *m_globalTextureListDescriptorSetLayout, 
+		m_deferredRendererSystem->getDepthBuffer(), m_deferredRendererSystem->getNormalMetallicBuffer(), m_deferredRendererSystem->getAlbedoRoughnessBuffer());
 	
 	//allocate inital textures - need to make a better system to load and unload textures dynamically
 	std::vector<VkDescriptorImageInfo> descriptorImageInfos;
@@ -220,7 +223,7 @@ void VulkanRenderingBackend::createBuffersAndDescriptors()
 	globalTextureDescriptorSetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	globalTextureDescriptorSetWrite.dstBinding = 0;
 	globalTextureDescriptorSetWrite.dstArrayElement = 0;
-	globalTextureDescriptorSetWrite.dstSet = m_globalTextureDescriptorSet;
+	globalTextureDescriptorSetWrite.dstSet = m_globalTextureListDescriptorSet;
 	globalTextureDescriptorSetWrite.pImageInfo = descriptorImageInfos.data();
 	globalTextureDescriptorSetWrite.descriptorCount = static_cast<uint32_t>(descriptorImageInfos.size());
 	globalTextureDescriptorSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
