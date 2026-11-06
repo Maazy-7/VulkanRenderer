@@ -30,6 +30,11 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	size_t rtWhite = addTexture(186, 186, 186, "rTWhite");
 	size_t blackColor = addTexture(0, 0, 0, "blackColor");
 	size_t whiteColor = addTexture(255, 255, 255, "whiteColor");
+	size_t defaultNormalMap = addTexture(128, 128, 255, "defualtNormalMap");
+	size_t narrowBrickDiffuse = addTexture("Assets/narrowbrick_albedo.png", "narrowbrickAlbedo");
+	size_t narrowBrickMetallic = addTexture("Assets/narrowbrick_metallic.png", "narrowbrickMetallic");
+	size_t narrowBrickRoughness = addTexture("Assets/narrowbrick_roughness.png", "narrowbrickRoughness");
+	size_t narrowBrickNormal = addTexture("Assets/narrowbrick_normal.png", "narrowbrickNormal");
 
 	diffuseSpecMapMaterial simpleDiffuseSpecMapMaterial{ container2Diffuse, container2Specular };
 	metallicRoughnessMaterial simplePBRMaterial{ container2Diffuse, container2Metallic, container2Roughness};
@@ -37,7 +42,9 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	metallicRoughnessMaterial redWallMaterial{ rtRed, blackColor, whiteColor};
 	metallicRoughnessMaterial greenWallMaterial{ rtGreen, blackColor, whiteColor};
 	metallicRoughnessMaterial whiteWallMaterial{ whiteColor, blackColor, whiteColor};
-	//TODO remove the constant material stuff now that we can add 1x1 textures by color value
+	metallicRoughnessMaterial narrowBrickCubeMaterial{ narrowBrickDiffuse, narrowBrickMetallic, narrowBrickRoughness, defaultNormalMap };
+	metallicRoughnessMaterial mirrorMaterial{ rtWhite, whiteColor, blackColor };
+
 	Light& light1 = m_lights.emplace_back(glm::vec3(0.f, 2.f, 0.f), glm::vec4(1.f), sphere, LightType::Point, m_lights.size());
 	m_vulkanRenderingBackend->createShadowCaster(light1, 1024, 1024);
 	m_vulkanRenderingBackend->attachCamera(m_camera.get());
@@ -49,10 +56,11 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	//m_gameObjects.emplace_back(glm::vec3(1.5f, 0.f, -1.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).constantMaterial = glm::vec4(0.f, 1.f, 1.f, 1.f);
 	//m_gameObjects.emplace_back(glm::vec3(1.5f, 0.f, 1.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).constantMaterial = glm::vec4(0.7f, 0.f, 1.f, 1.f);
 	//m_gameObjects.emplace_back(glm::vec3(-0.5f, 0.f, 0.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).constantMaterial = glm::vec4(1.f, 1.f, 1.f, 1.f);
+	//metal sphere
 	m_gameObjects.emplace_back(glm::vec3(-1.5f, 0.f, 1.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).setMaterial(sphere2PBRMaterial);
 	
 	//cube
-	m_gameObjects.emplace_back(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.5f), cube).setMaterial(whiteWallMaterial);
+	m_gameObjects.emplace_back(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.5f), cube).setMaterial(mirrorMaterial);
 	//bottom wall
 	m_gameObjects.emplace_back(glm::vec3(0.f, -1.f, 0.f), glm::vec3(0.f), glm::vec3(3.f, 0.15f, 3.f), cube).setMaterial(whiteWallMaterial);
 	//back wall
