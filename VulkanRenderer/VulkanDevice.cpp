@@ -321,6 +321,7 @@ void VulkanDevice::createDevice()
 	//enabling anisotropic filtering
 	VkPhysicalDeviceFeatures physicalDeviceFeatures{};
 	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
+	physicalDeviceFeatures.shaderInt64 = VK_TRUE;
 
 	VkPhysicalDeviceFeatures2 physicalDeviceFeatures2{};
 	physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
