@@ -40,6 +40,8 @@ public:
 	void recreateDeferredRendererResources(); //recreates the geometry pass and lighting pass render targets and their descriptors
 
 	VulkanImage& getDepthBuffer();
+	VulkanImage& getNormalMetallicBuffer();
+	VulkanImage& getAlbedoRoughnessBuffer();
 	VulkanImage& getLightingPassOutput();
 	VulkanPipeline& getGeometryPassPipeline();
 

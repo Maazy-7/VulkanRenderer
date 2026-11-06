@@ -430,9 +430,9 @@ void DeferredRendererSystem::renderLights(VkCommandBuffer commandBuffer)
 	for (const Light& light : *m_lightsList) 
 	{
 		model = glm::translate(glm::mat4(1.f), light.getPos()) * glm::scale(glm::mat4(1.f), glm::vec3(0.1f));
-		
+		color = light.getColor();
 		vkCmdPushConstants(commandBuffer, m_lightObjRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model);
-		//vkCmdPushConstants(commandBuffer, m_lightObjRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &color);
+		vkCmdPushConstants(commandBuffer, m_lightObjRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &color);
 		light.draw(commandBuffer);
 	}
 
@@ -527,6 +527,16 @@ void DeferredRendererSystem::recreateDeferredRendererResources()
 VulkanImage& DeferredRendererSystem::getDepthBuffer()
 {
 	return *m_gDepth;
+}
+
+VulkanImage& DeferredRendererSystem::getNormalMetallicBuffer()
+{
+	return *m_gNormalMetallic;
+}
+
+VulkanImage& DeferredRendererSystem::getAlbedoRoughnessBuffer()
+{
+	return *m_gAlbedoRoughness;
 }
 
 VulkanImage& DeferredRendererSystem::getLightingPassOutput()
