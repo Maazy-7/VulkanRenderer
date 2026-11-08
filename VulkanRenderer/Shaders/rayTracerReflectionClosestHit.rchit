@@ -46,7 +46,7 @@ layout(set = 2, binding = 6, scalar) buffer MeshAddressBuffer {
 layout(set = 1, binding = 0) uniform sampler2D textures[];
 
 layout (location = 0) rayPayloadInEXT vec3 reflectionColor;
-layout(location = 1) rayPayloadEXT float shadowVisibility;//used to calculate shadow using another traceray call
+layout (location = 1) rayPayloadEXT float shadowVisibility;//used to calculate shadow using another traceray call
 
 hitAttributeEXT vec2 barycentricCoords;
 
@@ -67,6 +67,22 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0);
 float distributionGGX(vec3 N, vec3 H, float roughness);
 float geometrySchlickGGX(float NdotV, float k);
 float geometrySmith(vec3 N, vec3 V, vec3 L, float k);
+
+float hash21(vec2 p) 
+{
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+vec3 randomOnUnitSphere(vec2 uv) 
+{
+    float u = hash21(uv + vec2(1.0, 0.0));
+    float v = hash21(uv + vec2(0.0, 2.0));
+    
+    float theta = u * 2.0 * 3.14159265359;
+    float phi = acos(2.0 * v - 1.0);
+    
+    return vec3(cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi));
+}
 
 void main()
 {
@@ -111,7 +127,7 @@ void main()
     vec3 albedo = texture(textures[nonuniformEXT(meshAddress.albedoTextureId)], uv).rgb;
     float metallic = texture(textures[nonuniformEXT(meshAddress.metallicTextureId)], uv).r;
     float roughness = texture(textures[nonuniformEXT(meshAddress.roughnessTextureId)], uv).r;
-    roughness = clamp(roughness, 0.4, 1.0);
+    roughness = clamp(roughness, 0.04, 1.0);
 
     //computing necessary variables for cook torrance pbr
     vec3 worldPos = vec3(gl_ObjectToWorldEXT * vec4(localPos, 1.0));//equivalent to frag pos in rasterization fragment shader
@@ -131,7 +147,7 @@ void main()
     vec3 F = fresnelSchlick(VdotH, F0);
     float D = distributionGGX(worldNormal, H, roughness);
     float k = roughness + 1.0;
-    k = (k * k) / 8.0;//
+    k = (k * k) / 8.0;
     float G = geometrySmith(worldNormal, V, L, k);
 
     vec3 numerator = D * G * F;
@@ -145,14 +161,16 @@ void main()
     //computing shadow for the reflection using a traceRayEXT call, just like in the rgen shader
     float shadow = 1.0;
     int computeRayTracedShadow = 1;//determines if shadows for the reflection should be computed
+    shadowVisibility = 0.0;
     if (computeRayTracedShadow == 1) 
     {
-        float shadowVisibility = 0.0;
         vec3 rayOrigin = worldPos + worldNormal * 0.001;
         uint shadowRayFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
         float tMin = 0.001;
-        float tMax = 10000.0;
-        traceRayEXT(tlas, shadowRayFlags, 0xFF, 0, 0, 1, rayOrigin, tMin, L, tMax, 1);
+        float tMax = length(ubo.lightPos.xyz - rayOrigin);//max ray distance is a little after the light object itself
+        vec3 randomDir = randomOnUnitSphere(vec2(gl_LaunchIDEXT.xy)) * 0.1;//should use ray payload to ensure random directions are the same
+        vec3 lightDirection = normalize((ubo.lightPos.xyz + randomDir) - worldPos);
+        traceRayEXT(tlas, shadowRayFlags, 0xFF, 0, 0, 1, rayOrigin, tMin, lightDirection, tMax, 1);
         shadow = shadowVisibility;//shadow ray traced result stored here, if ray intersects something 0 is returned meaning shadow otherwise miss returns 1
     }
 
@@ -162,8 +180,8 @@ void main()
     //indirect lighting/ambient - simple value for now
     vec3 ambient = vec3(0.1) * albedo * (1.0 - metallic);
     vec3 color = ambient + Lo;
-    color = color / (color + 1.0);
-    color = pow(color, vec3(1.0/2.2));
+    //color = color / (color + 1.0);
+    //color = pow(color, vec3(1.0/2.2));
     reflectionColor = color;
 }
 

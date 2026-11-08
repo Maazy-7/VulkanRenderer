@@ -27,10 +27,28 @@ layout (push_constant) uniform pushConstants
     layout (offset = 64) vec4 backgroundColor;
 } matrix;
 
-layout(location = 0) rayPayloadEXT vec3 reflectionColor;
-layout(location = 1) rayPayloadEXT float shadowVisibility;
+layout (location = 0) rayPayloadEXT vec3 reflectionColor;
+layout (location = 1) rayPayloadEXT float shadowVisibility;
 
 vec4 getPositionFromDepthMap(vec2 uv);
+
+
+float hash21(vec2 p) 
+{
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+vec3 randomOnUnitSphere(vec2 uv) 
+{
+    float u = hash21(uv + vec2(1.0, 0.0));
+    float v = hash21(uv + vec2(0.0, 2.0));
+    
+    float theta = u * 2.0 * 3.14159265359;
+    float phi = acos(2.0 * v - 1.0);
+    
+    return vec3(cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi));
+}
+
 
 void main() 
 {
@@ -54,14 +72,16 @@ void main()
     float roughness = albedoRoughness.w;
 
     vec3 rayOrigin = worldPos.xyz + normal * 0.001;//slight shift in ray origin to reduce ray acne (self intersection of ray with surface it came from)
-    vec3 lightDirection = normalize(ubo.lightPos.xyz - worldPos.xyz);
+    vec3 randomDir = randomOnUnitSphere(vec2(pixelCoords)) * 0.1;//random offset to light position so it simulates an area light
+    vec3 lightDirection = normalize((ubo.lightPos.xyz + randomDir) - worldPos.xyz);
 
     //compute and trace shadow ray
     uint shadowRayFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
     float tMin = 0.001;
     float tMax = 10000.0;
 
-    traceRayEXT(tlas, shadowRayFlags, 0xFF, 0, 0, 1, rayOrigin, tMin, lightDirection, tMax, 1);
+    shadowVisibility = 0.0;
+    traceRayEXT(tlas, shadowRayFlags, 0xFF, 0, 0, 1, rayOrigin, tMin, lightDirection, length(ubo.lightPos.xyz - rayOrigin), 1);
     float shadow = shadowVisibility;//shadow ray traced result stored here, if ray intersects something 0 is returned meaning shadow otherwise miss returns 1
 
     //compute and trace reflection result
@@ -69,17 +89,20 @@ void main()
     if (roughness < 0.05)//only tracing reflection rays on reflective materials (reflective materials are very smooth and have roughness less than 0.05) 
     {
         vec3 viewDirection = normalize(ubo.viewPos.xyz - worldPos.xyz);
-        vec3 reflectDirection = reflect(viewDirection, normal);
+        vec3 reflectDirection = reflect(-viewDirection, normal);
 
         uint reflectionRayFlags = gl_RayFlagsOpaqueEXT;
         traceRayEXT(tlas, reflectionRayFlags, 0xFF, 0, 0, 0, rayOrigin, tMin, reflectDirection, tMax, 0);
         reflectionResult = reflectionColor;
     }
 
-    //compute final color //TODO verify this logic and make sure its correct
-    vec3 color = vec3(0.3) * albedo * (1.0 - metallic);//ambient color
-    color = color * shadow + (reflectionResult * (1.0 - roughness));
-
+    //compute final color
+    vec3 ambient = vec3(0.3) * albedo * (1.0 - metallic);//ambient color
+    vec3 diffuse = albedo * shadow + ambient;
+    vec3 color = mix(diffuse, reflectionResult, metallic);//weighting diffuse and reflection based of metalness of surface
+    //gamma correction
+    color = color / (color + 1.0);
+    color = pow(color, vec3(1.0/2.2));
     imageStore(outputImage, pixelCoords, vec4(color, 1.0));
 }
 
