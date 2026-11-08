@@ -323,8 +323,8 @@ void RayTracedRendererSystem::buildTopLevelAccelerationStructure(VkCommandBuffer
 			blas.m_blasGeometry.geometry.triangles.indexData.deviceAddress,
 			static_cast<uint32_t>(objMaterial.m_diffuseTextureIndex),
 			static_cast<uint32_t>(objMaterial.m_NormalMapTextureIndex),
-			static_cast<uint32_t>(objMaterial.m_metallicTextureIndex),
-			static_cast<uint32_t>(objMaterial.m_roughnessTextureIndex)
+			static_cast<uint32_t>(objMaterial.m_roughnessTextureIndex),
+			static_cast<uint32_t>(objMaterial.m_metallicTextureIndex)
 		};
 		meshAddresses.push_back(meshAddress);
 	}
