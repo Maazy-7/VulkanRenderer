@@ -9,8 +9,9 @@ RayTracedRendererSystem::RayTracedRendererSystem(VulkanDevice& vulkanDevice, Vul
 {
 	m_vulkanTLAS.emplace(m_vulkanDevice, m_maxTLASInstances, m_swapchainFramesInFlight);
 
-	std::unordered_map<VkDescriptorType, uint32_t> descriptorTypes = { {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1}, 
-		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3}, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1} };
+	//double the descriptor sets than bindings due to 2 descriptors for each frame in flight
+	std::unordered_map<VkDescriptorType, uint32_t> descriptorTypes = { {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 2}, 
+		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6}, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2} };
 	m_raytracingDescriptorPool = std::make_unique<VulkanDescriptorPool>(m_vulkanDevice, descriptorTypes);
 
 	m_raytracingOutputImage.reserve(m_swapchainFramesInFlight);
