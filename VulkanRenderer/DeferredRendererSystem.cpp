@@ -41,10 +41,10 @@ DeferredRendererSystem::DeferredRendererSystem(VulkanDevice& vulkanDevice, const
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
 	//8MB albedo and roughness buffer, stores xyz albedo/diffuse map and w for the roughness material map
-	m_gAlbedoRoughness = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
+	m_gAlbedoRoughness = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, 
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
 	//8MB output buffer for the lighting pass
-	m_lightingPassOutput = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+	m_lightingPassOutput = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
 
@@ -98,7 +98,7 @@ void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descript
 	VkPipelineColorBlendAttachmentState colorBlendAttachmentStates[2] = { colorBlendAttachmentState, colorBlendAttachmentState };
 	VkDynamicState dynamicStates[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 	VkFormat colorAttachments[1] = { m_vulkanRenderer.getSwapChain().getSwapChainFormat() };
-	VkFormat geometryPassAttachments[2] = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R8G8B8A8_SRGB };
+	VkFormat geometryPassAttachments[2] = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R16G16B16A16_SFLOAT };
 	m_geometryPassPipeline = std::make_unique<VulkanPipeline>(m_vulkanDevice, geometryShaderStages);
 	
 	VkPushConstantRange geometryPassPushConstants{};
@@ -204,7 +204,7 @@ void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descript
 			.writeImage(&albedoSpecImageInfo, 2)
 			.writeImage(&shadowMapImageInfo, 3).build(m_lightingPassDescriptorSets[0]);
 	}
-	VkFormat lightingPassColorFormat = VK_FORMAT_R8G8B8A8_SRGB;
+	VkFormat lightingPassColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 	VkDescriptorSetLayout lightingPassSetLayouts[2] = { descriptorSetLayout.getDescriptorSetLayout(), m_lightingPassSetLayout->getDescriptorSetLayout() };
 	m_lightingPassPipeline->createPipelineLayout(2, lightingPassSetLayouts, 2, lightingPassPushConstants);
 	m_lightingPassPipeline->vertexInputState(1, &quadBindingDescription, static_cast<uint32_t>(quadAttributeDescriptions.size()), quadAttributeDescriptions.data())
@@ -241,7 +241,7 @@ void DeferredRendererSystem::executeGeometryPass(VkCommandBuffer commandBuffer)
 		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT, 1, commandBuffer);
 	m_gNormalMetallic->transitionImageLayout(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 1, commandBuffer);
-	m_gAlbedoRoughness->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+	m_gAlbedoRoughness->transitionImageLayout(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 1, commandBuffer);
 
 	//render attachment infos
@@ -313,7 +313,7 @@ void DeferredRendererSystem::executeGeometryPass(VkCommandBuffer commandBuffer)
 		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT, VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, 1, commandBuffer);
 	m_gNormalMetallic->transitionImageLayout(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 		VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, 1, commandBuffer);
-	m_gAlbedoRoughness->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+	m_gAlbedoRoughness->transitionImageLayout(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 		VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, 1, commandBuffer);
 }
 
@@ -322,7 +322,7 @@ void DeferredRendererSystem::executeLightingPass(VkCommandBuffer commandBuffer)/
 	//gbuffer attachments already transitioned to shader read only attachments from the geometry pass
 
 	//transition lighting pass output to color attachment bit
-	m_lightingPassOutput->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+	m_lightingPassOutput->transitionImageLayout(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 1, commandBuffer);
 
 	//color attachment info
@@ -369,7 +369,7 @@ void DeferredRendererSystem::executeLightingPass(VkCommandBuffer commandBuffer)/
 	vkCmdDraw(commandBuffer, 4, 1, 0, 0);
 
 	vkCmdEndRendering(commandBuffer);
-	m_lightingPassOutput->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+	m_lightingPassOutput->transitionImageLayout(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 
 		VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 1, commandBuffer);
 }
@@ -377,7 +377,7 @@ void DeferredRendererSystem::executeLightingPass(VkCommandBuffer commandBuffer)/
 void DeferredRendererSystem::renderLights(VkCommandBuffer commandBuffer)
 {
 	//setting lighting pass output to color attachment as it will be written to
-	m_lightingPassOutput->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+	m_lightingPassOutput->transitionImageLayout(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_TRANSFER_READ_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT, 
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 1, commandBuffer);
 	//setting depth buffer to depth stencil attachment as it will be read from
@@ -438,7 +438,7 @@ void DeferredRendererSystem::renderLights(VkCommandBuffer commandBuffer)
 
 	vkCmdEndRendering(commandBuffer);
 
-	m_lightingPassOutput->transitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+	m_lightingPassOutput->transitionImageLayout(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT,
 		1, commandBuffer);
 	m_gDepth->transitionImageLayout(VK_FORMAT_D32_SFLOAT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
@@ -481,10 +481,10 @@ void DeferredRendererSystem::recreateDeferredRendererResources()
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
 	//8MB albedo and specular buffer, xyz stores diffuse color whereas w stores specualr intensity
-	m_gAlbedoRoughness = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+	m_gAlbedoRoughness = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
 	//8MB output buffer for the lighting pass
-	m_lightingPassOutput = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+	m_lightingPassOutput = std::make_unique<VulkanImage>(m_vulkanDevice, width, height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true, gbufferTexturesSampler);
 

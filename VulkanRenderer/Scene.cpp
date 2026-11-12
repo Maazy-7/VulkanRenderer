@@ -57,10 +57,10 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	//m_gameObjects.emplace_back(glm::vec3(1.5f, 0.f, 1.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).constantMaterial = glm::vec4(0.7f, 0.f, 1.f, 1.f);
 	//m_gameObjects.emplace_back(glm::vec3(-0.5f, 0.f, 0.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).constantMaterial = glm::vec4(1.f, 1.f, 1.f, 1.f);
 	//metal sphere
-	m_gameObjects.emplace_back(glm::vec3(-1.5f, 0.f, 1.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).setMaterial(sphere2PBRMaterial);
+	m_gameObjects.emplace_back(glm::vec3(1.5f, 0.f, 1.5f), glm::vec3(0.f), glm::vec3(0.4f), sphere).setMaterial(sphere2PBRMaterial);
 	
 	//cube
-	m_gameObjects.emplace_back(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.5f), cube).setMaterial(mirrorMaterial);
+	m_gameObjects.emplace_back(glm::vec3(-1.f, 0.5f, 0.f), glm::vec3(0.f, 3.141492f/12, 0.f), glm::vec3(0.5f, 1.f, 0.5f), cube).setMaterial(mirrorMaterial);
 	//bottom wall
 	m_gameObjects.emplace_back(glm::vec3(0.f, -1.f, 0.f), glm::vec3(0.f), glm::vec3(3.f, 0.15f, 3.f), cube).setMaterial(whiteWallMaterial);
 	//back wall
