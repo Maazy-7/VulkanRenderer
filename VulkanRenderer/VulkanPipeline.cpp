@@ -20,7 +20,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkSha
 			shaderStageCreateInfo.pName = "main";
 			m_shaderStages->push_back(shaderStageCreateInfo);
 		}
-		else 
+		else //creating shader module if it doesn't already exist
 		{
 			auto shaderCode = readFromFile(path.second);
 			shaderModule = createShaderModule(shaderCode);
@@ -57,7 +57,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkSha
 			shaderStageCreateInfo.pName = "main";
 			shaderStages.push_back(shaderStageCreateInfo);
 		}
-		else
+		else //creating shader module if it doesn't already exist
 		{
 			auto shaderCode = readFromFile(path.second);
 			shaderModule = createShaderModule(shaderCode);
@@ -98,6 +98,55 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkSha
 	if (RayTracingFunctions::m_vkCreateRayTracingPipelinesKHR(m_vkDevice.getDevice(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &rtPipelineCreateInfo, nullptr, &m_vkPipeline) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create Vulkan ray tracing pipeline");
+	}
+}
+
+VulkanPipeline::VulkanPipeline(VulkanDevice& device, std::pair<VkShaderStageFlagBits, const std::string>& shaderPath, uint32_t setLayoutCount, 
+	VkDescriptorSetLayout* pSetLayouts, uint32_t pushConstantRangeCount, VkPushConstantRange* pPushConstantRanges)
+	: m_vkDevice(device)
+{
+	//loading shader module
+	VkShaderModule shaderModule;
+	VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
+	if (m_vkDevice.getShader(shaderPath.second, shaderModule))
+	{
+		shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderStageCreateInfo.stage = shaderPath.first;
+		shaderStageCreateInfo.module = shaderModule;
+		shaderStageCreateInfo.pName = "main";
+	}
+	else //creating shader module if it doesn't already exist
+	{
+		auto shaderCode = readFromFile(shaderPath.second);
+		shaderModule = createShaderModule(shaderCode);
+		m_vkDevice.addShader(shaderPath.second, shaderModule);
+
+		shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderStageCreateInfo.stage = shaderPath.first;
+		shaderStageCreateInfo.module = shaderModule;
+		shaderStageCreateInfo.pName = "main";
+	}
+
+	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
+	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutCreateInfo.setLayoutCount = setLayoutCount;
+	pipelineLayoutCreateInfo.pSetLayouts = pSetLayouts;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = pushConstantRangeCount;
+	pipelineLayoutCreateInfo.pPushConstantRanges = pPushConstantRanges;
+
+	if (vkCreatePipelineLayout(m_vkDevice.getDevice(), &pipelineLayoutCreateInfo, nullptr, &m_vkPipelineLayout) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create Vulkan pipeline layout");
+	}
+
+	VkComputePipelineCreateInfo computePipelineCreateInfo{};
+	computePipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	computePipelineCreateInfo.stage = shaderStageCreateInfo;
+	computePipelineCreateInfo.layout = m_vkPipelineLayout;
+
+	if (vkCreateComputePipelines(m_vkDevice.getDevice(), VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &m_vkPipeline) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create Vulkan compute pipeline");
 	}
 }
 

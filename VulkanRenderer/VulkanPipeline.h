@@ -16,10 +16,12 @@ public:
 	VulkanPipeline(const VulkanPipeline&) = delete;
 	VulkanPipeline& operator=(const VulkanPipeline&) = delete;
 
-	VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths);
+	VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths);//creates graphics pipeline
 	VulkanPipeline(VulkanDevice& device, std::vector<std::pair<VkShaderStageFlagBits, const std::string>>& shaderPaths, 
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups, uint32_t setLayoutCount, VkDescriptorSetLayout* pSetLayouts, 
 		uint32_t pushConstantRangeCount, VkPushConstantRange* pPushConstantRanges);//creates ray tracing pipeline
+	VulkanPipeline(VulkanDevice& device, std::pair<VkShaderStageFlagBits, const std::string>& shaderPath, 
+		uint32_t setLayoutCount, VkDescriptorSetLayout* pSetLayouts, uint32_t pushConstantRangeCount, VkPushConstantRange* pPushConstantRanges);//creates compute pipeline
 	~VulkanPipeline();
 
 	VkPipelineLayout getPipelineLayout() const;
