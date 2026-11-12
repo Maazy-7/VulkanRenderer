@@ -45,7 +45,7 @@ Scene::Scene(VulkanRenderingBackend* vulkanRenderingBackend)
 	metallicRoughnessMaterial narrowBrickCubeMaterial{ narrowBrickDiffuse, narrowBrickMetallic, narrowBrickRoughness, defaultNormalMap };
 	metallicRoughnessMaterial mirrorMaterial{ rtWhite, whiteColor, blackColor };
 
-	Light& light1 = m_lights.emplace_back(glm::vec3(0.f, 2.f, 0.f), glm::vec4(1.f), sphere, LightType::Point, m_lights.size());
+	Light& light1 = m_lights.emplace_back(glm::vec3(0.f, 2.f, 0.f), glm::vec4(1.f, 1.f, 1.f, 3.f), sphere, LightType::Point, m_lights.size());
 	m_vulkanRenderingBackend->createShadowCaster(light1, 1024, 1024);
 	m_vulkanRenderingBackend->attachCamera(m_camera.get());
 	glm::vec4 red = glm::vec4(0.65f, 0.05f, 0.05f, 1.f);

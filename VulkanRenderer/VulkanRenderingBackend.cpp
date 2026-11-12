@@ -1,7 +1,7 @@
 #include "VulkanRenderingBackend.h"
 
 VulkanRenderingBackend::VulkanRenderingBackend(Window& window)
-	: m_window(window), m_vulkanDevice(window), m_vulkanRenderer(window, m_vulkanDevice)
+	: m_window(window), m_vulkanDevice(window, true), m_vulkanRenderer(window, m_vulkanDevice)
 {
 	//1 uniform frame buffer per frame in flight (2) and 2 textures, one for albedo other is shadow map
 	std::unordered_map<VkDescriptorType, uint32_t> descriptorTypes = { {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2} };
@@ -40,7 +40,8 @@ void VulkanRenderingBackend::render(float dt)
 		return;
 	}
 
-	glm::vec4 LightPos = glm::vec4((*m_lights)[0].getPos(), 0.f);
+	Light& light = (*m_lights)[0];
+	glm::vec4 LightPos = glm::vec4(light.getPos(), light.getColor().w);//storing xyz pos and w intensity, should also add color and light fall off to shaders
 	glm::vec4 ViewPos = glm::vec4(m_camera->getPos(), 1.f);
 	LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
 	glm::mat4 lightSpaceMat = glm::ortho(-15.f, 15.f, -15.f, 15.f, 0.1f, 25.f);
@@ -70,18 +71,16 @@ void VulkanRenderingBackend::render(float dt)
 		0, 2, descriptorSets, 0, nullptr);
 	m_deferredRendererSystem->executeGeometryPass(commandBuffer);
 	m_deferredRendererSystem->executeLightingPass(commandBuffer);
-	//m_deferredRendererSystem->renderLights(commandBuffer);
-	//m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_deferredRendererSystem->getLightingPassOutput());
-
+	
 	m_raytracerRendererSystem->buildTopLevelAccelerationStructure(commandBuffer, frameIndex);
 	VkDescriptorSet descriptorSetsRt[2] = { cameraMatrixDescriptorSet, m_globalTextureListDescriptorSet };
 	m_raytracerRendererSystem->executeRayTracingPass(commandBuffer, frameIndex, descriptorSetsRt);
-	//m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_raytracerRendererSystem->getRayTracerOutputImage(frameIndex));
 	
 	m_raytracerRendererSystem->executeRasterAndRTBlendPass(commandBuffer, frameIndex);
+	m_deferredRendererSystem->renderLights(commandBuffer, m_raytracerRendererSystem->getRasterAndRTBlendOutputImage(frameIndex));
+	
 	m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_raytracerRendererSystem->getRasterAndRTBlendOutputImage(frameIndex));
 	//if (forwardRenderer) {  }
-	//TODO: implement light rendering with the raster and rt blending pass
 	//TODO: implement area lights and make the ray tracer probabilistic instead of deterministic - partially done
 
 	m_vulkanRenderer.endFrame();
