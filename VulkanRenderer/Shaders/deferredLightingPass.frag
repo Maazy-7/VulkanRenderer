@@ -80,7 +80,7 @@ void main()
     vec3 viewDir = normalize(viewPos.xyz - FragPos);
     vec3 lightDir = normalize(lightPos.xyz - FragPos);
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    vec3 lightColor = vec3(1.0);
+    vec3 lightColor = vec3(3.0);
 
     //Cook Torrance brdf terms
     float NdotL = max(dot(norm, lightDir), 0.0);

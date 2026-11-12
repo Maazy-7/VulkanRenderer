@@ -134,7 +134,7 @@ void main()
     vec3 V = normalize(-gl_WorldRayDirectionEXT);//view direction of surface hit by ray is just negative of hit direction
     vec3 L = normalize(ubo.lightPos.xyz - worldPos);
     vec3 H = normalize(V + L);
-    vec3 lightColor = vec3(1.0);
+    vec3 lightColor = vec3(3.0);
 
     float NdotL = max(dot(worldNormal, L), 0.0);
     float NdotV = max(dot(worldNormal, V), 0.0);
