@@ -202,5 +202,7 @@
     <None Include="Shaders\rayTracerReflectionClosestHit.rchit.spv" />
     <None Include="Shaders\rayTracerReflectionMiss.rmiss.spv" />
     <None Include="Shaders\rayTracerShadowMiss.rmiss.spv" />
+    <None Include="Shaders\rasterAndRTBlendShader.comp" />
+    <None Include="Shaders\rasterAndRTBlendShader.comp.spv" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,85 @@
+#version 460
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout (set = 0, binding = 0) uniform sampler2D rasterOutput;
+layout (set = 0, binding = 1) uniform sampler2D rayTracedOutput;
+layout (set = 0, binding = 2) uniform sampler2D gDepth;
+layout (set = 0, binding = 3) uniform sampler2D gNormalMetallic;
+layout (set = 0, binding = 4) uniform sampler2D gAlbedoRoughness;
+
+layout (set = 0, binding = 5, rgba8) uniform image2D outputImage;
+
+layout (push_constant) uniform ProjAndViewPos
+{
+	mat4 InvViewProjMat;
+	layout (offset = 64) vec4 viewPos;
+} push_constants;
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0) 
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+vec4 getPositionFromDepthMap(sampler2D depthMap, vec2 uv, mat4 invViewProjMat)//worldPos.w stores the depth to check for early exit
+{
+    float depth = texture(depthMap, uv).r;
+    vec4 ndcPos = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth, 1.0);
+    vec4 worldPosH = invViewProjMat * ndcPos;
+    vec3 worldPos = worldPosH.xyz / worldPosH.w;
+    return vec4(worldPos, depth);
+}
+
+void main() 
+{
+    ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 outputSize = imageSize(outputImage);
+
+    if (pixelCoords.x >= outputSize.x || pixelCoords.y >= outputSize.y) 
+    {
+        return;//discarding pixel which are out of image bounds
+    }
+
+    //calculating uv based of pixel coords, adding 0.5 centers uv to be in the middle of the pixel
+    vec2 uv = (vec2(pixelCoords) + 0.5) / vec2(outputSize);
+
+
+    vec4 worldPos = getPositionFromDepthMap(gDepth, uv, push_constants.InvViewProjMat);
+    
+    if (worldPos.w > 0.9999) //adding early exit on pixels where there is no geometry (max depth) and returning the sky color
+    {
+        vec3 skyColor = texture(rayTracedOutput, uv).gba;
+        skyColor = skyColor / (skyColor + vec3(1.0));
+        skyColor = pow(skyColor, vec3(1.0 / 2.2));
+        imageStore(outputImage, pixelCoords, vec4(skyColor, 1.0));
+        return;
+    }
+
+    //unpacking input images and gbuffer data
+    vec3 rasterColor = texture(rasterOutput, uv).rgb;
+    vec4 rtOutput = texture(rayTracedOutput, uv).rgba;
+    vec4 normalMetallic = texture(gNormalMetallic, uv).rgba;
+    vec4 albedoRoughness = texture(gAlbedoRoughness, uv).rgba;
+
+    float rtShadow = rtOutput.r;//holds shadow value, either 0 or 1
+    vec3 rtReflection = rtOutput.gba;//hold gba (rgb without offset) reflection color
+    vec3 normal = normalize(normalMetallic.xyz);
+    vec3 albedo = albedoRoughness.xyz;
+    float metallic = normalMetallic.w;
+    float roughness = albedoRoughness.w;
+
+    vec3 viewDir = normalize(push_constants.viewPos.xyz - worldPos.xyz);
+    vec3 F0 = mix(vec3(0.04), albedo, metallic);
+    vec3 F = fresnelSchlick(max(dot(normal, viewDir), 0.0), F0);
+
+    //blending rt and raster outputs
+    vec3 ambient = vec3(0.1) * albedo * (1.0 - metallic);
+    vec3 blendedDiffuse = ambient + rasterColor * rtShadow;
+    vec3 finalColor = (vec3(1.0) - F0) * blendedDiffuse + (rtReflection * F0);
+
+    //tone mapping and gamma correction
+    finalColor = finalColor / (finalColor + vec3(1.0));
+    finalColor = pow(finalColor, vec3(1.0 / 2.2));
+
+    imageStore(outputImage, pixelCoords, vec4(finalColor, 1.0));
+}

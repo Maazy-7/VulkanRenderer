@@ -221,6 +221,8 @@
     <None Include="Shaders\deferredLightingPass.frag.spv" />
     <None Include="Shaders\deferredLightingPass.vert" />
     <None Include="Shaders\deferredLightingPass.vert.spv" />
+    <None Include="Shaders\rasterAndRTBlendShader.comp" />
+    <None Include="Shaders\rasterAndRTBlendShader.comp.spv" />
     <None Include="Shaders\rayTracer.rgen" />
     <None Include="Shaders\rayTracer.rgen.spv" />
     <None Include="Shaders\rayTracerReflectionClosestHit.rchit" />
