@@ -81,7 +81,7 @@ void VulkanRenderingBackend::render(float dt)
 	m_raytracerRendererSystem->executeRasterAndRTBlendPass(commandBuffer, frameIndex);
 	m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_raytracerRendererSystem->getRasterAndRTBlendOutputImage(frameIndex));
 	//if (forwardRenderer) {  }
-	
+	//TODO: implement light rendering with the raster and rt blending pass
 	//TODO: implement area lights and make the ray tracer probabilistic instead of deterministic - partially done
 
 	m_vulkanRenderer.endFrame();
