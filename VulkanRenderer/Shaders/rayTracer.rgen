@@ -59,7 +59,7 @@ void main()
     vec4 worldPos = getPositionFromDepthMap(uv);
     if (worldPos.w > 0.9999) 
     {
-        imageStore(outputImage, pixelCoords, matrix.backgroundColor);//returning bright pink as background for now
+        imageStore(outputImage, pixelCoords, vec4(1, matrix.backgroundColor.xyz));//1 for the shadow and gba channels hold sky/background color to be used in the blending pass
         return;
     }
 
@@ -97,13 +97,16 @@ void main()
     }
 
     //compute final color
-    vec3 ambient = vec3(0.3) * albedo * (1.0 - metallic);//ambient color
+    /*vec3 ambient = vec3(0.3) * albedo * (1.0 - metallic);//ambient color
     vec3 diffuse = albedo * shadow + ambient;
     vec3 color = mix(diffuse, reflectionResult, metallic);//weighting diffuse and reflection based of metalness of surface
     //gamma correction
     color = color / (color + 1.0);
-    color = pow(color, vec3(1.0/2.2));
-    imageStore(outputImage, pixelCoords, vec4(color, 1.0));
+    color = pow(color, vec3(1.0/2.2));*/
+
+    //store shadow and reflection as a singular vec4 for blending with rasterized output
+    vec4 rtShadowAndReflection = vec4(shadow, reflectionColor);
+    imageStore(outputImage, pixelCoords, rtShadowAndReflection);
 }
 
 vec4 getPositionFromDepthMap(vec2 uv)//worldPos.w stores the depth to check for early exit
