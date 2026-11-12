@@ -16,7 +16,7 @@ layout (set = 0, binding = 0) uniform UniformBufferObject
 
 //descriptor set owned by ray tracer
 layout (set = 2, binding = 0) uniform accelerationStructureEXT tlas;
-layout (set = 2, binding = 1, rgba8) uniform image2D outputImage;
+layout (set = 2, binding = 1, rgba16f) uniform image2D outputImage;
 layout (set = 2, binding = 3) uniform sampler2D gDepth;
 layout (set = 2, binding = 4) uniform sampler2D gNormalMetallic;
 layout (set = 2, binding = 5) uniform sampler2D gAlbedoRoughness;
@@ -80,7 +80,10 @@ void main()
     float tMin = 0.001;
     float tMax = 10000.0;
 
+    //intializing both payloads before beginning tracing
     shadowVisibility = 0.0;
+    reflectionColor = vec3(0.0);
+
     traceRayEXT(tlas, shadowRayFlags, 0xFF, 0, 0, 1, rayOrigin, tMin, lightDirection, length(ubo.lightPos.xyz - rayOrigin), 1);
     float shadow = shadowVisibility;//shadow ray traced result stored here, if ray intersects something 0 is returned meaning shadow otherwise miss returns 1
 
@@ -95,7 +98,7 @@ void main()
         traceRayEXT(tlas, reflectionRayFlags, 0xFF, 0, 0, 0, rayOrigin, tMin, reflectDirection, tMax, 0);
         reflectionResult = reflectionColor;
     }
-
+    
     //compute final color
     /*vec3 ambient = vec3(0.3) * albedo * (1.0 - metallic);//ambient color
     vec3 diffuse = albedo * shadow + ambient;
