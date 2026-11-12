@@ -63,31 +63,27 @@ void VulkanRenderingBackend::render(float dt)
 
 	if (InputManager::getKey(GLFW_KEY_SPACE)) { forwardRenderer = true; }
 	else { forwardRenderer = false; }
-
-	if (forwardRenderer)
-	{
-		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_simpleRenderSystem->getVulkanPipeline().getPipelineLayout(), 0,
-		//	1, &cameraMatrixDescriptorSet, 0, nullptr);
-		//m_vulkanRenderer.beginRendering(commandBuffer);
-		//m_simpleRenderSystem->renderGameObjects(commandBuffer, dt);
-		//m_vulkanRenderer.endRendering(commandBuffer);
-	}
-	else
-	{
-		VkDescriptorSet descriptorSets[2] = { cameraMatrixDescriptorSet, m_globalTextureListDescriptorSet };
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_deferredRendererSystem->getGeometryPassPipeline().getPipelineLayout(),
-			0, 2, descriptorSets, 0, nullptr);
-		m_deferredRendererSystem->executeGeometryPass(commandBuffer);
-		m_deferredRendererSystem->executeLightingPass(commandBuffer);
-		//m_deferredRendererSystem->renderLights(commandBuffer);
-		//m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_deferredRendererSystem->getLightingPassOutput());
-	}
+	
+	//deferred pass
+	VkDescriptorSet descriptorSets[2] = { cameraMatrixDescriptorSet, m_globalTextureListDescriptorSet };
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_deferredRendererSystem->getGeometryPassPipeline().getPipelineLayout(),
+		0, 2, descriptorSets, 0, nullptr);
+	m_deferredRendererSystem->executeGeometryPass(commandBuffer);
+	m_deferredRendererSystem->executeLightingPass(commandBuffer);
+	//m_deferredRendererSystem->renderLights(commandBuffer);
+	//m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_deferredRendererSystem->getLightingPassOutput());
 
 	m_raytracerRendererSystem->buildTopLevelAccelerationStructure(commandBuffer, frameIndex);
-	VkDescriptorSet descriptorSets[2] = { cameraMatrixDescriptorSet, m_globalTextureListDescriptorSet };
-	m_raytracerRendererSystem->executeRayTracingPass(commandBuffer, frameIndex, descriptorSets);
-	m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_raytracerRendererSystem->getRayTracerOutputImage(frameIndex));
-	//TODO: debug ray tracer, shadow rays work but are noisy in middle whereas reflection rays are just not even running/being traced
+	VkDescriptorSet descriptorSetsRt[2] = { cameraMatrixDescriptorSet, m_globalTextureListDescriptorSet };
+	m_raytracerRendererSystem->executeRayTracingPass(commandBuffer, frameIndex, descriptorSetsRt);
+	//m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_raytracerRendererSystem->getRayTracerOutputImage(frameIndex));
+	
+	m_raytracerRendererSystem->executeRasterAndRTBlendPass(commandBuffer, frameIndex);
+	m_vulkanRenderer.blitVkImageToSwapChain(commandBuffer, m_raytracerRendererSystem->getRasterAndRTBlendOutputImage(frameIndex));
+	//if (forwardRenderer) {  }
+	
+	//TODO: implement area lights and make the ray tracer probabilistic instead of deterministic - partially done
+
 	m_vulkanRenderer.endFrame();
 }
 
@@ -207,7 +203,8 @@ void VulkanRenderingBackend::createBuffersAndDescriptors()
 		&variableDescriptorCountAllocInfo);
 	m_deferredRendererSystem->createPipelines(*m_globalSetLayout, *m_globalTextureListDescriptorSetLayout);
 	m_raytracerRendererSystem->createPipeline(*m_globalSetLayout, *m_globalTextureListDescriptorSetLayout, 
-		m_deferredRendererSystem->getDepthBuffer(), m_deferredRendererSystem->getNormalMetallicBuffer(), m_deferredRendererSystem->getAlbedoRoughnessBuffer());
+		m_deferredRendererSystem->getDepthBuffer(), m_deferredRendererSystem->getNormalMetallicBuffer(), 
+		m_deferredRendererSystem->getAlbedoRoughnessBuffer(), m_deferredRendererSystem->getLightingPassOutput());
 	
 	//allocate inital textures - need to make a better system to load and unload textures dynamically
 	std::vector<VkDescriptorImageInfo> descriptorImageInfos;
