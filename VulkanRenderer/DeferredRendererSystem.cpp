@@ -217,6 +217,7 @@ void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descript
 		.pipelineRendering(1, &lightingPassColorFormat, VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED)
 		.build();
 
+	VkFormat lightRenderingColorFormat = VK_FORMAT_R8G8B8A8_UNORM;
 	//creating pipeline to render the lights, it will write to lighting pass output and use the depth buffer from geometry pass and act as a forward renderer
 	std::vector<std::pair<VkShaderStageFlagBits, const std::string>> lightObjRenderShaderStages = {
 		{VK_SHADER_STAGE_VERTEX_BIT, "Shaders/shader.vert.spv"}, {VK_SHADER_STAGE_FRAGMENT_BIT, "Shaders/singleColor.frag.spv"} };
@@ -230,7 +231,7 @@ void DeferredRendererSystem::createPipelines(VulkanDescriptorSetLayout& descript
 		.colorBlendState(VK_FALSE, VK_LOGIC_OP_COPY, 1, &colorBlendAttachmentState, blendConstants)
 		.depthStencilState(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_FALSE, 0.f, 1.f, VK_FALSE)
 		.dynamicState(2, dynamicStates)
-		.pipelineRendering(1, &lightingPassColorFormat, m_vulkanDevice.findDepthFormat(), VK_FORMAT_UNDEFINED)
+		.pipelineRendering(1, &lightRenderingColorFormat, m_vulkanDevice.findDepthFormat(), VK_FORMAT_UNDEFINED)
 		.build();
 }
 
@@ -374,11 +375,9 @@ void DeferredRendererSystem::executeLightingPass(VkCommandBuffer commandBuffer)/
 		VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 1, commandBuffer);
 }
 
-void DeferredRendererSystem::renderLights(VkCommandBuffer commandBuffer)
+void DeferredRendererSystem::renderLights(VkCommandBuffer commandBuffer, VulkanImage& outputImage)
 {
-	//setting lighting pass output to color attachment as it will be written to
-	m_lightingPassOutput->transitionImageLayout(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		VK_ACCESS_2_TRANSFER_READ_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT, 
+	outputImage.transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, 
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 1, commandBuffer);
 	//setting depth buffer to depth stencil attachment as it will be read from
 	m_gDepth->transitionImageLayout(VK_FORMAT_D32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 
@@ -396,7 +395,7 @@ void DeferredRendererSystem::renderLights(VkCommandBuffer commandBuffer)
 	//writes to lighting pass output
 	VkRenderingAttachmentInfo colorAttachmentInfo{};
 	colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	colorAttachmentInfo.imageView = m_lightingPassOutput->getVkImageView();
+	colorAttachmentInfo.imageView = outputImage.getVkImageView();
 	colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 	colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -438,9 +437,8 @@ void DeferredRendererSystem::renderLights(VkCommandBuffer commandBuffer)
 
 	vkCmdEndRendering(commandBuffer);
 
-	m_lightingPassOutput->transitionImageLayout(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-		1, commandBuffer);
+	outputImage.transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_2_TRANSFER_READ_BIT,
+		VK_PIPELINE_STAGE_2_TRANSFER_BIT, 1, commandBuffer);
 	m_gDepth->transitionImageLayout(VK_FORMAT_D32_SFLOAT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
 		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT, 
 		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, 1, commandBuffer);

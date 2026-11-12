@@ -32,7 +32,7 @@ public:
 
 	void executeGeometryPass(VkCommandBuffer commandBuffer);
 	void executeLightingPass(VkCommandBuffer commandBuffer);
-	void renderLights(VkCommandBuffer commandBuffer);
+	void renderLights(VkCommandBuffer commandBuffer, VulkanImage& outputImage);
 	void setGameObjectList(std::vector<gameObject>* gameObjects);
 	void setLightList(std::vector<Light>* lights);
 	void setShadowCasterList(const std::vector<ShadowCaster>* shadowCasters);
