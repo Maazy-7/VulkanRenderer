@@ -108,12 +108,12 @@ void main()
     float shadow = calculateCubemapShadow(FragPos, norm);
 
     //final color directly from light
-    vec3 Lo = (diffuse + specular) * lightColor * NdotL * shadow;
+    vec3 Lo = (diffuse + specular) * lightColor * NdotL;// * shadow; shadow added when blending raster and rt
     
     //indirect lighting/ambient - simple value for now
     vec3 ambient = vec3(0.1) * albedo * (1.0 - metallic);
-    vec3 color = ambient + Lo;
-    color = color / (color + 1.0);
-    color = pow(color, vec3(1.0/2.2));
+    vec3 color = Lo ;//+ ambient; ambient light computed and added in raster rt blend shader
+    //color = color / (color + 1.0);
+    //color = pow(color, vec3(1.0/2.2));
     outFragPos = vec4(color, 1.0);
 }
