@@ -20,12 +20,14 @@ public:
 	void attachCamera(const Camera* camera);
 
 	void createPipeline(VulkanDescriptorSetLayout& frameUBOLayout, VulkanDescriptorSetLayout& globalTextureDescriptorLayout, 
-		VulkanImage& gDepth, VulkanImage& gNormalMetallic, VulkanImage& gAlbedoRoughness);
+		VulkanImage& gDepth, VulkanImage& gNormalMetallic, VulkanImage& gAlbedoRoughness, VulkanImage& deferredLightingOutput);
 	void buildBottomLevelAccelerationStructures(VkCommandBuffer commandBuffer);
 	void buildTopLevelAccelerationStructure(VkCommandBuffer commandBuffer, size_t swapchainFrameIndex);
 	void executeRayTracingPass(VkCommandBuffer commandBuffer, size_t swapchainFrameIndex, VkDescriptorSet* descriptorSets);
+	void executeRasterAndRTBlendPass(VkCommandBuffer commandBuffer, size_t swapchainFrameIndex);
 	void recreateRayTracerSystemResources();//only recreates the output image buffer
 	VulkanImage& getRayTracerOutputImage(size_t frameIndex);
+	VulkanImage& getRasterAndRTBlendOutputImage(size_t frameIndex);
 
 private:
 
@@ -38,6 +40,10 @@ private:
 	std::unique_ptr<VulkanDescriptorSetLayout> m_raytracingDescriptorSetLayout;
 	std::vector<VkDescriptorSet> m_raytracingDescriptorSet;
 	std::vector<VulkanImage> m_raytracingOutputImage;
+	std::unique_ptr<VulkanPipeline> m_rasterAndRTBlendComputePipeline;
+	std::unique_ptr<VulkanDescriptorSetLayout> m_rasterAndRTBlendDescriptorSetLayout;
+	std::vector<VkDescriptorSet> m_rasterAndRTBlendDescriptorSet;
+	std::vector<VulkanImage> m_rasterAndRTBlendOutputImage;
 	std::optional<VulkanBuffer> m_vulkanBLASbuffer;//all blas stored within this buffer
 	std::optional<VulkanBuffer> m_vulkanBLASScratchBuildBuffer;
 	VkDeviceSize m_totalBlasSize = 0;//will store combined size of all blas to be used when blas buffer size needs to be increased/decreased

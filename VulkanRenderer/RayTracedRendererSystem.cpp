@@ -9,16 +9,19 @@ RayTracedRendererSystem::RayTracedRendererSystem(VulkanDevice& vulkanDevice, Vul
 {
 	m_vulkanTLAS.emplace(m_vulkanDevice, m_maxTLASInstances, m_swapchainFramesInFlight);
 
-	//double the descriptor sets than bindings due to 2 descriptors for each frame in flight
+	//double the descriptor sets than bindings due to 2 descriptors sets for each frame in flight
 	std::unordered_map<VkDescriptorType, uint32_t> descriptorTypes = { {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 2}, 
-		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6}, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2} };
+		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 4}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 16}, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2} };
 	m_raytracingDescriptorPool = std::make_unique<VulkanDescriptorPool>(m_vulkanDevice, descriptorTypes);
 
 	m_raytracingOutputImage.reserve(m_swapchainFramesInFlight);
+	m_rasterAndRTBlendOutputImage.reserve(m_swapchainFramesInFlight);
 	VkExtent2D swapChainExtent = m_vulkanRenderer.getSwapChain().getSwapChainExtent();
 	for (size_t i = 0; i < m_swapchainFramesInFlight; i++) 
 	{
 		m_raytracingOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+			/*remove transfer src usage bit*/VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		m_rasterAndRTBlendOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
 }
@@ -39,7 +42,7 @@ void RayTracedRendererSystem::attachCamera(const Camera* camera)
 }
 
 void RayTracedRendererSystem::createPipeline(VulkanDescriptorSetLayout& frameUBOLayout, VulkanDescriptorSetLayout& globalTextureDescriptorLayout,
-	VulkanImage& gDepth, VulkanImage& gNormalMetallic, VulkanImage& gAlbedoRoughness)
+	VulkanImage& gDepth, VulkanImage& gNormalMetallic, VulkanImage& gAlbedoRoughness, VulkanImage& deferredLightingOutput)
 {
 	std::vector<std::pair<VkShaderStageFlagBits, const std::string>> rayTracerShaderStages = {
 		{ VK_SHADER_STAGE_RAYGEN_BIT_KHR, "Shaders/rayTracer.rgen.spv" },
@@ -154,6 +157,76 @@ void RayTracedRendererSystem::createPipeline(VulkanDescriptorSetLayout& frameUBO
 		raytracingPipelineSetLayouts, 1, rayTracingPushConstants);
 
 	setupShaderBindingTable();
+
+
+	//setting up compute pipeline
+	std::pair<VkShaderStageFlagBits, const std::string> computeShaderStage { VK_SHADER_STAGE_COMPUTE_BIT, "Shaders/rasterAndRTBlendShader.comp.spv" };
+
+	//push constants for compute pipeline
+	VkPushConstantRange computePushConstant{};
+	computePushConstant.offset = 0;
+	computePushConstant.size = 80;//64 byte inv view proj mat, 16 byte camera view pos
+	computePushConstant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	
+	//descriptors for compute pipeline, 1 for each frame in flight
+	bindings.clear();
+	VulkanDescriptorSetLayout::addBinding(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+	VulkanDescriptorSetLayout::addBinding(bindings, 5, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+
+	m_rasterAndRTBlendDescriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_vulkanDevice, bindings);
+	m_rasterAndRTBlendDescriptorSet.resize(m_swapchainFramesInFlight);
+
+	for (size_t i = 0; i < m_rasterAndRTBlendDescriptorSet.size(); i++) 
+	{
+		VulkanDescriptorWriter descriptorWriter(*m_raytracingDescriptorPool, *m_rasterAndRTBlendDescriptorSetLayout);
+
+		//rasterized lighting pass output from deferred renderer
+		VkDescriptorImageInfo deferredLightingOutputImageInfo{};
+		deferredLightingOutputImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		deferredLightingOutputImageInfo.imageView = deferredLightingOutput.getVkImageView();
+		deferredLightingOutputImageInfo.sampler = deferredLightingOutput.getVkSampler();
+
+		//ray traced output from ray tracer
+		VkDescriptorImageInfo rtOutputImageInfo{};
+		rtOutputImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		rtOutputImageInfo.imageView = m_raytracingOutputImage[i].getVkImageView();
+		rtOutputImageInfo.sampler = m_raytracingOutputImage[i].getVkSampler();
+
+		//gbuffer depth buffer
+		VkDescriptorImageInfo depthImageInfo{};
+		depthImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		depthImageInfo.imageView = gDepth.getVkImageView();
+		depthImageInfo.sampler = gDepth.getVkSampler();
+
+		//gbuffer normal metallic buffer
+		VkDescriptorImageInfo normalMetallicImageInfo{};
+		normalMetallicImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		normalMetallicImageInfo.imageView = gNormalMetallic.getVkImageView();
+		normalMetallicImageInfo.sampler = gNormalMetallic.getVkSampler();
+
+		//gbuffer albedo roughness buffer
+		VkDescriptorImageInfo albedoRoughnessImageInfo{};
+		albedoRoughnessImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		albedoRoughnessImageInfo.imageView = gAlbedoRoughness.getVkImageView();
+		albedoRoughnessImageInfo.sampler = gAlbedoRoughness.getVkSampler();
+
+		//output image shader will write to
+		VkDescriptorImageInfo outputImageInfo{};
+		outputImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		outputImageInfo.imageView = m_rasterAndRTBlendOutputImage[i].getVkImageView();
+		
+		descriptorWriter.writeImage(&deferredLightingOutputImageInfo, 0).writeImage(&rtOutputImageInfo, 1).writeImage(&depthImageInfo, 2)
+			.writeImage(&normalMetallicImageInfo, 3).writeImage(&albedoRoughnessImageInfo, 4)
+			.writeImage(&outputImageInfo, 5).build(m_rasterAndRTBlendDescriptorSet[i]);
+	}
+
+	VkDescriptorSetLayout computePipelineSetLayout[] = { m_rasterAndRTBlendDescriptorSetLayout->getDescriptorSetLayout() };
+	m_rasterAndRTBlendComputePipeline = std::make_unique<VulkanPipeline>(m_vulkanDevice, computeShaderStage, 1, computePipelineSetLayout, 
+		1, &computePushConstant);
 }
 
 void RayTracedRendererSystem::setupShaderBindingTable()
@@ -395,7 +468,34 @@ void RayTracedRendererSystem::executeRayTracingPass(VkCommandBuffer commandBuffe
 	RayTracingFunctions::m_vkCmdTraceRaysKHR(commandBuffer, &m_stridedDeviceAddressRegions[0], &m_stridedDeviceAddressRegions[1], 
 		&m_stridedDeviceAddressRegions[2], &m_stridedDeviceAddressRegions[3], swapchainExtent.width, swapchainExtent.height, 1);
 
-	m_raytracingOutputImage[swapchainFrameIndex].transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+	m_raytracingOutputImage[swapchainFrameIndex].transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
+		VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 1, commandBuffer);
+}
+
+void RayTracedRendererSystem::executeRasterAndRTBlendPass(VkCommandBuffer commandBuffer, size_t swapchainFrameIndex)
+{
+	//transitioning blend output to be written to
+	m_rasterAndRTBlendOutputImage[swapchainFrameIndex].transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_2_SHADER_WRITE_BIT, 
+		VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 1, commandBuffer);
+
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_rasterAndRTBlendComputePipeline->getPipeline());
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_rasterAndRTBlendComputePipeline->getPipelineLayout(), 0, 1, 
+		&m_rasterAndRTBlendDescriptorSet[swapchainFrameIndex], 0, nullptr);
+
+	glm::mat4 invViewProjMat = m_camera->getProjection(); invViewProjMat[1][1] *= -1;
+	invViewProjMat *= m_camera->getView();
+	invViewProjMat = glm::inverse(invViewProjMat);
+	glm::vec4 viewPos = glm::vec4(m_camera->getPos(), 1.f);
+	vkCmdPushConstants(commandBuffer, m_rasterAndRTBlendComputePipeline->getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(glm::mat4), &invViewProjMat);
+	vkCmdPushConstants(commandBuffer, m_rasterAndRTBlendComputePipeline->getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(glm::vec4), &viewPos);
+
+	VkExtent2D swapchainExtent = m_vulkanRenderer.getSwapChain().getSwapChainExtent();
+	uint32_t groupCountX = (swapchainExtent.width + 15) / 16;
+	uint32_t groupCountY = (swapchainExtent.height + 15) / 16;
+
+	vkCmdDispatch(commandBuffer, groupCountX, groupCountY, 1);
+
+	m_rasterAndRTBlendOutputImage[swapchainFrameIndex].transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
 		VK_ACCESS_2_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT, 1, commandBuffer);
 }
 
@@ -407,10 +507,17 @@ void RayTracedRendererSystem::recreateRayTracerSystemResources()
 	{
 		m_raytracingOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		m_rasterAndRTBlendOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
 }
 
 VulkanImage& RayTracedRendererSystem::getRayTracerOutputImage(size_t frameIndex)
 {
 	return m_raytracingOutputImage[frameIndex];
+}
+
+VulkanImage& RayTracedRendererSystem::getRasterAndRTBlendOutputImage(size_t frameIndex)
+{
+	return m_rasterAndRTBlendOutputImage[frameIndex];
 }
