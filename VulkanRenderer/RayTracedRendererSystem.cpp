@@ -19,7 +19,7 @@ RayTracedRendererSystem::RayTracedRendererSystem(VulkanDevice& vulkanDevice, Vul
 	VkExtent2D swapChainExtent = m_vulkanRenderer.getSwapChain().getSwapChainExtent();
 	for (size_t i = 0; i < m_swapchainFramesInFlight; i++) 
 	{
-		m_raytracingOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+		m_raytracingOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
 			/*remove transfer src usage bit*/VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		m_rasterAndRTBlendOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -445,7 +445,7 @@ void RayTracedRendererSystem::buildTopLevelAccelerationStructure(VkCommandBuffer
 void RayTracedRendererSystem::executeRayTracingPass(VkCommandBuffer commandBuffer, size_t swapchainFrameIndex, VkDescriptorSet* descriptorSets)
 {
 	//transitioning ray tracer's output image layout for writing to
-	m_raytracingOutputImage[swapchainFrameIndex].transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_2_SHADER_WRITE_BIT, 
+	m_raytracingOutputImage[swapchainFrameIndex].transitionImageLayout(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_2_SHADER_WRITE_BIT,
 		VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, 1, commandBuffer);
 	
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, m_raytracingPipeline->getPipeline());
@@ -468,7 +468,7 @@ void RayTracedRendererSystem::executeRayTracingPass(VkCommandBuffer commandBuffe
 	RayTracingFunctions::m_vkCmdTraceRaysKHR(commandBuffer, &m_stridedDeviceAddressRegions[0], &m_stridedDeviceAddressRegions[1], 
 		&m_stridedDeviceAddressRegions[2], &m_stridedDeviceAddressRegions[3], swapchainExtent.width, swapchainExtent.height, 1);
 
-	m_raytracingOutputImage[swapchainFrameIndex].transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
+	m_raytracingOutputImage[swapchainFrameIndex].transitionImageLayout(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 1, commandBuffer);
 }
 
@@ -487,7 +487,7 @@ void RayTracedRendererSystem::executeRasterAndRTBlendPass(VkCommandBuffer comman
 	invViewProjMat = glm::inverse(invViewProjMat);
 	glm::vec4 viewPos = glm::vec4(m_camera->getPos(), 1.f);
 	vkCmdPushConstants(commandBuffer, m_rasterAndRTBlendComputePipeline->getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(glm::mat4), &invViewProjMat);
-	vkCmdPushConstants(commandBuffer, m_rasterAndRTBlendComputePipeline->getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(glm::vec4), &viewPos);
+	vkCmdPushConstants(commandBuffer, m_rasterAndRTBlendComputePipeline->getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 64, sizeof(glm::vec4), &viewPos);
 
 	VkExtent2D swapchainExtent = m_vulkanRenderer.getSwapChain().getSwapChainExtent();
 	uint32_t groupCountX = (swapchainExtent.width + 15) / 16;
@@ -505,7 +505,7 @@ void RayTracedRendererSystem::recreateRayTracerSystemResources()
 	VkExtent2D swapChainExtent = m_vulkanRenderer.getSwapChain().getSwapChainExtent();
 	for (size_t i = 0; i < m_raytracingOutputImage.size(); i++)
 	{
-		m_raytracingOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+		m_raytracingOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		m_rasterAndRTBlendOutputImage.emplace_back(m_vulkanDevice, swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
