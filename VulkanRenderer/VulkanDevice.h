@@ -11,10 +11,11 @@
 
 
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-const bool enableValidationLayers = false;
 
-#if DEBUG
-enableValidationLayers = true;
+#if _DEBUG
+constexpr bool enableValidationLayers = true;
+#else
+constexpr bool enableValidationLayers = false;
 #endif
 
 
