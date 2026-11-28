@@ -46,6 +46,17 @@ void Camera::update(float dt, float aspect)
 	m_view = glm::lookAt(m_position,m_position+m_front,m_up);
 }
 
+bool Camera::cameraMoved(glm::vec3 front, glm::vec3 position) const
+{
+	glm::vec3 v1 = front - m_front;
+	glm::vec3 v2 = position - m_position;
+	if (glm::length(v1) > 0.001 || glm::length(v2) > 0.001) 
+	{
+		return true;
+	}
+	else { return false; }
+}
+
 
 void Camera::processMouse() 
 {

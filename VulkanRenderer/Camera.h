@@ -26,6 +26,7 @@ public:
 
 	glm::vec3 getPos() const { return m_position; }
 	glm::vec3 getFront() const { return m_front; }
+	bool cameraMoved(glm::vec3 front, glm::vec3 position) const;
 
 private:
 
