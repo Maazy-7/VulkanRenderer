@@ -25,6 +25,11 @@ void Light::setPos(glm::vec3 pos)
 	m_pos = pos;
 }
 
+void Light::setSize(float size)
+{
+	m_size = size;
+}
+
 LightType Light::getLightType() const
 {
 	return m_lightType;
@@ -39,6 +44,11 @@ bool Light::hasShadowCaster(size_t& shadowCasterIndexOut) const
 size_t Light::getLightIndex() const
 {
 	return m_lightIndex;
+}
+
+float Light::getSize() const
+{
+	return m_size;
 }
 
 void Light::draw(VkCommandBuffer commandBuffer) const

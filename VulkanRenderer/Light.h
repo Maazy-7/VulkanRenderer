@@ -26,10 +26,12 @@ public:
 	LightType getLightType() const;
 	bool hasShadowCaster(size_t& shadowCasterIndexOut) const;
 	size_t getLightIndex() const;
+	float getSize() const;
 
 	void draw(VkCommandBuffer commandBuffer) const;
 
 	void setPos(glm::vec3 pos);
+	void setSize(float size);
 
 private:
 	glm::vec3 m_pos;
@@ -38,6 +40,7 @@ private:
 	Model& m_model;
 	size_t m_lightIndex; 
 	size_t m_shadowCasterIndex = SIZE_MAX;//max size_t represents no shadow caster attached, could also try int and -1 for no shadow caster
+	float m_size;//represents size of light, radius for sphere light and half length for area light
 
 	friend ShadowCaster;
 };
