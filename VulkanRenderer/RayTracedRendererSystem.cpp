@@ -37,6 +37,11 @@ void RayTracedRendererSystem::setGameObjectList(const std::vector<gameObject>* g
 	m_gameObjectList = gameObjectList;
 }
 
+void RayTracedRendererSystem::setLightList(const std::vector<Light>* lightList)
+{
+	m_lightList = lightList;
+}
+
 void RayTracedRendererSystem::attachCamera(const Camera* camera)
 {
 	m_camera = camera;
@@ -56,7 +61,7 @@ void RayTracedRendererSystem::createPipeline(VulkanDescriptorSetLayout& frameUBO
 	VkPushConstantRange rayGenPushConstant{};
 	rayGenPushConstant.offset = 0;
 	rayGenPushConstant.size = 80;//64 byte inv proj view matrix, 16 byte background color
-	rayGenPushConstant.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+	rayGenPushConstant.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 
 	VkPushConstantRange rayTracingPushConstants[1] = { rayGenPushConstant };
 	
@@ -459,10 +464,12 @@ void RayTracedRendererSystem::executeRayTracingPass(VkCommandBuffer commandBuffe
 	glm::mat4 invViewProjMat = m_camera->getProjection(); invViewProjMat[1][1] *= -1;
 	invViewProjMat *= m_camera->getView();
 	invViewProjMat = glm::inverse(invViewProjMat);
-	vkCmdPushConstants(commandBuffer, m_raytracingPipeline->getPipelineLayout(), VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR, 0, sizeof(glm::mat4), &invViewProjMat);
+	vkCmdPushConstants(commandBuffer, m_raytracingPipeline->getPipelineLayout(), VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | 
+		VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 0, sizeof(glm::mat4), &invViewProjMat);
 
-	glm::vec4 skyColor = glm::vec4(0.0f, 0.61f, 1.f, 0.f);
-	vkCmdPushConstants(commandBuffer, m_raytracingPipeline->getPipelineLayout(), VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR, 64, sizeof(glm::vec4), &skyColor);
+	glm::vec4 skyColor = glm::vec4(0.0f, 0.0f, 0.f, (*m_lightList)[0].getSize());
+	vkCmdPushConstants(commandBuffer, m_raytracingPipeline->getPipelineLayout(), VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | 
+		VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 64, sizeof(glm::vec4), &skyColor);
 
 	VkExtent2D swapchainExtent = m_vulkanRenderer.getSwapChain().getSwapChainExtent();
 	
