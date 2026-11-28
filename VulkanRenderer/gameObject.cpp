@@ -43,6 +43,11 @@ size_t gameObject::getModelID() const
 	return m_modelID;
 }
 
+glm::vec3 gameObject::getPos() const
+{
+	return m_pos;
+}
+
 void gameObject::setMaterial(metallicRoughnessMaterial& material)
 {
 	m_material = material;

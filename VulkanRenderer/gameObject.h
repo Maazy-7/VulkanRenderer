@@ -35,6 +35,7 @@ public:
 	glm::vec4 getColor() const;
 	metallicRoughnessMaterial getMaterial() const;
 	size_t getModelID() const;
+	glm::vec3 getPos() const;
 
 	void setMaterial(metallicRoughnessMaterial& material);
 
