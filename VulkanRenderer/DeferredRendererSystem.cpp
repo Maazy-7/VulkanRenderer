@@ -428,7 +428,7 @@ void DeferredRendererSystem::renderLights(VkCommandBuffer commandBuffer, VulkanI
 	glm::vec4 color;
 	for (const Light& light : *m_lightsList) 
 	{
-		model = glm::translate(glm::mat4(1.f), light.getPos()) * glm::scale(glm::mat4(1.f), glm::vec3(0.1f));
+		model = glm::translate(glm::mat4(1.f), light.getPos()) * glm::scale(glm::mat4(1.f), glm::vec3(0.4f, 0.01f, 0.4f));
 		color = light.getColor();
 		vkCmdPushConstants(commandBuffer, m_lightObjRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model);
 		vkCmdPushConstants(commandBuffer, m_lightObjRenderingPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(glm::vec4), &color);
