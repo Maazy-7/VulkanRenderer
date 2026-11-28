@@ -1,7 +1,7 @@
 #include "VulkanRenderingBackend.h"
 
 VulkanRenderingBackend::VulkanRenderingBackend(Window& window)
-	: m_window(window), m_vulkanDevice(window, true), m_vulkanRenderer(window, m_vulkanDevice)
+	: m_window(window), m_vulkanDevice(window), m_vulkanRenderer(window, m_vulkanDevice)
 {
 	//1 uniform frame buffer per frame in flight (2) and 2 textures, one for albedo other is shadow map
 	std::unordered_map<VkDescriptorType, uint32_t> descriptorTypes = { {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2} };
@@ -42,7 +42,14 @@ void VulkanRenderingBackend::render(float dt)
 
 	Light& light = (*m_lights)[0];
 	glm::vec4 LightPos = glm::vec4(light.getPos(), light.getColor().w);//storing xyz pos and w intensity, should also add color and light fall off to shaders
-	glm::vec4 ViewPos = glm::vec4(m_camera->getPos(), 1.f);
+	static int acc; acc++;
+	if (m_camera->cameraMoved(prevCamFront, prevCamPos)) 
+	{
+		acc = 0;
+	}
+	prevCamPos = m_camera->getPos();
+	prevCamFront = m_camera->getFront();
+	glm::vec4 ViewPos = glm::vec4(m_camera->getPos(), acc);
 	LightData lightData{}; lightData.lightPos = LightPos; lightData.viewPos = ViewPos;
 	glm::mat4 lightSpaceMat = glm::ortho(-15.f, 15.f, -15.f, 15.f, 0.1f, 25.f);
 	lightSpaceMat[1][1] *= -1;

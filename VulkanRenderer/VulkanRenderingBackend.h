@@ -61,6 +61,10 @@ private:
 	std::vector<Light>* m_lights = nullptr;
 
 	uint32_t maxTextures = 1024;
+
+
+	glm::vec3 prevCamPos;
+	glm::vec3 prevCamFront;
 };
 
 struct FrameUbo
