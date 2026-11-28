@@ -35,7 +35,8 @@ vec4 getPositionFromDepthMap(vec2 uv);
 
 float hash21(vec2 p) 
 {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+    float sampleCount = float(ubo.viewPos.w) * 78.233;
+    return fract(sin(dot(p, vec2(127.1, 311.7) + sampleCount)) * 43758.5453123);
 }
 
 vec3 randomOnUnitSphere(vec2 uv) 
@@ -47,6 +48,13 @@ vec3 randomOnUnitSphere(vec2 uv)
     float phi = acos(2.0 * v - 1.0);
     
     return vec3(cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi));
+}
+
+vec2 randomOnQuad(vec2 uv, vec2 minBound, vec2 maxBound) 
+{
+    float u = hash21(uv + vec2(1.0, 0.0));
+    float v = hash21(uv + vec2(0.0, 2.0));
+    return vec2(minBound.x + u * (maxBound.x - minBound.x), minBound.y + v * (maxBound.y - minBound.y));
 }
 
 
@@ -72,8 +80,11 @@ void main()
     float roughness = albedoRoughness.w;
 
     vec3 rayOrigin = worldPos.xyz + normal * 0.001;//slight shift in ray origin to reduce ray acne (self intersection of ray with surface it came from)
-    vec3 randomDir = randomOnUnitSphere(vec2(pixelCoords)) * 0.1;//random offset to light position so it simulates an area light
-    vec3 lightDirection = normalize((ubo.lightPos.xyz + randomDir) - worldPos.xyz);
+    //vec3 randomDir = randomOnUnitSphere(vec2(pixelCoords)) * 0.1;//random offset to light position so it simulates an area light
+    vec2 randomPointOnLight = randomOnQuad(vec2(pixelCoords), vec2(-0.4, -0.4), vec2(0.4, 0.4));
+    vec3 randomDir = vec3(randomPointOnLight.x, 0.0, randomPointOnLight.y);//random offset to light position so it simulates an area light
+    randomDir = randomDir + ubo.lightPos.xyz;
+    vec3 lightDirection = normalize(randomDir - worldPos.xyz);
 
     //compute and trace shadow ray
     uint shadowRayFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
@@ -84,7 +95,7 @@ void main()
     shadowVisibility = 0.0;
     reflectionColor = vec3(0.0);
 
-    traceRayEXT(tlas, shadowRayFlags, 0xFF, 0, 0, 1, rayOrigin, tMin, lightDirection, length(ubo.lightPos.xyz - rayOrigin), 1);
+    traceRayEXT(tlas, shadowRayFlags, 0xFF, 0, 0, 1, rayOrigin, tMin, lightDirection, length(randomDir - rayOrigin), 1);
     float shadow = shadowVisibility;//shadow ray traced result stored here, if ray intersects something 0 is returned meaning shadow otherwise miss returns 1
 
     //compute and trace reflection result
@@ -107,9 +118,27 @@ void main()
     color = color / (color + 1.0);
     color = pow(color, vec3(1.0/2.2));*/
 
-    //store shadow and reflection as a singular vec4 for blending with rasterized output
-    vec4 rtShadowAndReflection = vec4(shadow, reflectionColor);
-    imageStore(outputImage, pixelCoords, rtShadowAndReflection);
+    //averaging shadow results over multiple frames to reduce noise over time, (temporal accumulation)
+    //maxSamples represents the number of frames to average over so that shadows arent hardened and remain soft
+    //once max sample count is reach shadows aren't averaged anymore, and previous shadow result is used
+    float sampleCount = ubo.viewPos.w;
+    int maxSamples = 100;
+    vec4 currentRT = vec4(shadow, reflectionResult);
+    if (sampleCount > 0.0 && sampleCount < maxSamples) 
+    {
+        vec4 previousRT = imageLoad(outputImage, pixelCoords);
+        float weight = 1.0 / (sampleCount + 1.0);
+        currentRT = mix(previousRT, currentRT, weight);
+        //store shadow and reflection as a singular vec4 for blending with rasterized output
+        //vec4 rtShadowAndReflection = vec4(shadow, reflectionColor);
+        imageStore(outputImage, pixelCoords, currentRT);
+    }
+    else if (sampleCount == 0.0)
+    {
+        //store shadow and reflection as a singular vec4 for blending with rasterized output
+        vec4 rtShadowAndReflection = vec4(shadow, reflectionColor);
+        imageStore(outputImage, pixelCoords, rtShadowAndReflection);
+    }
 }
 
 vec4 getPositionFromDepthMap(vec2 uv)//worldPos.w stores the depth to check for early exit

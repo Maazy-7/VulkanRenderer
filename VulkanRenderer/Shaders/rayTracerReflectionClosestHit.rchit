@@ -70,7 +70,8 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float k);
 
 float hash21(vec2 p) 
 {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+    float sampleCount = float(ubo.viewPos.w) * 78.233;
+    return fract(sin(dot(p, vec2(127.1, 311.7) + sampleCount)) * 43758.5453123);
 }
 
 vec3 randomOnUnitSphere(vec2 uv) 
@@ -82,6 +83,13 @@ vec3 randomOnUnitSphere(vec2 uv)
     float phi = acos(2.0 * v - 1.0);
     
     return vec3(cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi));
+}
+
+vec2 randomOnQuad(vec2 uv, vec2 minBound, vec2 maxBound) 
+{
+    float u = hash21(uv + vec2(1.0, 0.0));
+    float v = hash21(uv + vec2(0.0, 2.0));
+    return vec2(minBound.x + u * (maxBound.x - minBound.x), minBound.y + v * (maxBound.y - minBound.y));
 }
 
 void main()
@@ -167,9 +175,11 @@ void main()
         vec3 rayOrigin = worldPos + worldNormal * 0.001;
         uint shadowRayFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
         float tMin = 0.001;
-        float tMax = length(ubo.lightPos.xyz - rayOrigin);//max ray distance is a little after the light object itself
-        vec3 randomDir = randomOnUnitSphere(vec2(gl_LaunchIDEXT.xy)) * 0.1;//should use ray payload to ensure random directions are the same
-        vec3 lightDirection = normalize((ubo.lightPos.xyz + randomDir) - worldPos);
+        vec2 randomPointOnLight = randomOnQuad(vec2(gl_LaunchIDEXT.xy), vec2(-0.4, -0.4), vec2(0.4, 0.4));//random offset to light position so it simulates an area light//should use ray payload to ensure random directions are the same
+        vec3 randomDir = vec3(randomPointOnLight.x, 0.0, randomPointOnLight.y);
+        randomDir = ubo.lightPos.xyz + randomDir;
+        float tMax = length(randomDir - rayOrigin);
+        vec3 lightDirection = normalize(randomDir - worldPos);
         traceRayEXT(tlas, shadowRayFlags, 0xFF, 0, 0, 1, rayOrigin, tMin, lightDirection, tMax, 1);
         shadow = shadowVisibility;//shadow ray traced result stored here, if ray intersects something 0 is returned meaning shadow otherwise miss returns 1
     }
