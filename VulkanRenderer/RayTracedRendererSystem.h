@@ -5,6 +5,7 @@
 #include "VulkanRenderer.h"
 #include "Camera.h"
 #include "VulkanAccelerationStructure.h"
+#include "Light.h"
 
 class RayTracedRendererSystem
 {
@@ -18,6 +19,7 @@ public:
 	void setModelList(const std::vector<Model>* modelList);
 	void setGameObjectList(const std::vector<gameObject>* gameObjectList);
 	void attachCamera(const Camera* camera);
+	void setLightList(const std::vector<Light>* lightList);
 
 	void createPipeline(VulkanDescriptorSetLayout& frameUBOLayout, VulkanDescriptorSetLayout& globalTextureDescriptorLayout, 
 		VulkanImage& gDepth, VulkanImage& gNormalMetallic, VulkanImage& gAlbedoRoughness, VulkanImage& deferredLightingOutput);
@@ -58,6 +60,7 @@ private:
 
 	const std::vector<Model>* m_modelList = nullptr;
 	const std::vector<gameObject>* m_gameObjectList = nullptr;
+	const std::vector<Light>* m_lightList = nullptr;
 	const Camera* m_camera = nullptr;
 };
 
