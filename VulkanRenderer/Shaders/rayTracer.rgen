@@ -80,8 +80,8 @@ void main()
     float roughness = albedoRoughness.w;
 
     vec3 rayOrigin = worldPos.xyz + normal * 0.001;//slight shift in ray origin to reduce ray acne (self intersection of ray with surface it came from)
-    //vec3 randomDir = randomOnUnitSphere(vec2(pixelCoords)) * 0.1;//random offset to light position so it simulates an area light
-    vec2 randomPointOnLight = randomOnQuad(vec2(pixelCoords), vec2(-0.4, -0.4), vec2(0.4, 0.4));
+    //vec3 randomDir = randomOnUnitSphere(vec2(pixelCoords)) * matrix.backgroundColor.w;//random offset to light position so it simulates an area light
+    vec2 randomPointOnLight = randomOnQuad(vec2(pixelCoords), vec2(-matrix.backgroundColor.w), vec2(matrix.backgroundColor.w));
     vec3 randomDir = vec3(randomPointOnLight.x, 0.0, randomPointOnLight.y);//random offset to light position so it simulates an area light
     randomDir = randomDir + ubo.lightPos.xyz;
     vec3 lightDirection = normalize(randomDir - worldPos.xyz);

@@ -60,6 +60,12 @@ layout (set = 0, binding = 0) uniform UniformBufferObject
     vec4 lightPos;
 } ubo;
 
+layout (push_constant) uniform pushConstants 
+{
+    mat4 InvViewProjMat;
+    layout (offset = 64) vec4 backgroundColor;
+} matrix;
+
 const float PI = 3.14159265359;
 const float EPS = 1e-5;
 
@@ -175,8 +181,8 @@ void main()
         vec3 rayOrigin = worldPos + worldNormal * 0.001;
         uint shadowRayFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
         float tMin = 0.001;
-        vec2 randomPointOnLight = randomOnQuad(vec2(gl_LaunchIDEXT.xy), vec2(-0.4, -0.4), vec2(0.4, 0.4));//random offset to light position so it simulates an area light//should use ray payload to ensure random directions are the same
-        vec3 randomDir = vec3(randomPointOnLight.x, 0.0, randomPointOnLight.y);
+        vec2 randomPointOnLight = randomOnQuad(vec2(gl_LaunchIDEXT.xy), vec2(-matrix.backgroundColor.w), vec2(matrix.backgroundColor.w));//random offset to light position so it simulates an area light
+        vec3 randomDir = vec3(randomPointOnLight.x, 0.0, randomPointOnLight.y);//should use ray payload to ensure random directions are the same
         randomDir = ubo.lightPos.xyz + randomDir;
         float tMax = length(randomDir - rayOrigin);
         vec3 lightDirection = normalize(randomDir - worldPos);
